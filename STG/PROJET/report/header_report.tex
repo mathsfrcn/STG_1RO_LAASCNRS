@@ -1,0 +1,233 @@
+
+
+\usepackage[top=3cm, bottom=3cm, left=3.5cm, right=3.5cm]{geometry}
+
+
+\setlength{\parindent}{0cm}
+
+
+\usepackage[french]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{ragged2e}
+\usepackage{amsfonts}
+\usepackage{systeme}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{comment}
+\usepackage{multicol}
+\usepackage{lipsum} 
+\usepackage{graphicx}
+\usepackage{stmaryrd}
+\usepackage{systeme}
+\usepackage{wrapfig}
+\usepackage{colortbl}
+\usepackage{cellspace}
+\usepackage{stmaryrd}
+\usepackage{ntheorem}
+\usepackage{lmodern}
+\usepackage{mathtools}
+\usepackage{ragged2e}
+\usepackage{tabularx}
+\usepackage{titlepic}
+\usepackage{fancyhdr}
+\usepackage{caption}
+\usepackage{xcolor} % pour les couleurs
+\usepackage[linkbordercolor=white]{hyperref} % après avoir chargé xcolor
+\usepackage{systeme}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{listings}
+\usepackage{tikz}
+\usepackage{mdframed}
+\usepackage{xparse} % Nécessaire pour définir des environnements avec arguments optionnels
+\usepackage{booktabs}  % Pour des tableaux plus jolis
+\usepackage{siunitx}
+\usepackage{adjustbox}
+\usepackage{float} % For image positionning
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable}
+
+
+% \setlist[itemize]{topsep=0pt,itemsep=2pt}
+
+% \setcounter{secnumdepth}{-1} % Désactive le compteur des parties
+
+% PAGE SETTINGS
+
+% \justifying
+
+% \setlength{\columnseprule}{1pt}
+% \def\columnseprulecolor{\color{black}}
+
+% \newcolumntype{C}{>{$\displaystyle}Sc<$}
+% \cellspacetoplimit=5pt
+% \cellspacebottomlimit=5pt
+
+\newcolumntype{C}{>{$\displaystyle}Sc<$}
+\cellspacetoplimit=5pt
+\cellspacebottomlimit=5pt
+
+
+% MATHS SHORTHANDS
+
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\U}{\mathbb{U}}
+\newcommand{\K}{\mathbb{K}}
+\newcommand{\M}{\mathcal{M}}
+\newcommand{\B}{\mathcal{B}}
+
+\renewcommand{\epsilon}{\varepsilon}
+\renewcommand{\phi}{\varphi}
+\renewcommand{\rho}{\varrho}
+
+% MOD NOTATION
+
+\theorembodyfont{\upshape}
+
+% Définir un environnement pour encadrer les définitions avec un titre
+\NewDocumentEnvironment{definition}{O{}}
+{
+  \begin{mdframed}[linewidth=0pt,linecolor=gray,backgroundcolor=gray!10,roundcorner=5pt]
+  \textbf{Définition}%
+  \IfNoValueTF{#1}{}{~(\textbf{#1})} % Affiche le titre entre parenthèses et en gras s'il est fourni
+  . % Point à la fin
+}
+{
+  \end{mdframed}
+}
+
+% Définir un environnement pour encadrer les théorèmes avec un titre
+\NewDocumentEnvironment{theorem}{O{}}
+{
+  \begin{mdframed}[linewidth=1pt,linecolor=darkgray,backgroundcolor=darkgray!10,roundcorner=5pt]
+  \textbf{Théorème}%
+  \IfNoValueTF{#1}{}{~(\textbf{#1})} % Affiche le titre entre parenthèses et en gras s'il est fourni
+  . % Point à la fin
+}
+{
+  \end{mdframed}
+}
+
+
+\theoremstyle{plain}
+\newtheorem*{remark}{Remarque}
+\newtheorem*{proposition}{Proposition}
+\newtheorem*{lemma}{Lemme}
+\newtheorem*{prop}{Propriété}
+\newtheorem*{corollary}{Corollaire}
+\newtheorem*{proof}{Démonstration}
+\newtheorem*{example}{Exemple}
+
+
+% OTHERS 
+
+
+\newlength\tindent
+\setlength{\tindent}{\parindent}
+\setlength{\parindent}{0pt}
+\renewcommand{\indent}{\hspace*{\tindent}}
+
+\usepackage{fancyvrb}
+\usepackage{tikz-cd} 
+\usepackage{amsmath}
+\usepackage{mathrsfs}  
+\usepackage{amssymb}
+\usepackage{tkz-graph}
+\usepackage{caption}
+\usepackage{multicol}
+\usepackage{listings} % Importation du package listings
+\usepackage{xcolor} % Pour ajouter de la couleur
+
+\setlength{\columnsep}{1cm} % Espace entre les colonnes
+
+
+% Définition du style de l'en-tête
+\pagestyle{fancy}
+\fancyhf{} % Nettoyer les en-têtes et pieds de page
+
+% Gauche : Nom de la section
+\fancyhead[L]{\nouppercase{\leftmark}}
+
+% Droite : Logo
+\fancyhead[R]{\includegraphics[width=2cm]{./images/logo_UT.png}}
+
+% Ligne sous l'en-tête
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Numéro de page centré en bas
+\fancyfoot[C]{\thepage}
+
+% Ligne au-dessus du pied de page (optionnel, mettre à 0pt pour supprimer)
+\renewcommand{\footrulewidth}{0pt}
+
+
+\setlength{\headheight}{1.5cm} % Ajuste la hauteur de l'en-tête
+
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{
+    style=mystyle
+}
+
+
+% Define colorbox
+\newtcolorbox{remarkBox}[1][]{%
+  colback=yellow!10!white,
+  colframe=yellow!60!black,
+  arc=4mm,
+  boxrule=0.8pt,
+  left=6pt, right=6pt, top=6pt, bottom=6pt,
+  enhanced,
+  title=Remarque~\thetcbcounter,
+  #1
+}
+
+% Define exampleBox
+\newtcolorbox{exampleBox}[1][]{%
+  colback=blue!10!white,     % fond bleu clair
+  colframe=blue!50!black,    % bordure un peu foncée
+  colbacktitle=blue!30,      % fond de l'en-tête
+  coltitle=white,            % texte de l'en-tête en blanc
+  arc=4mm,
+  boxrule=0.8pt,
+  left=6pt, right=6pt, top=6pt, bottom=6pt,
+  enhanced,
+  title=Exemple~\thetcbcounter,
+  #1
+}
+
+
+% Background color 
+\definecolor{mydarkblue}{HTML}{252A70}
+
+% Bib 
+\usepackage{biblatex}
+\addbibresource{biblio.bib} % file of reference info

@@ -1,0 +1,1110 @@
+\documentclass[a4paper]{article}
+
+% HEADER
+\input{header_report.tex}
+
+\setcounter{tocdepth}{2}
+
+\begin{document}
+
+% ==================================================================================================================================
+% TITLEPAGE 
+
+\input{titlepage_report.tex}
+
+\tableofcontents
+
+\noindent\rule{\textwidth}{1pt}
+
+% ==================================================================================================================================
+% Introduction 
+
+\newpage
+\section*{Introduction}
+
+Dans le cadre de l'UE Simulation Aléatoire de notre M1 IMA/RO nous avons travaillé sur un projet de modélisation
+de réacteur nucléaire. Nous avons donc dû, étudier, développer, simuler un modèle de réacteur nucléaire.
+
+Ce rapport présente donc le travail que nous avons pu fournir pendant plus d'un mois. Nous commençons par une mise en 
+contexte technique mais essentielle pour comprendre le modèle. S'ensuit une description technique des différents composants 
+et mécanismes d'un réacteur. 
+La troisième partie s'attarde sur les méthodes que nous avons utilisées pour implémenter le modèle ainsi que sur
+la structure du projet. 
+Pour nous permettre de valider les attendus du projet, une étude statistique s'est avérée indispensable et constitue près de 
+la moitié de ce rapport. 
+Nous clôturons celui-ci par un énoncé des limites et extensions possibles du modèle. 
+Enfin, pour les plus intéressés, différentes annexes présentent les technlogies actuellement utilisées pour la gestion 
+des réacteurs actuels. La dernière annexe propose, quand à elle, une approche plus théorique au modèle. 
+
+\medskip
+
+Pour les plus curieux, souhaitant découvrir le projet plus en détail, celui-ci est disponible sur le Github suivant : 
+    \begin{center}
+        \href{https://github.com/winston2968/Projet-Simulation-Aleatoire.git}{https://github.com/winston2968/Projet-Simulation-Aleatoire.git}
+    \end{center}
+
+% ==================================================================================================================================
+% La fission nucléaire
+
+\section{La fission nucléaire : De la théorie à la pratique}
+
+Avant d'introduire et de modéliser un réacteur nucléaire, commençons par nous pencher sur ses mécanismes 
+internes pour comprendre leur fonctionnement. 
+
+\subsection{Un peu de chimie}
+
+Au niveau microscopique, la matière est constituée de molécules, elles même composées d'un 
+agencement de plusieurs atomes respectant une certaine position. 
+Le concept de molécules fut introduit en 1811\textsuperscript{\parencite{molecules-wiki}} par 
+Amedeo Avogadro. Ces éléments sont au coeur de l'ensemble des réactions chimiques usuelles telles que 
+la combustion, le fonctionnement des piles/batteries ou même de la rouille.
+Cependant, certaines transformations mettent en jeu non plus les molécules, mais les noyaux des atomes eux-mêmes. 
+Ces réactions, dites nucléaires (voir \cite{reaction-nucleaire-wiki}), libèrent des quantités d’énergie bien supérieures aux réactions chimiques.
+
+La notion d'atome est aussi ancienne que celle des molécules mais son modèle actuel nous vient 
+de Schrödinger\textsuperscript{\parencite{atomes-wiki}} et date de 1926. 
+
+\subsection{La fission} 
+
+Il existe deux types de réactions nucléaires : la \emph{fission} et la \emph{fusion}. 
+La fission nucléaire\textsuperscript{\parencite{fission-wiki}} fut découverte en 1938 par des physiciens allemands sur le travail de Enrico Fermi datant des années 
+1934. Cette découverte fait l'effet d'une bombe (sans mauvais jeu de mots) dans le milieu de la physique moderne et lance 
+aussitôt la course au développement de l'arme atomique dans un contexte tendu de fin seconde guerre mondiale et 
+de début de guerre froide. 
+
+Le principe de la fission nucléaire est assez simple. Partant d'un noyau lourd instable (souvent un isotope 
+d'uranium ou de plutonium) et en le bombardant de neutrons à très grande vitesse on souhaite séparer le 
+noyau en deux parties approximativement égales d'éléments moins lourds. 
+Lors de cette séparation, des neutrons sont libérés et peuvent, eux aussi, produire de nouvelles réactions de fission 
+avec d'autres atomes lourds. C'est ce que l'on appelle le principe de \emph{réaction en chaîne}. 
+
+Une telle réaction produit énormément d'énergie et de chaleur, à titre d'exemple, la combustion de 1kg de charbon
+produit $3 \times 10^7$ J. alors que la fission de 1kg d'uranium en produit $ 8 \times 10^{13}$ soit entre 
+100 millions et 1 milliard de fois plus d'énergie. 
+
+Ce surplus d'énergie permet actuellement de produire de l'électricité dans nos centrales nucléaires. La chaleur 
+produite vaporise de l'eau qui fait ensuite tourner des turbines pour produire de l'électricité. 
+
+\subsection{Différents types de neutrons}\label{subsec:neutron-type}
+
+Pour induire une réaction en chaîne dans un réacteur et la maintenir, il faut jouer avec différents paramètres tels que 
+la densité du matériaux fissile, la quantité de neutrons introduite au départ, la forme du réacteur, sa température, etc... 
+Nous essaierons d'introduire tout ces paramètres dans notre modèle pour le rendre le plus proche du réel possible. 
+
+Dans cet objectif, nous ne pouvons pas négliger le fait que plusieurs types de neutrons existent dans cette réaction. 
+En effet, ceux-ci possèdent une certaine quantité d'énergie et se déplacent à une certaine vitesse qui ne sont pas toujours constantes. 
+Ainsi, pour pouvoir induire une réaction de fission, un neutron doit être suffisament ralenti pour percuter un atome lourd. 
+Nous différencierons donc 3 types de neutrons : 
+\begin{itemize}
+    \item Les neutrons \textbf{rapides} : produits directement par une réaction de fission, ils possèdent beaucoup 
+    d'énergie, se déplacent vite et ont une très faible probabilité d'être absorbés par le milieu. 
+    \item Les neutrons \textbf{épithermiques} : ce sont des neutrons en ralentissement dans le milieu possédant une 
+    énergie plus faible. Ils ont plus d'interactions avec le milieu. 
+    \item Les neutrons \textbf{thermiques} : ce sont des neutrons complètement ralentis qui se déplacent à la même vitesse 
+    que les isotopes lourds. Ils peuvent donc plus facilement induire des réactions de fission. Ils servent 
+    à maintenir le réaction en chaîne dans le réacteur. 
+\end{itemize}
+
+\begin{table}[H]
+    \centering
+    \begin{adjustbox}{max width=\textwidth}
+        \begin{tabular}{@{}>{\RaggedRight\arraybackslash}p{3cm}
+                            >{\RaggedRight\arraybackslash}p{3.5cm}
+                            >{\RaggedRight\arraybackslash}p{4cm}
+                            >{\RaggedRight\arraybackslash}p{4cm}@{}}
+            \toprule
+            \textbf{Type de neutron} & \textbf{Plage d'énergie typique} & \textbf{Rôle dans le réacteur} & \textbf{Comportement} \\ 
+            \midrule
+            \textbf{Rapide} & $\sim$2\,MeV & Produit directement par la fission & Subit des collisions pour se ralentir (modération) \\
+            \textbf{Épithermique} & 1\,eV – 1\,keV & Phase intermédiaire du ralentissement & Perd progressivement son énergie cinétique \\
+            \textbf{Thermique} & $\sim$0.025\,eV & Provoque efficacement la fission de l'U-235 & Absorbé par les noyaux fissiles \\ 
+            \bottomrule
+        \end{tabular}
+    \end{adjustbox}
+    \caption{Principaux types de neutrons intervenant dans un réacteur nucléaire}
+    \label{tab:types_neutrons}
+\end{table}
+
+\subsection{Le rôle du modérateur}
+
+On souhaiterait entretenir une réaction en chaîne dans un réacteur tout en évitant qu'elle s'emballe, nous devons donc
+introduire un \emph{modérateur}. 
+Son rôle sera de ralentir les neutrons nouvellement créés par fission tout en en absorbant une certaine quantité pour ne 
+pas que la réaction s'emballe. Un modérateur doit donc être assez léger tout en ralentissant suffisament les neutrons. 
+En pratique, différents matériaux sont utilisés, les voici dans le tableau suivant : 
+
+\begin{table}[H]
+    \centering
+    \begin{adjustbox}{max width=\textwidth}
+        \begin{tabular}{@{}>{\RaggedRight\arraybackslash}p{3.2cm}
+                            >{\RaggedRight\arraybackslash}p{3.2cm}
+                            >{\RaggedRight\arraybackslash}p{3cm}
+                            >{\RaggedRight\arraybackslash}p{3cm}
+                            >{\RaggedRight\arraybackslash}p{3cm}@{}}
+            \toprule
+            \textbf{Modérateur} & \textbf{Composition chimique} & \textbf{Pouvoir modérateur} & \textbf{Absorption neutronique} & \textbf{Utilisation typique} \\ 
+            \midrule
+            \textbf{Eau légère (H$_2$O)} & Hydrogène et oxygène & Excellent & Moyenne & Réacteurs à eau pressurisée (REP) \\
+            \textbf{Eau lourde (D$_2$O)} & Deutérium et oxygène & Excellent & Très faible & Réacteurs CANDU (Canada) \\
+            \textbf{Graphite (C)} & Carbone pur & Bon & Très faible & Réacteurs RBMK et AGR \\
+            \textbf{Béryllium (Be)} & Béryllium pur & Bon & Faible & Réacteurs de recherche \\ 
+            \bottomrule
+        \end{tabular}
+    \end{adjustbox}
+    \caption{Caractéristiques comparées des principaux matériaux modérateurs}
+    \label{tab:moderateurs}
+\end{table}
+
+% \subsection{La section efficace}
+
+% Pour modéliser correctement les interactions entre les neutrons et la matière, il est nécessaire d’introduire la notion de 
+% \emph{section efficace}. Celle-ci traduit la probabilité qu’un neutron interagisse avec un noyau lorsqu’il le rencontre. 
+% En d'autres termes, elle représente une surface fictive caractérisant la capacité d’un noyau à provoquer une réaction 
+% (nucléaire ou non) lorsqu’il est bombardé par des neutrons.
+
+% La section efficace, notée $\sigma$, s’exprime en \emph{barn} :
+%     \[ 1\,\text{barn} = 10^{-28}\,\text{m}^2 \]
+% Plus la valeur de $\sigma$ est grande, plus la probabilité d’interaction est élevée. Elle dépend à la fois :
+% \begin{itemize}
+%     \item de la nature du noyau cible (Uranium, Plutonium, etc.),
+%     \item du type d’interaction considérée (diffusion, capture, fission),
+%     \item et surtout de l’énergie du neutron incident.
+% \end{itemize}
+
+% La figure suivante illustre typiquement la variation de la section efficace de fission en fonction de l’énergie du neutron : 
+% elle est très faible pour les neutrons rapides, et augmente considérablement lorsque les neutrons deviennent thermiques. 
+% C’est cette dépendance énergétique qui rend le rôle du modérateur essentiel dans les réacteurs à neutrons thermiques.
+
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[scale=0.25]{images/section_efficace.png}
+%     \caption{Évolution typique de la section efficace de fission en fonction de l’énergie du neutron}
+%     \label{fig:section_efficace}
+% \end{figure}
+
+% On distingue généralement plusieurs types de sections efficaces :
+% \begin{itemize}
+%     \item $\sigma_f$ : \textbf{section efficace de fission}, probabilité qu’un neutron provoque une fission,
+%     \item $\sigma_c$ : \textbf{section efficace de capture}, probabilité qu’un neutron soit absorbé sans fission,
+%     \item $\sigma_s$ : \textbf{section efficace de diffusion}, probabilité qu’un neutron soit simplement dévié.
+% \end{itemize}
+
+% Leur somme constitue la \emph{section efficace totale} :
+%     \[ \sigma_t = \sigma_f + \sigma_c + \sigma_s \]
+
+% Pour illustrer ces valeurs, le tableau suivant compare les sections efficaces de différents isotopes couramment utilisés 
+% dans les réacteurs nucléaires pour des neutrons thermiques :
+
+% \begin{table}[H]
+%     \centering
+%     \begin{adjustbox}{max width=\textwidth}
+%         \begin{tabular}{@{}>{\RaggedRight\arraybackslash}p{3cm}
+%                             >{\RaggedRight\arraybackslash}p{3.5cm}
+%                             >{\RaggedRight\arraybackslash}p{3.5cm}
+%                             >{\RaggedRight\arraybackslash}p{3.5cm}@{}}
+%             \toprule
+%             \textbf{Isotope} & \textbf{Section efficace de fission ($\sigma_f$)} & \textbf{Section efficace de capture ($\sigma_c$)} & \textbf{Remarques} \\ 
+%             \midrule
+%             \textbf{Uranium-235} & $\sim$580 barns & $\sim$100 barns & Très réactif aux neutrons thermiques \\ 
+%             \textbf{Uranium-238} & $\sim$0.02 barns & $\sim$2.7 barns & Ne fissionne qu’avec des neutrons rapides \\ 
+%             \textbf{Plutonium-239} & $\sim$750 barns & $\sim$270 barns & Fortement fissile, produit secondaire du cycle U-238 \\ 
+%             \bottomrule
+%         \end{tabular}
+%     \end{adjustbox}
+%     \caption{Comparaison des sections efficaces pour différents isotopes fissiles}
+%     \label{tab:sections_efficaces}
+% \end{table}
+
+% Ainsi, la grande différence de section efficace entre l’uranium-235 et l’uranium-238 explique pourquoi seul le premier 
+% est utilisé comme combustible principal dans les réacteurs à neutrons thermiques. 
+% La compréhension et la maîtrise de cette grandeur sont donc essentielles pour modéliser la probabilité d’absorption, 
+% de diffusion et de fission dans un réacteur.
+
+\subsection{Le facteur de multiplication \( k \)}
+
+Le \emph{facteur de multiplication} \( k \) est une grandeur fondamentale dans l’étude des réacteurs nucléaires.  
+Il caractérise l’évolution de la population de neutrons d’une génération à la suivante et permet de déterminer 
+si la réaction en chaîne s’amplifie, se stabilise ou s’éteint.  
+
+On définit \( k \) comme le rapport entre le nombre moyen de neutrons produits par fission à une génération \( n+1 \) 
+et le nombre de neutrons présents à la génération \( n \) :
+    \begin{equation}
+        k = \frac{\text{Nombre de neutrons à la génération } (n+1)}{\text{Nombre de neutrons à la génération } n}
+    \end{equation}
+Ce facteur dépend directement de la composition du combustible, du taux d’absorption, du pouvoir modérateur et de la géométrie du réacteur.  
+\begin{itemize}
+    \item Si \( k < 1 \) : chaque génération produit moins de neutrons que la précédente, la réaction en chaîne finit par s’éteindre.  
+    \item Si \( k = 1 \) : la population de neutrons reste constante — le réacteur est dit \emph{critique}.  
+    \item Si \( k > 1 \) : la population augmente de génération en génération — le réacteur devient \emph{sur-critique}, 
+    conduisant potentiellement à une réaction incontrôlée si aucune régulation n’est effectuée.  
+\end{itemize}
+
+\begin{table}[H]
+    \centering
+    \begin{adjustbox}{max width=\textwidth}
+        \begin{tabular}{@{}>{\RaggedRight\arraybackslash}p{3.5cm}
+                            >{\RaggedRight\arraybackslash}p{4cm}
+                            >{\RaggedRight\arraybackslash}p{6cm}@{}}
+            \toprule
+            \textbf{Régime du réacteur} & \textbf{Valeur du facteur \( k \)} & \textbf{Conséquence physique} \\ 
+            \midrule
+            \textbf{Sous-critique} & \( k < 1 \) & La réaction en chaîne s’éteint progressivement (extinction). \\ 
+            \textbf{Critique} & \( k = 1 \) & La réaction est stable : la puissance du réacteur est constante. \\ 
+            \textbf{Sur-critique} & \( k > 1 \) & La réaction s’emballe : augmentation exponentielle du nombre de neutrons. \\ 
+            \bottomrule
+        \end{tabular}
+    \end{adjustbox}
+    \caption{Différents régimes du réacteur selon la valeur du facteur de multiplication \( k \)}
+    \label{tab:facteur_k}
+\end{table}
+ 
+% En pratique, on décompose le facteur de multiplication en plusieurs composantes physiques :
+%     \begin{equation}
+%         k = \eta \, f \, p \, \varepsilon,
+%     \end{equation}
+% où :
+% \begin{itemize}
+%     \item \( \eta \) : nombre moyen de neutrons produits par fission et disponibles pour entretenir la réaction,  
+%     \item \( f \) : fraction des neutrons absorbés dans le combustible fissile,  
+%     \item \( p \) : probabilité qu’un neutron échappe à la résonance d’absorption pendant son ralentissement,  
+%     \item \( \varepsilon \) : facteur de multiplication rapide (neutrons produits par fissions induites par des neutrons rapides).  
+% \end{itemize}
+
+% Le contrôle du facteur \( k \) est au cœur de la sûreté des réacteurs.  
+% Il est ajusté à l’aide de barres de contrôle et du réglage 
+% du modérateur, afin de maintenir un équilibre critique stable (\( k = 1 \)) lors du fonctionnement nominal.  
+
+
+% ==================================================================================================================================
+% Modélisation physique
+
+\section{Modélisation Physique}
+
+\subsection{Modèle Global des Barres de Contrôle}
+
+Les barres de contrôle sont le principal mécanisme de pilotage et d'arrêt d'urgence d'un réacteur nucléaire. 
+Elles servent à contrôler la population de neutrons et, par conséquent, la puissance thermique du cœur.
+
+\subsubsection{Objectif et principe} 
+
+Leur fonctionnement repose sur l'\textbf{absorption neutronique}. 
+Elles sont fabriquées à partir d'éléments dits \textbf{poisons à neutrons}, c'est-à-dire des matériaux ayant
+une très haute probabilité d'absorber les neutrons sans provoquer de fission. 
+Les matériaux couramment utilisés sont le Bore (B), le Cadmium (Cd), l'Hafnium (Hf) ou le Gadolinium (Gd).
+En insérant ces barres dans le cœur du réacteur, on introduit un \textbf{puits} à neutron :
+\begin{itemize}
+    \item Les neutrons thermiques entrant en contact avec la barre sont capturés par cette dernière.
+    \item La réaction en chaîne ralentit (le facteur de multiplication \(k\) diminue).
+    \item Le nombre total de fissions par seconde diminue, ce qui réduit la puissance du réacteur.
+\end{itemize}
+
+A l'inverse, en les retirant, on augmente la réactivité et la puissance croît.
+
+\subsubsection{Type et rôle} 
+
+Les barres ne sont pas toutes identiques et ont chacune une vitesse ainsi qu'une amplitude différente :
+\begin{itemize}
+    \item \emph{Barres de Régulation (ou de Pilotage)} :  
+    Ont un "poids" (valeur d'antiréactivité) relativement faible. Elles sont conçues pour se déplacer rapidement et continuellement. 
+    Leur rôle est de compenser les petites fluctuations de puissance pour maintenir le réacteur au niveau attendu.
+
+    \item \emph{Barres de Compensation (ou "Shim")} : \label{barres-compensation}
+    Ont un poids antiréactif beaucoup plus important. Elles sont déplacées très lentement pour compenser les grands 
+    changements de réactivité à long terme, comme l'usure du combustible ou l'empoisonnement des barres.
+    
+    \item \emph{Barres d'Arrêt d'Urgence (SCRAM)} :
+    représentent la solution de dernier recours. Elles ont un poids antiréactif très important et sont 
+    conçues pour s'insérer extrêmement rapidement. Leur rôle principal est de stopper la réaction en chaîne de manière 
+    quasi instantanée en cas d'anomalie grave.
+\end{itemize}
+
+Pour des raisons pratiques, nous choisirons d'implémenter uniquement les barres de régulation ainsi que les barres SCRAM.
+En effet, les barres de compensation sont utilisées sur des temps très long et pour des tâches qui dépassent notre simulation.
+
+
+\subsubsection{Modélisation de l'antiréactivité}
+
+Pour simuler l'impact des barres de pilotage sur la réactivité du cœur, nous utilisons un modèle global
+\footnote{L'implémentation d'un modèle spatial, prenant en compte la position des barres dans le réacteur, n'était pas approprié pour une modélisation de cette ampleur.}.
+
+Le défi majeur de l'implémentation de cette fonctionnalité repose sur le fait que l'efficacité des barres n'est pas linéaire par rapport à son insertion : 
+elle dépend du flux de neutrons présent à la hauteur où se trouve la pointe de la barre.
+Dans un réacteur homogène, la distribution spatiale du flux de neutrons \(\phi(z)\) selon l'axe vertical suit une forme sinusoïdale, 
+étant maximale au centre du cœur et quasi-nulle aux extrémités à cause des fuites.
+
+L'efficacité différentielle d'une barre\footnote{Cela correspond à l'antiréactivité ajoutée par centimètre d'insertion.} est proportionnelle au flux neutronique local. 
+L'efficacité totale \(\rho(z)\) à une profondeur \(z\) est donc l'intégrale de ce flux. Or l'intégrale d'une fonction sinus/cosinus donne une forme caractéristique appelée \textbf{courbe en S}.
+
+Nous approcherons cette courbe par la formule suivante, où \(z \in [0,1]\) représente la fraction d'insertion (\(0=\text{sortie}, 1=\text{insérée}\)) :
+
+    \begin{equation}
+        \rho(z) = \rho_{\text{total}} \times \frac{1}{2} \left( 1 - \cos(\pi z) \right)
+    \end{equation}
+
+Dans notre simulation, cette valeur \(\rho(z)\) (exprimée en pcm\footnote{Unité de réactivité, abréviation de "pour cent mille".})
+est convertie en un facteur multiplicatif appliqué aux probabilités de fission \(f\) et d'absorption \(a\) du modèle stochastique.
+Etant donné que les barres de pilotage n'ont d'effet que sur les neutrons les plus lents ({thermiques voir \ref{subsec:neutron-type}}\footnote{Il est nécessaire de nuancer nos propos. 
+Les neutrons épithermiques sont également capturés via un système de résonance par effet Dopler\textsuperscript{\parencite{doppler}} avec des barres 
+spéciales. Mais pour des besoins de simplification, nous avons choisi de rendre uniquement les neutrons 
+\textit{thermiques} absorbables par le système de contrôle.}), les probabilités concernant les autres types restent 
+inchangées.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=1]{images/integral_control_rod_worth_curve.jpg}
+        \caption{Courbe en S représentant l'antiréactivité des barres de pilotage.}
+        \label{fig:s_curve}
+    \end{figure}
+
+
+\subsection{Modèle Thermique et Loi de Newton}
+
+La température du réacteur est une variable d'état résultant d'un bilan énergétique. 
+Pour la calculer, nous appliquons le \textbf{Premier Principe de la Thermodynamique}\textsuperscript{\parencite{pp-thermodynamique}} : pour un système fermé, la variation de son énergie interne \((U)\) au cours du temps est égale à la somme des puissances thermiques reçues et perdues, moins le travail mécanique effectué par le système.
+
+    \begin{equation}
+        \frac{dU}{dt} = \dot{Q} - \dot{W}
+    \end{equation}
+
+Où :
+
+\begin{itemize}
+    \item \(\dot{Q}\) : Le flux thermique net (\(W\)).
+    \item \(\dot{W}\) : La puissance mécanique fournie par le système (\(W\)).
+\end{itemize}
+
+Ici, le coeur du réacteur ne fournit aucun travail mécanique. Le flux thermique net \(\dot{Q}\) se décomposant en deux termes : la puissance entrante (\(P_{int}\)) et la puissance sortante (\(P_{out}\)). Nous pouvons reformuler le principe énoncé plus haut de la façon suivante :
+la variation d'énergie interne du système est égale à la différence entre la puissance produite et la puissance évacuée.
+
+    \begin{equation}
+        \frac{dU}{dt} = P_{\text{in}}(t) - P_{\text{out}}(t)^\text{\parencite{capacite-thermique}}
+    \end{equation}
+
+Or \(P_{\text{in}}(t)\) est la puissance générée par la fission dans le réacteur et \(P_{\text{out}}(t)\) 
+correspond à celle perdue par reffroidissement. 
+De plus, sachant que\footnote{Cette égalité vient de la définition de la capacité thermique\textsuperscript{\parencite{capacite-thermique}} d'un corps. 
+Elle énonce que pour un système incompressible, la variation d'énergie interne est proportionnelle à 
+la variation de température. Le coefficient de proportionnalité est la \textbf{capacité thermique} du système, 
+notée \(C\). Cette valeur sera fixée à l'initialisation du modèle.} \(dU = C \cdot dT\) (où \(C\) est la capacité thermique totale du cœur 
+en \(J \cdot K^{-1}\)), l'équation d'évolution de la température s'écrit donc : 
+
+    \begin{align}
+        & C \cdot \frac{dT(t)}{dt} = P_{\text{fission}}(t) - P_{\text{reffroidissement}}(t) \\ 
+        \iff & \frac{dT(t)}{dt} = \frac{1}{C} \left( P_{\text{fission}}(t) - P_{\text{reffroidissement}}(t) \right) 
+    \end{align} 
+
+La puissance entrant dans le système, \(P_{\text{fission}}\), est directement proportionnelle au 
+nombre de fissions par seconde simulées par notre modèle de neutrons. L'énergie perdue par reffroidissement est, 
+quand à elle, plus difficile à calculer. 
+
+\subsubsection{Évacuation de Chaleur (\(P_{\text{out}}\)) - Loi de Newton}
+
+Nous allons considérer que l'échange d'énergie thermique se fait uniquement entre le noyau et le sytème 
+de reffroidissement du réacteur (généralement de l'eau). 
+Ainsi, pour modéliser cet échange, nous utilisons la \textbf{Loi de Reffroidissement de Newton}\textsuperscript{\parencite{loi-refroidissement-newton}}.
+Elle énonce que le taux de perte de chaleur d'un corps est proportionnel à la différence 
+de température entre le corps et le milieu environnant :
+
+\begin{equation}
+    P_{\text{out}}(t) = h \cdot (T(t) - T_{\text{eau}})
+\end{equation}
+
+Où :
+\begin{itemize}
+    \item \(h\) : Le coefficient global de transfert thermique\footnote{Il s'agit du coefficient de 
+        reffroidissement et dépend de la surface de contact ainsi que du modérateur utilisé. Il est défini 
+        dans notre code par : \(cooling\_coef = thermic\_capacity * \tau\,\text{avec}\,\tau=0.05\).} 
+        en \(W \cdot K^{-1}\).
+    \item \(T(t)\) : La température du réacteur à l'instant \(t\).
+    \item \(T_{\text{eau}}\) : La température du fluide de reffroidissement que nous fixerons à \(300K\)\footnote{Cette 
+        valeur choisit arbitrairement correspond à environ \(26^\circ C\), elle doit être comprise 
+        entre \(0^\circ C\) et \(30^\circ C\)} dans notre modèle.
+\end{itemize}
+
+\subsubsection{Paramétrage de l'Inertie Thermique}
+
+En combinant les équations précédentes, l'évolution de la température du réacteur est régie par l'équation différentielle :
+
+    \begin{equation}
+        \frac{dT}{dt} = \frac{P_{\text{fission}}}{C} - \frac{h}{C} (T - T_{\text{eau}})
+    \end{equation}
+
+Le terme \(\frac{h}{C}\) représente l'inverse de la constante de temps thermique du système, notée \(\tau_{\text{th}}\). 
+Elle caractérise la vitesse à laquelle le réacteur se refroidit naturellement. Dans notre code, nous avons fixé empiriquement ce ratio à :
+
+\[
+    \frac{h}{C} = 0.05 \, s^{-1}
+\]
+
+Cela correspond à une constante de temps \(\tau_{\text{th}} = \frac{1}{0.05} = 20\) secondes. Ce choix nous permet 
+d'obtenir une simulation viable où la température réagit aux variations de puissance de façon adaptée où 
+le système de reffroidissement du réacteur est très performant. 
+Ainsi, en suivant cette loi, la température d'un corps dont la température est supérieure à son environnement 
+suit une courbe similaire à celle-ci dessous\footnote{Aussi, plus la différence de température est grande plus elle va diminuer rapidement jusqu'à l'état d'équilibre.} :
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.4]{images/newton_law.png}
+    \caption{Graphe de reffroidissement d'un corps par la loi de Newton.}
+    \label{fig:newton_law}
+\end{figure}
+
+% ==================================================================================================================================
+% Modélisation 
+
+\section{Simulation}
+
+\subsection{Objectif et principe}
+
+L'objectif est maintenant de modéliser toutes les notions vues précédemment. 
+Nous étudierons l'évolution d'une population de neutrons dans un environnement représentant
+le réacteur. L'évolution de cette population dépendra de différents paramètres donnés à l'initialisation 
+ou grâce au modérateur utilisé. 
+Deux version du modèle existent. La première, expérimentale est très simple. La seconde, celle que nous 
+détaillerons ici est un système à base d'agents (les neutrons) et implémente plus de mécanismes. 
+
+\subsection{Représentation}
+
+Le système est donc composé de 4 éléments : les neutrons, le réacteur le modérateur ainsi que les barres de contrôle. Chacun est représenté de façon 
+individuelle par un objet en Python. 
+
+\medskip 
+
+Premièrement, une classe \texttt{Neutron} a été créée pour représenter individuellement chaque individu de la population. 
+Elle permet d'attribuer des valeurs de vitesse, position, type et autres à chaque neutron présent dans le réacteur. 
+Différentes méthodes existent donc pour mettre à jour ces valeurs, même si la plupart des calculs sont effectués dans 
+la classe \texttt{ReactorV2}. 
+
+L'espace de vie des neutrons est, quant à lui, représenté par une grille 2D (un tableau en Python) sauvegardé 
+dans la classe \texttt{ReactorV2}. Un paramètre de celle-ci permet de la rendre torique. 
+
+Le modérateur est lui aussi modélisé par une classe appelée \texttt{Moderator}. Un modérateur 
+est simplement défini par ses probabilités d'absorption, de diffusion, de fission des neutrons ainsi 
+que par des propriétés de changement d'état de ceux-ci. 
+L'ensemble des modérateurs possibles est stocké dans un dictionnaire de la classe \texttt{Reactor}. 
+Le modérateur choisit influcence directement l'évolution de la population de neutrons ainsi que 
+leur comportement au cours du temps. 
+Nous avons choisis d'utiliser de l'eau lourde comme modérateur car c'est le seul compatible avec l'Uranium.
+
+Les barres de contrôle sont instanciées par la classe \texttt{controlRod} contenant les paramètres de chaque type de barre
+ainsi que différentes fonctions utiles à sa gestion. 
+
+Enfin, le réacteur est simulé par la classe \texttt{ReactorV2}. Outre des paramètres classiques tels que sa taille, 
+le nombre d'itérations de la simulation ou autre, celle-ci stocke un dictionnaire de neutrons représentant l'état 
+du réacteur à un moment donné. Pour conserver l'historique de son état, on stocke la suite de ces dictionnaires dans 
+une liste \texttt{history}. 
+
+\medskip
+
+Pour conclure sur cette partie, le coeur de la simulation se situe dans la classe \texttt{ReactorV2}. Chaque 
+ajout de fonctionnalité (modérateur, neutron, etc...) est représentée par une classe ajoutée en paramètre. 
+
+\subsection{Dynamique}
+
+Penchons nous maintenant sur la dynamique du modèle. Nous allons ici détailler le cycle d'une génération de neutrons. 
+Tout commence par l'initialisation du modèle : on choisit de positionner un certain nombre de neutrons 
+sur la grille du réacteur (selon une loi Uniforme, Normale ou centrée). 
+
+À chaque pas de temps, on considère chaque neutron indépendamment des autres. Si l'on a spécifié un modérateur lors de 
+l'initialisation du modèle, on choisit une action pour ce neutron par un tirage aléatoire dépendant des 
+différentes probabilités données par le modérateur. Si aucun modérateur n'est spécifié, on utilise les probabilités 
+données par défaut. Ainsi, un neutron peut effectuer une seule action à chaque pas de temps : 
+\begin{itemize} 
+    \item \textbf{Diffusion} : le neutron continue à se déplacer dans le milieu en tirant aléatoirement une direction et 
+    une distance qui détermineront sa position au prochain pas de temps. 
+    \item \textbf{Absorption} : le neutron est absorbé par le modérateur, il disparaît du modèle. 
+    \item \textbf{Fission} : le neutron rencontre un isotope et produit une réaction de fission. 
+    Il disparaît donc et un nombre aléatoire (suivant une loi de Poisson) de nouveaux neutrons est produit 
+    sur la même case. À noter que seuls les neutrons thermiques peuvent réagir (voir \ref{subsec:comportement-neutrons}). 
+\end{itemize}
+
+\subsection{Les neutrons}\label{subsec:comportement-neutrons}
+
+Nous avons modélisé différents types de neutrons dans le réacteur pour coller au plus près de la réalité.
+En effet, dans un réacteur à fission, toutes les particules ne se déplacent pas à la même vitesse. Les neutrons nouvellement 
+produits par une réaction de fission sont en effet très rapides et ne sont donc pas en phase avec les noyaux 
+lourds restant pour réagir. Le modérateur sert donc à ralentir ces neutrons. 
+
+Ainsi, pour plus de flexibilité, les neutrons ont été représentés indépendamment les uns des autres grâce 
+au modèles d'agent, implémenté par la classe \texttt{Neutron}.
+Chaque neutron possède donc différents attributs : 
+\begin{itemize}
+    \item Sa position \texttt{self.x} et \texttt{self.y} qui représentent ses coordonnées dans le réacteur.
+    \item Un identifiant unique \texttt{self.id}.
+    \item Un type \texttt{self.type} qui peut être \texttt{fast}, \texttt{epithermal} ou \texttt{termal}.
+    Chaque type de neutron a des comportements différents (voir \ref{subsec:neutron-type}). 
+    \item Une vitesse \texttt{self.speed} : très importante au départ, elle diminue au fur et à mesure 
+    de la durée de vie du neutron selon le type de modérateur.
+    \item Une trajectore \texttt{self.traj}. 
+    \item Une durée de vie \texttt{self.age} correspondant au nombre d'itérations effectué.
+\end{itemize}
+
+Le coeur du processus d'évolution d'un neutron est encodé par la méthode \texttt{self.evolve}.
+À chaque itération du réacteur, on recalcule le type du neutron selon les probabilités 
+de transition spécifiées par le modérateur. 
+
+La méthode \texttt{self.diffuse} calcule, quant à elle, les nouvelles coordonnées du neutron si celui-ci 
+doit se déplacer. Un neutrons se déplace de façon uniforme dans un cercle définit autour de lui 
+de rayon \texttt{self.max\_speed}.
+
+\subsection{La gestion de la réaction : Les barres de contrôle}\label{subsec:comportement-barres}
+
+D'un point de vue informatique, ce système repose sur l'interaction de trois composants distincts : 
+la modélisation physique de la barre, l'automate de pilotage ainsi que la boucle de rétroaction sur les neutrons.
+
+\subsubsection{La classe \texttt{ControlRod}}
+
+Chaque barre est un agent indépendant défini par ses caractéristiques physiques et son état dynamique :
+\begin{itemize}
+    \item \textbf{Attributs statiques :} Un type définissant son poids neutronique total et sa vitesse maximale de déplacement (\(\% \cdot s^{-1}\)).
+    \item \textbf{Attributs dynamiques :} Sa position actuelle (\(\texttt{position\_percent} \in [0, 100]\)) et sa consigne (\texttt{target\_position}).
+    \item \textbf{Méthode \texttt{step(dt)} :} Met à jour la position de la barre à chaque pas de temps pour rejoindre sa consigne, en respectant sa vitesse maximale.
+    \item \textbf{Méthode \texttt{get\_reactivity\_pcm()} :} Calcule l'efficacité instantanée de la barre selon la courbe en S, convertissant la position mécanique en antiréactivité neutronique.
+\end{itemize}
+
+\subsubsection{Boucle de Contrôle-Commande}
+
+À chaque itération de la simulation, la gestion des barres suit le cycle suivant :
+
+\begin{enumerate}
+    \item \textbf{Mesure :}
+    Le réacteur calcule sa puissance instantanée \(P(t)\) à partir du nombre de fissions observées. Elle est ensuite normalisée en un pourcentage de la puissance nominale (\(P_{\%}\)).
+    \item \textbf{Sécurité (Fonction \texttt{check\_emergency\_scram}) :}
+    On vérifie si \(P_{\%} > P_{\text{seuil}}\).
+    Si le seuil est dépassé, le mode SCRAM est enclenché : le pilote automatique est désactivé et toutes les barres reçoivent l'ordre de s'insérer à 100\%.
+    \item \textbf{Régulation (Fonction \texttt{update\_automatic\_control\_rods}) :}
+    Si le SCRAM n'est pas activé, le régulateur PI\ref{algo-pi} calcule l'erreur de puissance.
+    Il détermine une nouvelle position cible pour les barres de régulation afin d'annuler cette erreur :
+    \item \textbf{Action Physique :}
+    Les barres se déplacent mécaniquement vers leur nouvelle cible.
+    L'antiréactivité totale est calculée et convertie en un facteur correctif appliqué aux probabilités de fission et d'absorption pour le pas de temps suivant.
+\end{enumerate}
+
+\subsubsection{Algorithme de Pilotage : Le Régulateur PI}\label{algo-pi}
+
+Pour ajuster automatiquement la position des barres de régulation, nous avons implémenté un correcteur 
+\textbf{Proportionnel-Intégral (PI)}\textsuperscript{\parencite{reg-pi}}. C'est un mécanisme de rétroaction : 
+le système observe l'écart entre la puissance réelle et la puissance voulue pour corriger sa commande en temps réel.
+L'objectif est d'annuler l'\textbf{erreur} \(\varepsilon(t)\), définie par :
+
+    \begin{equation}
+        \varepsilon(t) = P_{\text{consigne}} - P_{\text{réelle}}(t)
+    \end{equation}
+
+La nouvelle position cible est la somme de deux termes complémentaires :
+
+    \begin{equation}
+        \text{Position}(t) = \text{Base} + \underbrace{K_p \cdot \varepsilon(t)}_{\text{Terme Proportionnel}} + \underbrace{K_i \cdot \int_{0}^{t} \varepsilon(\tau) d\tau}_{\text{Terme Intégral}}
+    \end{equation}
+
+\begin{itemize}
+    \item \textbf{Le Terme Proportionnel (\(P : K_p\)) :} Il assure la réactivité du système. La correction 
+        est directement proportionnelle à l'erreur instantanée. Si l'écart de puissance est grand, la barre bouge vite.
+    \item \textbf{Le Terme Intégral (\(I : K_i\)) :} Il assure la précision. Il correspond à la somme des 
+        erreurs passées. Si une petite erreur persiste, le terme intégral va augmenter progressivement jusqu'à 
+        forcer la barre à bouger pour éliminer totalement l'écart.
+\end{itemize}
+
+Dans notre simulation en temps discret, l'intégrale mathématique est approximée par une somme cumulée à chaque pas de temps :
+    \[ \int \varepsilon \, dt \approx \sum \varepsilon \cdot dt \]
+
+% ==================================================================================================================================
+% Études statistiques 
+
+\section{Études Statistiques}
+
+Passons maintenant à l'étude de notre modèle. L'objectif est ici de comprendre l'influence des différents 
+paramètres sur le comportement du modèle. 
+
+\subsection{Paramètres de l'étude}
+
+Afin d'étudier le comportement de notre modèle, nous avons mis en place un système d'exportation automatique des données 
+du modèle. Les simulations utilisées pour cette étude comptent 3600 itérations du modèle, ce qui correspond à une heure 
+de fonctionnement réel du réacteur.\footnote{Si l'on considère qu'une itération du modèle équivaut à 1 seconde réelle, 3600 itérations 
+correspondent bien à une heure. Ce résultat est bien entendu à nuancer, en réalité les neutrons se déplacent beaucoup plus 
+vite dans le coeur et l'état du réacteur évolue, lui aussi, bien plus rapidement.}
+Ainsi, à la fin de chaque simulation, un programme Python génère un dossier horodaté contenant trois fichiers CSV :
+
+\begin{itemize}
+    \item \texttt{settings\_<timestamp>.csv} : Ce fichier est une "photographie" de l'état initial et final du système. Il contient l'ensemble des paramètres de configuration
+     ainsi que les valeurs finales des variables d'état.
+    \item \texttt{reactor\_history\_<timestamp>.csv} : Il s'agit d'une série temporelle enregistrant l'évolution macroscopique du réacteur à chaque itération \(dt\).
+    \item \texttt{neutrons\_trajectories\_<timestamp>.csv} : Sont recensés dans ce CSV tous les neutrons contenus dans le réacteur à chaque pas de temps ainsi que leurs paramètres associés.
+\end{itemize}
+
+Ces fichiers bruts sont ensuite traités avec R. Nous utilisons les librairies \texttt{ggplot2} et \texttt{dplyr} pour 
+nettoyer les données, calculer les corrélations et générer les visualisations présentées ci-après.
+
+\subsection{Conjectures}
+
+Au vu de la méthode de développement modulaire du modèle, nous avons pu le tester au fur et à mesure de 
+son élaboration. Nous pensons donc que celui-ci est une représentation suffisament fiable de 
+la réalité (si l'on met de côté la différence d'échelle), notament sur différents aspects : 
+\begin{enumerate}
+    \item Les neutrons sont suceptibles d'évoluer et leur état influe directement sur la réactivité 
+    du réacteur. Le nombre d'entre eux (de type thermique notament) est donc censé refléter la puissance 
+    du réacteur à un instant $t$. 
+    \item Concernant les barres de contrôle, elles ont été développées dans le seul but de 
+    faire diminuer la réactivité du réacteur. Nous souhaitons donc que l'intensité de la réaction (température et puissance)
+    varient de façon inversement proportionnelle à l'intensité des barres de contrôle.
+    \item Enfin, nous souhaitons que le modèle soit suffisament stable au court du temps, une fois passée la phase 
+    de mise en route. 
+\end{enumerate}
+
+Dans la suite de cette section, nous allons donc tenter de confirmer ou de réfuter les hypothèses énoncées plus haut. 
+
+\subsection{L'évolution des neutrons}
+
+Concentrons nous maintenant sur l'évolution des neutrons dans le réacteur. L'histogramme ci-dessous 
+distingue le nombre de neutrons selon leur durée de vie. 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.35]{images/neutron_life_time.png}
+    \caption{Distribution du temps de vie des neutrons par temps $dt$.}
+    \label{fig:neutron_life_time}
+\end{figure}
+
+Les résultats montrent une disparité significative dans la survie des neutrons. Si la durée de vie moyenne reste faible (4,2 itérations), 
+reflétant une absorption rapide pour la majorité de la population, on note la persistance de certains neutrons jusqu'à 48 itérations 
+(plus de 10 fois la moyenne). Cette asymétrie marquée confirme que le transport des neutrons est dominé par des interactions à court terme, 
+ponctuées d'événements de diffusion plus rares mais longs.
+
+\begin{wrapfigure}{l}{0.4\textwidth}
+    \centering
+    \begin{tabular}{ | l | c | }
+        \hline
+        Types Fission & Total \\ \hline
+        2 & 45646 \\
+        3 & 177 \\
+        4 & 8 \\
+        5 & 1 \\
+        \hline
+   \end{tabular}
+   \caption{Nombre de fissions produites par type}
+\end{wrapfigure}
+
+Concernant l'apparition de neutrons lors de fissions, leur nombre suit une loi de Poisson de paramètre $ \lambda = 2$ avec une borne 
+supérieure fixée à 5 neutrons.
+Le tableau ci-contre représente le nombre de fissions produites ayant engendré 2, 3, 4 ou 5
+neutrons. 
+Cette analyse montre une prédominance écrasante des fissions libérant 
+2 neutrons (plus de 99,7\% des cas). Bien que rares, des événements générant 3, 4 ou 5 neutrons sont observés, 
+confirmant la nature stochastique du processus.
+
+L'analyse par niveau d'énergie ci-dessous révèle une dynamique contrastée : la phase thermique est prédominante 
+(5,8 pas), correspondant à une longue période de diffusion stable, tandis que le processus de modération 
+(phases rapides et épithermiques) est beaucoup plus bref (cumul de 4 pas), les neutrons perdant leur énergie 
+très vite par collisions.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.3]{images/state_time.png}
+    \caption{Distribution du temps moyen de résidence dans un état.}
+    \label{fig:state_time}
+\end{figure}
+
+Cela peut s'expliquer grâce au type de modérateur utilisé pour la simulation : de l'eau lourde. En effet, c'est 
+celui qui ralentit le plus rapidement les neutrons vers l'état thermique. Il a, de plus, une faible probabilité d'absorption.
+
+On observe par ailleurs que la somme des durées moyennes par état (9,8 pas) est nettement supérieure à l'espérance de vie globale (4,2 pas). 
+Ce phénomène s'explique par la "mortalité" en cours de route : de nombreux neutrons sont absorbés ou fuient le réacteur dès les phases rapides 
+ou épithermiques. N'atteignant jamais le stade thermique, ils tirent la moyenne globale vers le bas.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.4]{images/thermalization.png}
+    \caption{Distribution du temps de vie des neutrons par temps $dt$.}
+    \label{fig:thermalization}
+\end{figure}
+
+La dynamique de thermalisation ci-dessus nous éclaire quand à la proportion des différents types de 
+neutrons tout au long de la simulation. 
+On constate que la composition du flux neutronique est conservée au fil du temps. Si le nombre total de neutrons varie, la part respective 
+de chaque catégorie reste stable, sans qu'aucun type ne devienne soudainement prédominant ou ne disparaisse.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.35]{images/spatial.png}
+    \caption{Distribution spatiale des neutrons sur la durée de simulation.}
+    \label{fig:spatial}
+\end{figure}
+
+Malgré l'initialisation et les déplacements aléatoires des neutrons, leur positionnement est massivement concentré au coeur du réacteur, 
+même s'ils occupent tout l'espace disponible. Leur nombre diminue progressivement à mesure qu'on s'approche des bords.
+
+\begin{remarkBox}[title=Distribution Spatiale]
+    Ce positionnement moyen des neutrons est conforme 
+    à la théorie de la diffusion dans un réacteur homogène (flux en cosinus), justifiant a posteriori l'utilisation 
+    de la courbe en S pour l'efficacité des barres.
+\end{remarkBox}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.4]{images/neutron_trajectories.png}
+    \caption{Trajet dans le réacteur des 5 neutrons ayant tenu le plus longtemps.}
+    \label{fig:neutron-trajectories}
+\end{figure}
+
+Nous avons isolé les 5 neutrons ayant la plus longue durée de vie pour analyser leurs déplacements. 
+Le graphique montre des trajectoires en zigzag, sans direction précise ni motif particulier. Ce mouvement totalement aléatoire est logique 
+et confirme que notre programme de simulation fonctionne comme prévu.
+
+\begin{remarkBox}[title=Piste d'amélioration]
+    Pour la suite, il serait intéressant de comparer ces résultats avec des modèles physiques plus poussés. 
+    Cela permettrait de voir si les vrais neutrons se déplacent de façon aussi chaotique ou s'ils suivent des règles de trajectoire 
+    un peu moins imprévisibles.
+\end{remarkBox}
+
+\subsection{Comportement du réacteur et barres de contrôle}
+
+Nous souhaitons ici étudier le comportement plus général du réacteur sur le long terme.
+Le multigraphe ci-dessous est une bonne représentation de l'évolution des différents paramètres de celui-ci
+au cours du temps.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.4]{images/dashbord.png}
+    \caption{Tableau de bord des différents indicateurs.}
+    \label{fig:dashbord}
+\end{figure}
+
+L'étude des données sur les 3600 itérations de la simulation révèle un comportement dynamique marqué par d'importantes 
+fluctuations des paramètres principaux : 
+\begin{itemize}
+    \item Puissance thermique (power\_mw) : La production d'énergie est instable, avec une moyenne s'établissant à 610,1 MW 
+    et une médiane légèrement inférieure à 576,0 MW. La plage de variation est très large, allant de son lancement
+    jusqu'à un pic de 1584 MW, ce qui indique une forte variabilité du régime de fonctionnement.
+    \item Température du cœur (temperature\_k) : Ce paramètre montre une plus grande stabilité dûe à l'inertie 
+    thermique. La moyenne se situe à 1453 K (médiane à 1487 K). Une fois la phase de démarrage passée, le réacteur 
+    se maintient majoritairement dans une plage de températures élevées, entre 1400 et 1600 K.
+    \item Barres de contrôle (pos\_RE01) : Le système de pilotage est fortement sollicité. La position moyenne des 
+    barres est de 51,47\% (médiane à 63,14\%). L'utilisation de l'intégralité de la course des barres (de 0 à 100\%) 
+    témoigne d'un effort constant pour réguler la réactivité du cœur. 
+\end{itemize}
+
+\begin{remarkBox}[title=Dynamique de la Puissance et Inertie Thermique]
+    La courbe de puissance montre une phase de démarrage rapide (exponentielle) caractéristique de la sur-criticité initiale 
+    ($k > 1$), suivie d'une stabilisation ou de fluctuations contrôlées. La distribution du nombre de neutrons suit une 
+    loi normale autour de la moyenne en régime établi, ce qui valide la stabilité statistique de la méthode de Monte-Carlo.
+
+    \medskip
+
+    L'évolution de la température présente une courbe plus lisse que celle de la puissance. Les fluctuations rapides du 
+    flux neutronique (bruit stochastique) sont filtrées par l'inertie thermique, confirmant le rôle tampon de la capacité 
+    thermique $C$ et du reffroidissement par loi de Newton.
+\end{remarkBox}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.4]{images/power_evolution.png}
+    \caption{Evolution lissée de la puissance au cours du temps.}
+    \label{fig:power-evolution}
+\end{figure}
+
+Ce second graphique illustre la méthode utilisée pour rendre les données exploitables. Le nuage de points noirs 
+représente les mesures brutes du tableau de bord à chaque pas de temps : on y voit un signal très "bruité", dispersé 
+par la nature stochastique de la simulation.
+
+Pour analyser le comportement réel du réacteur sans se perdre dans ces fluctuations, nous avons tracé une 
+courbe de tendance (en rouge). Ce lissage permet d'éliminer le bruit numérique pour révéler la dynamique physique 
+sous-jacente de la puissance.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.4]{images/control_rod.png}
+    \caption{Evolution de la dynamique du réacteur au cours du temps.}
+    \label{fig:control-rod}
+\end{figure}
+
+Une fois le signal propre obtenu, nous pouvons le confronter aux autres variables du système.
+Ce graphique comparatif révèle ainsi deux phénomènes physiques majeurs :
+\begin{enumerate}
+    \item \emph{Corrélation Flux/Puissance} : Les courbes rouge (Puissance) et jaune (Neutrons) épousent parfaitement 
+    les mêmes variations, confirmant que la puissance thermique est bien proportionnelle au flux neutronique instantané.
+    \item \emph{L'effet miroir du pilotage} : On observe une corrélation inverse nette avec la position des barres 
+    de contrôle (en vert). Lorsque la courbe verte descend (retrait des barres), la puissance monte immédiatement, 
+    et inversement. Cela démontre la réactivité directe du cœur aux commandes de pilotage.
+\end{enumerate}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.3]{images/control_rod2.png}
+    \caption{Courbe d'efficacité des barres de contrôle.}
+    \label{fig:control-rod2}
+\end{figure}
+
+L'analyse de l'efficacité des barres de contrôle révèle une corrélation imparfaite. Si l'on voit bien que sortir les 
+barres (aller vers 0 sur l'axe X) fait généralement monter la puissance, la relation n'est pas linéaire.
+Les certitudes se limitent aux extrêmes : une puissance faible correspond systématiquement à des barres enfoncées, 
+tandis qu'une puissance forte (> 800 MW) nécessite des barres relevées. Entre ces deux états, notamment entre 550 et 
+800 MW, le nuage de points est très étalé, ce qui signifie que le réacteur peut se trouver à cette puissance avec des 
+configurations de barres très différentes.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.3]{images/control_rod_khi2.png}
+    \caption{Graphe des corrélations entre la position des barres de pilotage et la puissance.}
+    \label{fig:control-rod_khi2}
+\end{figure}
+
+Le graphique ci-dessus met en évidence une structure diagonale très nette. 
+Les rectangles bleus indiquent une forte sur-représentation des couples logiques : les barres "Sorties" sont massivement 
+associées aux puissances "Moyennes" et "Fortes", tandis que les barres "Enfoncées" correspondent quasi-exclusivement à 
+une puissance "Faible".
+Les rectangles rouges signalent une incompatibilité physique : il est statistiquement impossible d'observer une 
+puissance forte avec des barres enfoncées.
+
+\begin{wrapfigure}{l}{0.5\textwidth}
+    \centering
+    \includegraphics[scale=0.4]{images/khi2.png}
+    \caption{Résultat du test $\chi^2$.}
+    \label{fig:khi2}
+\end{wrapfigure}
+
+Ce constat visuel est validé par le test de Pearson, qui rejette formellement l'hypothèse d'indépendance entre les variables 
+de significativité et d'intensité. 
+La première ($p < 2.2 \times 10^{-16}$) est la probabilité que cette répartition soit dûe au hasard est quasi-nulle. 
+Le lien est donc statistiquement avéré. L'intensité ($\chi^2 = 906.53$), quant à elle, quantifie la force de cette relation. 
+Elle indique une dépendance massive : la position des barres est bien le facteur déterminant qui dicte le niveau 
+de puissance du réacteur.
+
+\subsection{Bilan Global}
+
+Pour résumer, notre simulation réussit bien à reproduire la physique d'un réacteur : le lien entre le nombre de neutrons 
+et l'énergie produite est correct, et les commandes fonctionnent comme prévu. Les trajets "au hasard" 
+des neutrons confirment aussi que la partie probabiliste du modèle fonctionne bien.
+Le seul point faible reste la stabilité : le réacteur a du mal à converger et rester à une puissance fixe.
+
+%==========================================================================================================================================
+% Discussion et extensions possibles
+
+\section{Discussion et extensions possibles}
+
+Bien que notre simulation reproduise les grands principes d'un réacteur, elle repose sur plusieurs simplifications 
+majeures par rapport à la physique nucléaire réelle. Nous allons ici en faire une brève énumération. 
+
+\subsection{Limites}
+
+\paragraph{Discrétisation Spatio-Temporelle.}
+Notre modèle repose sur une grille 2D et un temps discret ($\Delta t$). Dans la réalité, les neutrons évoluent 
+dans un espace continu 3D. La discrétisation spatiale introduit des effets de bord artificiels et la discrétisation 
+temporelle peut induire des erreurs d'intégration, notamment pour le calcul de la température ou du PID si le pas de 
+temps est trop grand par rapport à la vitesse des neutrons.
+
+\paragraph{Modèle "Point-Model".}
+Notre gestion de la température et de la puissance considère le réacteur comme un bloc homogène. Nous calculons 
+\textit{une} température moyenne globale. Or, dans un vrai réacteur, il existe des gradients thermiques énormes : le 
+centre est beaucoup plus chaud que les bords. Une surchauffe locale peut faire fondre une barre sans que la température 
+moyenne ne dépasse le seuil d'alerte, ce que notre modèle ne peut pas détecter.
+
+\paragraph{Absence de Neutrons Retardés.}
+Il s'agit d'une limite physique importante. Dans notre code, tous les neutrons sont émis instantanément après la fission. 
+Dans la réalité, une fraction (\(\approx 0.65\%\)) des neutrons est émise avec un retard (en secondes) lors des fissions.
+C'est un élément essentiel à prendre en compte pour la stabilité du réacteur. Sans eux, la réaction s'emballerait très 
+rapidement, rendant tout contrôle mécanique impossible. Notre simulation compense cela par des vitesses de barres 
+artificiellement rapides ou paramètres adaptés.
+
+\paragraph{Simplification du Spectre Énergétique.}
+Nous avons réduit la complexité neutronique à trois groupes (\textit{Fast, Épithermique, Thermique}) avec des 
+probabilités de transition simples. La réalité fait appel à des équations de transport complexes (voir : inégalités 
+de Boltzmann\ref{boltzmann}) et des sections efficaces qui varient en continu avec l'énergie, et non par paliers discrets.
+
+\paragraph{Abscence des barres de compensation}
+Comme énoncé dans la description des barres de contrôle (voir \ref{barres-compensation}), nous n'avons pas 
+implémenté les barres de compensation. Celles-ci permettent de réguler la réactivité du réacteur à plus long terme. 
+Elles nous permettraient de stabiliser le réacteur plus facilement et de moins faire travailler les barres de régulation.
+
+\subsection{Extensions possibles}
+
+Ainsi, pour rendre notre modèle plus réaliste, nous pouvons envisager plusieurs axes d'amélioration :
+
+\paragraph{Passage au Temps Continu (Méthode de Monte-Carlo Dynamique).}
+Actuellement, nous déplaçons tous les neutrons d'un pas fixe à chaque tour de boucle. Une approche plus rigoureuse consisterait 
+à utiliser un algorithme à événements discrets (type {Algorithme de Gillespie}).
+
+\begin{itemize}
+    \item \emph{Principe :} Au lieu d'un $\Delta t$ fixe, on calcule le temps d'attente aléatoire jusqu'à la prochaine interaction 
+    pour \textit{chaque} neutron (basé sur une loi exponentielle décroissante dépendant des sections efficaces).
+    \item \emph{Avantage :} Cela permettrait de simuler des échelles de temps réalistes, où des phénomènes très rapides (fission) 
+    et très lents (décroissance radioactive) coexistent.
+\end{itemize}
+
+\paragraph{Implémentation de la Contre-Réaction Doppler.}
+Actuellement, notre réacteur ne se régule que via les barres de contrôle (sécurité active). Nous pourrions implémenter 
+l'{Effet Doppler} : modifier les probabilités d'absorption $a$ en fonction de la température $T$ calculée.
+
+\begin{equation}
+    a(T) = a_{base} + \alpha (T - T_{ref}) 
+\end{equation}
+
+Avec un coefficient \(\alpha > 0\), une augmentation de température augmenterait automatiquement l'absorption, freinant la réaction 
+sans intervention extérieure. C'est un critère de stabilité fondamental pour les réacteurs modernes.
+
+\paragraph{Gestion des Neutrons Retardés.}
+Pour rendre le pilotage plus réaliste, il faudrait ajouter une nouvelle classe d'agents : les "Précurseurs". Ce sont des atomes 
+instables créés par la fission qui ne bougent pas, mais qui ont une probabilité de relâcher un neutron après un temps aléatoire. 
+Cela introduirait l'inertie neutronique nécessaire pour simuler des transitoires lents et réalistes.
+
+\paragraph{Extension 3D.}
+Enfin, passer d'une grille 2D à une matrice 3D permettrait de simuler la distribution axiale du flux. 
+Cela permettrait d'observer des phénomènes complexes comme les oscillations au Xénon, où la puissance bascule du haut vers le bas du réacteur périodiquement.
+
+
+% ==================================================================================================================================
+% Conclusion
+
+\section{Conclusion}
+
+Pour conclure ce projet, commençons par un bref rappel de ce qui a été fait. 
+Nous avons réussi à produire une ébauche de simulateur de réacteur nucléaire implémentant 
+les notions de modérateur, barres de contrôle, évolution des neutrons et autres. Notions que nous considérons comme 
+principales dans la compréhension d'un réacteur nucléaire. 
+Nous pouvons noter l'efficacité des barres de contrôle à réguler le réacteur ainsi que l'architecture 
+stochastique du modèle. 
+
+Concernant les apports techniques du projet, nous allons nous contenter d'en citer qu'une infime partie. 
+Tout d'abord, nous avons pu développer une implémentation complexe d'une simulation Monte-Carlo. 
+Algorithmiquement, il a fallu réfléchir au stockage de l'état du modèle et optimiser son fonctionnement pour faciliter
+les simulations et la modification du code. 
+
+D'autre part, ce projet nous a permis de nous plonger dans la compréhension de la physique nucléaire. 
+Nous avons dû choisir les mécanismes à implémenter et comprendre les mécanismes à la base des réacteurs.
+
+
+% ==================================================================================================================================
+% Annexes 1
+
+\newpage
+\section*{Annexe 1 - Le premier régulateur PI}
+\addcontentsline{toc}{section}{Annexe 1 - Le premier régulateur PI}
+
+L'ancêtre du régulateur proprotionnel intégrable qui régit actuellement le monde de l'industrie vient de l'ingénieur écossais James Watt\textsuperscript{\parencite{james-watt}}.
+Grâce à son invention : le \textit{régulateur à boules}, il est considéré comme l'un des inventeurs de la machine à vapeur.
+
+\paragraph{Le principe.}    Deux boules en métal tournent entrainées par un moteur. Plus le moteur va vite, plus la force centrifuge écarte les boules.
+En s'écartant, elles tirent sur un levier qui ferme l'arrivée de vapeur.
+Il s'agit de l'ancêtre du \textit{régulateur proprotionnel (P)} que nous utilisons dans notre simulation. Si la vitesse augementait (erreur), la vapeur diminuait instantanément et faisait donc baisser les boules.
+
+\paragraph{Le problème.}    Ce modèle souffrait de ce que l'on appelle l'erreur statique La machine manquait de précision et ne tenait jamais exactement la position souhaitée.
+C'est pour cette raison que le terme \textit{intégral (I)} a été inventé plus tard.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.3]{images/watt_regulator.jpg}
+    \caption{Ancêtre du régulateur PI mis au point par James Watt.}
+    \label{fig:watt_regulator}
+\end{figure}
+
+% ==================================================================================================================================
+% Annexe 2
+
+\newpage
+\section*{Annexe 2 - Qu'en est-il de notre système d'urgence européen ?\textsuperscript{\parencite{control-rod-europe}}}
+\addcontentsline{toc}{section}{Annexe 2 - Qu'en est-il de notre système d'urgence européen ?}
+
+En Europe, et particulièrement en France, le type de réacteur dominant est le \emph{Réacteur à Eau Pressurisée} (REP).\\
+Dans un REP, le contrôle de la réactivité est géré par deux systèmes complémentaires :
+\begin{enumerate}
+    \item \emph{Le Bore Soluble :} C'est un "poison" liquide qui permet de compenser les ajustements lents.
+    \item \emph{Les Barres Mécaniques :} Elles sont utilisées pour la régulation et l'arrêt d'urgence (SCRAM).
+\end{enumerate}
+
+Le mécanisme de SCRAM sur un REP est un exemple de \emph{sécurité passive} : les barres d'arrêt sont maintenues en position 
+haute par des électroaimants. En cas d'arrêt d'urgence, le courant est coupé, les aimants lâchent les barres, qui tombent alors par
+simple gravité dans le cœur, assurant l'arrêt du réacteur même en cas de panne de courant totale. 
+Nous nous sommes basé sur ce système pour implémenter notre fonctionnalité permettant une auto-régulation de la puissance en fonction de celle souhaitée.
+
+% ==================================================================================================================================
+% Annexe 2
+
+\newpage
+\section*{Annexe 3 - Modèle Théorique et Fondements Mathématiques de la Simulation Monte-Carlo\textsuperscript{\parencite{boltzmann-wiki, monte-carlo, markov-chain}}}
+\label{boltzmann}
+\addcontentsline{toc}{section}{Annexe 3 - Modèle Théorique et Fondements Mathématiques de la Simulation Monte-Carlo}
+
+Notre modèle, bien que complexe, n'est qu'une approximation d'une réalité beaucoup plus difficile à estimer. Chaque 
+neutron simulé subit un tirage aléatoire à chaque itération, représentant sa position et ses interactions avec le milieu. 
+Mis bout-à-bout, notre modèle constitue ainsi une imposante \textbf{chaîne de Markov}\textsuperscript{\parencite{markov-chain}}.
+
+\subsection*{L'Équation de Boltzmann}
+
+L'équation différentielle linéaire de Boltzmann décrit le bilan exact de la population de neutrons dans un volume de 
+l'espace des phases (i.e le flux de neutrons dans un réacteur nucléaire). Pour le flux 
+angulaire \(\psi(\vec{r}, \vec{\Omega}, E, t)\), on a donc :
+
+\begin{equation}
+    \underbrace{\frac{1}{v} \frac{\partial \psi}{\partial t}}_{\text{Variation}} + 
+    \underbrace{\vec{\Omega} \cdot \nabla \psi}_{\text{Transport}} + 
+    \underbrace{\Sigma_t \psi}_{\text{Collision}} = 
+    \underbrace{\iint \Sigma_s' \psi' d\Omega' dE'}_{\text{Diffusion}} + 
+    \underbrace{S}_{\text{Source}}
+\end{equation}
+
+Chaque terme correspond à un phénomène physique que nous avons simulé individuellement :
+
+\begin{itemize}
+    \item \textbf{Variation Temporelle (\(\frac{1}{v} \frac{\partial \psi}{\partial t}\))} : Changement de la densité de neutrons au cours du temps en un point donné.
+    \item \textbf{Transport (\(\vec{\Omega} \cdot \nabla \psi\))} : Déplacement des neutrons en ligne droite.
+    \item \textbf{Collision (\(\Sigma_t \psi\))} : Perte de neutrons dûe à toute interaction (absorption ou diffusion).
+    \item \textbf{Diffusion (\(\iint\))} : Gain de neutrons provenant d'autres énergies ou directions après un choc.
+    \item \textbf{Source (\(S\))} : Production de nouveaux neutrons, principalement par fission (\(\nu \Sigma_f \phi\)), simulée dans notre code par \texttt{simul\_poisson}.
+\end{itemize}
+
+Résoudre cette équation analytiquement est impossible pour des géométries complexes. Les codes industriels utilisent soit 
+des méthodes déterministes, soit des méthodes de Monte-Carlo, qui convergent vers la solution exacte par la loi 
+des grands nombres.
+
+\subsection*{La Méthode de Monte-Carlo "Analogue"}
+
+La méthode de Monte-Carlo consiste à utiliser des tirages aléatoires pour estimer des grandeurs numériques. Dans notre 
+projet, nous utilisons une version dite "analogue" : nous simulons directement le processus physique tel qu'il se 
+produit dans la nature.  
+
+À chaque étape de la vie d'un neutron (déplacement, interaction), le code effectue un tirage aléatoire pour déterminer 
+l'issue de l'événement, en respectant les probabilités physiques ($f$, $a$, $d$) définies par les sections efficaces 
+des matériaux.  
+
+Chaque neutron suit une \textit{marche aléatoire} unique et imprévisible. Pris isolément, le destin d'un neutron 
+simulé n'a pas de signification physique déterministe.
+
+\subsection*{Loi Forte des Grands Nombres et Convergence}
+
+La {Loi Forte des Grands Nombres} stipule que si l'on répète une expérience aléatoire un grand nombre de fois, 
+la moyenne empirique des résultats converge vers l'espérance mathématique.  
+
+Soit \(X_i\) une variable aléatoire représentant le résultat de l'histoire du \(i^{\text{ième}}\) neutron 
+(par exemple : "a-t-il causé une fission ?"). Si nous simulons \(N\) neutrons indépendants, la moyenne empirique 
+\(\bar{X}_N\) est :
+
+\begin{equation}
+    \bar{X}_N = \frac{1}{N} \sum_{i=1}^{N} X_i \xrightarrow[N \to \infty]{p.s.} \mathbb{E}[X]
+\end{equation}
+
+Appliqué à notre réacteur, nous pouvons en déduire que :
+\begin{itemize}
+    \item Au niveau \textbf{microscopique}, le comportement est chaotique et stochastique.
+    \item Au niveau \textbf{macroscopique}, grâce à la LGN, la somme des comportements des $N$ neutrons converge 
+    vers une distribution stable, permettant d'estimer le flux neutronique et la puissance thermique.
+\end{itemize}
+
+\subsection*{Précision et limites}
+
+La précision de nos résultats dépend du nombre de neutrons simulés. Selon le Théorème Central Limite, l'erreur relative 
+diminue proportionnellement à l'inverse de la racine carrée du nombre de neutrons :
+
+\[ 
+    \text{Erreur} \propto \frac{1}{\sqrt{N}} 
+\]
+
+Ainsi, pour doubler la précision des courbes de température ou de puissance, il faudrait quadrupler le nombre de 
+neutrons simulés.
+
+
+% ==================================================================================================================================
+% Biblio
+
+\newpage 
+\printbibliography
+
+\end{document}
