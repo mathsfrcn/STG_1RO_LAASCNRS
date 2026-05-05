@@ -1,0 +1,53 @@
+[ DÉBUT DU PROGRAMME ]
+         |
+         v
+====================================================================
+ CEO :  KC_benders_Main
+====================================================================
+         |
+         |---> 1. Initialisation : Crée un scénario de demande basique (Nominal).
+         |
+         |---> 2. Premier Appel :  benders_Master (ou Master_integer)
+         |        -> Le Maître renvoie un 1er Plan de Production (X_t) naïf.
+         |
+         v
++------------------------------------------------------------------------------------------------------------+
+| LA BOUCLE DE BENDERS (TQ le coût global augmente) 		      		|
+|                                                                  								|
+|   (Le plan de production actuel "sol" est envoyé à l'adversaire) 		|
+|                            |                                     								|
+|                            v                                     								|
+|   		L'ATTAQUE (Le Sous-Problème)                               				|
+|        Appel à : KC_benders_Subproblem                           				|
+|             |                                                    								|
+|             |-- a. Évalue le plan : budget_graph_cost            				|
+|             |      (Calcule le coût de chaque arc du graphe)     			|
+|             |                                                    								|
+|             |-- b. Fait la Programmation Dynamique               				|
+|             |      (Passe "Aller" pour trouver le coût max)      				|
+|             |                                                    								|
+|             |-- c. Backtrack (Le Retour)                         					|
+|             |      (Sélectionne les pires chemins)               					|
+|             v                                                    								|
+|      [ Extrait un Sous-graphe de pires scénarios ]               				|
+|                            |                                     								|
+|                            v                                     								|
+|         L'APPRENTISSAGE (La Fusion)                                 					|
+|        Appel à : merge_budget_graph                              				|
+|        (Ajoute ces nouveaux mauvais scénarios à la mémoire)      		|
+|                            |                                     								|
+|                            v                                     								|
+|         LA DÉFENSE (Le Maître)                                      					|
+|        Appel à : benders_Master_integer                          				|
+|        (CPLEX génère des "coupes" avec les nouveaux scénarios    		|
+|         et calcule un nouveau plan de production ultra-robuste)  		|
+|                            |                                     								|
+|                            v                                     								|
+|         LE TEST D'ARRÊT                                             						|
+|        Le coût du nouveau plan est-il égal à l'ancien ?          			|
+|          -> NON : On repart pour un tour de boucle.              				|
+|          -> OUI : L'adversaire a perdu, on sort de la boucle.    			|
++------------------------------------------------------------------------------------------------------------+
+         |
+         v
+[ FIN : Plan de production trouvé ]

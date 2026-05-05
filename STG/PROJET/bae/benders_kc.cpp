@@ -288,6 +288,9 @@ float objective_value(Solution sol, vector<float> Dt){
 
 //=========================================== Knowledge Compilation Benders Decomposition code
 
+// It works in two phases: 
+//		- forward pass : it calculates the worst-case scenario by traversing the graph
+//		- backpropagation : it retrieves the most interesting sub-graph (containing the worst-case scenario)
 Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > > arcsol){
 	Solution sol;
 
@@ -436,9 +439,12 @@ Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > >
 	return sol;
 }
 
+// It works in two phases: 
+//		- forward pass : it calculates the worst-case scenario by traversing the graph
+//		- backpropagation : it retrieves the most interesting sub-graph (containing the worst-case scenario)
 vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float approx_coeff){
-	vector<vector<vector<vector<int> > > > arcbool; // bool flag to arcs within the worsts scenarios
-	vector<vector<float> > pi_value; // value of the longest path to pi[t][j]
+	vector<vector<vector<vector<int> > > > arcbool; // bool flag to arcs within the worsts scenarios (if a specific decision by the opponent is part of the subgraph)
+	vector<vector<float> > pi_value; 				// value of the longest path to pi[t][j] (It stores the "maximum cumulative cost" to reach period t having consumed j budget units)
 	vector<vector<bool> > pi_subopt_bool;
 	vector<vector<vector<vector<float> > > > costs = budget_graph_cost(sol); // costs of all arcs
 
@@ -460,10 +466,10 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 	// dynamic prog. for longest path
 
 	float tmp;
-	pi_value[0][0] = 0;
+	pi_value[0][0] = 0;	// start at period 0 cost 0
 	for(int t=1; t<sol.inst.T+1;t++){
 		for(int j = 0; j<sol.inst.Gamma+1; j++){
-			tmp = pi_value[t-1][j]+costs[t][j][j][0];// init of pi_value[t][j]
+			tmp = pi_value[t-1][j]+costs[t][j][j][0]; 	// init of pi_value[t][j]
 			for(int i = 0; i<=j; i++){
 				if(j<=i+sol.inst.deltat[t-1]){
 					if(pi_value[t-1][i]+costs[t][i][j][0] > tmp){
@@ -471,14 +477,14 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][0]<<endl;
 						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][1]<<endl;
 						// }
-						tmp = pi_value[t-1][i]+costs[t][i][j][0];
+						tmp = pi_value[t-1][i]+costs[t][i][j][0];	// Maximum cost to reach i + the cost of arc(i, j) in overstock/ stockout and keeps the worst of the two
 					} 
 					if(pi_value[t-1][i]+costs[t][i][j][1] > tmp){
 						// if(j== 0){
 						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][0]<<endl;
 						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][1]<<endl;
 						// }
-						tmp = pi_value[t-1][i]+costs[t][i][j][1];
+						tmp = pi_value[t-1][i]+costs[t][i][j][1];	//
 					} 
 				}
 			}
@@ -494,12 +500,11 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 		} 
 		// cout<<i<<", "<<pi_value[sol.inst.T][i]<<endl;
 	}
-	pi_value[sol.inst.T+1][0] = tmp;
+	pi_value[sol.inst.T+1][0] = tmp;	// Longuest path
 	// cout<<"longest path : "<<pi_value[sol.inst.T+1][0]<<endl;
 	
 
-	//==========================now the backtrack
-	// float sub_OPT = -114;
+	//========================== now the backtrack
 	float sub_OPT;
 	if(pi_value[sol.inst.T+1][0]>=0){
 		sub_OPT = approx_coeff*pi_value[sol.inst.T+1][0];
@@ -528,6 +533,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 				// cout<<" "<<BoolToString(pi_subopt_bool[t][j])<<" "<<pi_value[t][j]<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][0]<<endl;
 				// cout<<" "<<BoolToString(pi_subopt_bool[t][j])<<" "<<pi_value[t][j]<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][1]<<endl;
 				if(pi_subopt_bool[t][j] and j<=i+sol.inst.deltat[t-1] and (t!=1 or i==0)){ //last and is specific for first layer of the graph
+					// if ==, we go through (t, j) in the matrix and we start again form the node (t-1, i)
 					if(pi_value[t][j] == pi_value[t-1][i]+costs[t][i][j][0]){
 						arcbool[t][i][j][0] = 1;
 						pi_subopt_bool[t-1][i] = true;
@@ -662,19 +668,19 @@ pair<int, float> KC_benders_Main(Instance inst, float approx_coeff){
 	// cout<<"nominal scenario : ";
 	// display_vector_float(inst.Dt);
 
-	sol = KC_benders_Master(inst, arcsol);
+	sol = KC_benders_Master(inst, arcsol);	// Proposes a first (unsatisfactory) solution compared to the nominal scenario
 
 	// cout<<"first sol cost : "<<sol.obj_val<<endl;;
 	// display_vector_float(sol.Xt);
 
 	// vector<vector<vector<vector<int> > > > tmp =  KC_benders_Subproblem(sol,approx_coeff);
 
-	while(!stopCriterion){
-		arcsol_new = KC_benders_Subproblem(sol, approx_coeff);
+	while(!stopCriterion){	// While the solution is not satisfactory we do the merge loop
+		arcsol_new = KC_benders_Subproblem(sol, approx_coeff);	// Proposes a new worst solution according to the master solution
 		// cout<<"subproblem solved"<<endl;
-		arcsol = merge_budget_graph(arcsol, arcsol_new);
+		arcsol = merge_budget_graph(arcsol, arcsol_new);		// Merge the worst solution with the current solution
 		// cout<<"budget graphs merged"<<endl;
-		new_sol = KC_benders_Master(inst, arcsol);
+		new_sol = KC_benders_Master(inst, arcsol);				// Proposes a new solution according to the merge
 		iter++;
 		// cout<<"master problem solved"<<endl;
 		// cout<<"new sol : ";
@@ -682,7 +688,9 @@ pair<int, float> KC_benders_Main(Instance inst, float approx_coeff){
 		// cout<<"new sol value : "<<new_sol.obj_val<<endl;
 
 		// cout<<"============ "<< new_sol.obj_val << " " << sol.obj_val<<endl;
-		if(new_sol.obj_val == sol.obj_val){
+		
+		// If the cost increased, the opponent has found a computer breach and we continue in the loop
+		if(new_sol.obj_val == sol.obj_val){	
 			stopCriterion = true;
 			break;
 		}
@@ -702,13 +710,13 @@ pair<int, float> KC_benders_Main(Instance inst, float approx_coeff){
 }
 
 
-//===========================================Standard Benders Decomposition code
+//=========================================== Standard Benders Decomposition code
 
 Solution benders_Master(Instance inst, vector<vector<float> > scenarios){
 	Solution sol;
 	sol.inst = inst;
 
-	//cpo model creation and solving
+	// cpo model creation and solving
 
 	IloEnv env;
 	IloModel model(env);
@@ -728,15 +736,15 @@ Solution benders_Master(Instance inst, vector<vector<float> > scenarios){
 		I[o] = IloNumVarArray(env, inst.T);
 		for(int t = 0; t<inst.T; t++){
 			char name[80];
-			s[o][t] = IloNumVar(env);
+			s[o][t] = IloNumVar(env);	// Sales
 			sprintf(name,"s_%d_%d",o,t);
 			s[o][t].setName(name);
 
-			B[o][t] = IloNumVar(env);
+			B[o][t] = IloNumVar(env);	// Backorders
 			sprintf(name,"B_%d_%d",o,t);
 			B[o][t].setName(name);
 	
-			I[o][t] = IloNumVar(env);
+			I[o][t] = IloNumVar(env);	// Inventory
 			sprintf(name,"I_%d_%d",o,t);
 			I[o][t].setName(name);
 
@@ -756,12 +764,12 @@ Solution benders_Master(Instance inst, vector<vector<float> > scenarios){
 
 	for(int t = 0; t<inst.T; t++){
 		for(int o = 0; o<scenarios.size();o++){
-			model.add(B[o][t] - I[o][t] == scenarios[o][t] - X[t]); //(2)
+			model.add(B[o][t] - I[o][t] == scenarios[o][t] - X[t]);	// (2): Flow balance
 			IloExpr expr(env);
 			for(int i = 0; i<=t; i++){
 				expr += s[o][i];
 			}
-			model.add(expr == scenarios[o][t]-B[o][t]);			//(3)
+			model.add(expr == scenarios[o][t]-B[o][t]);				// (3)
 		}
 	}
 
@@ -771,9 +779,9 @@ Solution benders_Master(Instance inst, vector<vector<float> > scenarios){
 	for(int o = 0; o<scenarios.size();o++){
 		IloExpr expr(env);
 		for(int t = 0; t<inst.T; t++){
-			expr += (inst.cI*I[o][t] + inst.cB*B[o][t] - inst.bP*s[o][t]);
+			expr += (inst.cI*I[o][t] + inst.cB*B[o][t] - inst.bP*s[o][t]);	// Total cost incurred by the previous scenario
 		}
-		model.add(z>= expr);
+		model.add(z >= expr);
 	}
 
 	// obj
