@@ -55,7 +55,7 @@ struct Solution_ADV
 
 //===========================================misc.
 
-//displan an float vector, for debugging
+// displan an float vector, for debugging
 void display_vector_float(vector<float> v){
 	for (int i = 0; i < v.size(); ++i)
 	{
@@ -64,7 +64,7 @@ void display_vector_float(vector<float> v){
 	cout<<endl;
 }
 
-//displan an int vector, for debugging
+// displan an int vector, for debugging
 void display_vector_int(vector<int> v){
 	for (int i = 0; i < v.size(); ++i)
 	{
@@ -99,7 +99,7 @@ vector<float> cumulToStandard(vector<float> data){
 	return stand;
 }
 
-//read an instance from psplib problem 58 pspInstance. Products are agregated.
+// read an instance from psplib problem 58 pspInstance. Products are agregated.
 Instance read_instance(string filename, int budget){
 	Instance inst;
 
@@ -123,10 +123,10 @@ Instance read_instance(string filename, int budget){
 	}
 	inst.Dt = standardToCumul(inst.dt);
 
-	inst.cI = 3; //stock cost
-	inst.cB = 6; //backorder cost
-	inst.bP = 10; //selling price
-	//inst.Gamma = int(inst.Dt[inst.Dt.size()-1]);
+	inst.cI = 3; // stock cost
+	inst.cB = 6; // backorder cost
+	inst.bP = 10; // selling price
+	// inst.Gamma = int(inst.Dt[inst.Dt.size()-1]);
 	inst.Gamma = budget;
 	inst.deltat.resize(inst.T);
 	for(int t = 0; t<inst.T;t++){
@@ -157,24 +157,24 @@ Instance read_instance_randomized(string filename, int budget){
 	for(int i = 0; i<nbProd; i++){
 		for(int j = 0; j<inst.T; j++){
 			file >> tmp;
-			//arbitrary to have nice instances
+			// arbitrary to have nice instances
 			inst.dt[j] += tmp + int(rand() % 2);
 		}
 	}
 	inst.Dt = standardToCumul(inst.dt);
 
 	
-	inst.cB = rand() % 10 + 10; //backorder cost
-	inst.cI = rand() % 10 + 10; //stock cost
-	inst.bP = rand() % 10 + 10; //selling price
-	//inst.Gamma = int(inst.Dt[inst.Dt.size()-1]);
+	inst.cB = rand() % 10 + 10; // backorder cost
+	inst.cI = rand() % 10 + 10; // stock cost
+	inst.bP = rand() % 10 + 10; // selling price
+	// inst.Gamma = int(inst.Dt[inst.Dt.size()-1]);
 	inst.Gamma = budget;
 	inst.Dt = standardToCumul(inst.dt);
 	inst.deltat.resize(inst.T);
 
-	//display_vector_float(inst.Dt);
+	// display_vector_float(inst.Dt);
 	for(int t = 0; t<inst.T;t++){
-		//recours temporaire(pas propre)
+		// recours temporaire (pas propre)
 		if(inst.Dt[t] == 0){
 			inst.deltat[t] = 0;
 		}
@@ -187,23 +187,22 @@ Instance read_instance_randomized(string filename, int budget){
 		else if(t<inst.T-1){
 			inst.deltat[t] = rand()%(int(inst.Dt[t]));
 			while(inst.Dt[t-1] + inst.deltat[t-1] > inst.Dt[t] - inst.deltat[t] or inst.deltat[t] > inst.dt[t+1]){
-				//cout<<inst.Dt[t-1] <<" "<< inst.deltat[t-1] <<" " <<inst.Dt[t] <<" "<< inst.deltat[t]<<" "<<t<<endl;
+				// cout<<inst.Dt[t-1] <<" "<< inst.deltat[t-1] <<" " <<inst.Dt[t] <<" "<< inst.deltat[t]<<" "<<t<<endl;
 				inst.deltat[t] = rand()%(int(inst.Dt[t]));
-				//cout<<"fin"<<endl;
+				// cout<<"fin"<<endl;
 			}
 		}
 		else{
 			inst.deltat[t] = rand()%(int(inst.Dt[t]));
 			while(inst.Dt[t-1] + inst.deltat[t-1] > inst.Dt[t] - inst.deltat[t]){
-				//cout<<inst.Dt[t-1] <<" "<< inst.deltat[t-1] <<" " <<inst.Dt[t] <<" "<< inst.deltat[t]<<" "<<t<<endl;
+				// cout<<inst.Dt[t-1] <<" "<< inst.deltat[t-1] <<" " <<inst.Dt[t] <<" "<< inst.deltat[t]<<" "<<t<<endl;
 				inst.deltat[t] = rand()%(int(inst.Dt[t]));
 			}
 		}
 		// cout<<inst.deltat[t]<<endl;
 	}
-	//cout<<"poueeeeeeeeeeeeeeeet000"<<endl;
 	inst.X.resize(inst.T);
-	//recours temporaire(pas propre)
+	// recours temporaire (pas propre)
 	for(int t = 0; t<inst.T;t++){
 		if(inst.Dt[t]==0){
 			inst.X[t] = 0;
@@ -214,7 +213,6 @@ Instance read_instance_randomized(string filename, int budget){
 	}
 
 	file.close();
-	//cout<<"poueeeeeeeeeeeeeeeet"<<endl;
 	return inst;
 }
 
@@ -223,8 +221,14 @@ Instance duplicate_instance(Instance inst){
 }
 
 
-//returns the graph with all the costs for KC_subproblem
+// returns the graph with all the costs for KC_subproblem
 vector<vector<vector<vector<float> > > > budget_graph_cost(Solution sol){
+	// costs[t][i][j][k]
+	// t: time
+	// i: uncertainty budget already consumed at the beginning of the period
+	// j: uncertainty budget consumed at the end of the period
+	// (i-j): delta_t deflection chosen by the opponent
+	// k=2: to store the 2 sides of the maximum of the cost function
 	vector<vector<vector<vector<float> > > > costs;
 
 	costs.resize(sol.inst.T+2);
@@ -237,8 +241,10 @@ vector<vector<vector<vector<float> > > > budget_graph_cost(Solution sol){
 				costs[t][i][j].resize(2);
 				if(j<=i+sol.inst.deltat[t-1] and j>=i){
 					if(t<sol.inst.T){
-						costs[t][i][j][0] = sol.inst.cI*(sol.Xt[t-1]- (sol.inst.Dt[t-1] - (j-i)));
-						costs[t][i][j][1] = sol.inst.cB*(sol.inst.Dt[t-1] + (j-i) - sol.Xt[t-1]);
+																	// (sol.inst.Dt[t-1] - (j-i)): reduced demand
+																	// (sol.inst.Dt[t-1] + (j-i)): increased demand
+						costs[t][i][j][0] = sol.inst.cI*(sol.Xt[t-1]- (sol.inst.Dt[t-1] - (j-i)));	// Cost of Inventory
+						costs[t][i][j][1] = sol.inst.cB*(sol.inst.Dt[t-1] + (j-i) - sol.Xt[t-1]);	// Cost of backorders
 					}
 					else if(t==sol.inst.T){
 						costs[t][i][j][0] = sol.inst.cI*(sol.Xt[t-1]- (sol.inst.Dt[t-1] - (j-i))) - sol.inst.bP*(sol.inst.Dt[t-1] - (j-i));
@@ -269,10 +275,10 @@ vector<vector<vector<vector<float> > > > budget_graph_cost(Solution sol){
 //===========================================solution related code
 
 float objective_value(Solution sol, vector<float> Dt){
-	//cout<<"=============obj"<<endl;
+	// cout<<"=============obj"<<endl;
 	float obj = 0;
 	for(int i = 0; i<sol.inst.T; i++){
-		//cout<<sol.inst.cI*(sol.Xt[i]-Dt[i])<<" "<<sol.inst.cB*(Dt[i]-sol.Xt[i]) - sol.inst.bP*min(Dt[i],sol.Xt[i])<<endl;
+		// cout<<sol.inst.cI*(sol.Xt[i]-Dt[i])<<" "<<sol.inst.cB*(Dt[i]-sol.Xt[i]) - sol.inst.bP*min(Dt[i],sol.Xt[i])<<endl;
 		obj += max(sol.inst.cI*(sol.Xt[i]-Dt[i]), 
 			sol.inst.cB*(Dt[i]-sol.Xt[i]));
 	}
@@ -288,14 +294,14 @@ Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > >
 	IloEnv env;
 	IloModel model(env);
 
-	//used to retrieve relevant pi after the solve
+	// used to retrieve relevant pi after the solve
 	vector<vector<int> > pibool;
 	pibool.resize(inst.T+2);
 
-	//vars
+	// vars
 	IloArray<IloNumVarArray> pi(env,inst.T+2);
 	for(int t = 0; t<inst.T+2;t++){
-		//for t = 0 and t = T+1 only one variable in the array
+		// for t = 0 and t = T+1 only one variable in the array
 		pi[t] = IloNumVarArray(env, inst.Gamma+1);
 		pibool[t].resize(inst.Gamma+1);
 		for(int i = 0; i<inst.Gamma+1; i++){
@@ -314,18 +320,18 @@ Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > >
 		sprintf(name,"X_%d",t);
 		X[t].setName(name);
 	}
-	//csts
+	// csts
 
-	//bounbds for X variables
+	// bounbds for X variables
 	for(int t = 1; t<inst.T+1;t++){
 		model.add(X[t-1]<=inst.X[t-1]);
 	}
 
-	//for t in 1...T-1
+	// for t in 1...T-1
 	for(int t = 1; t<inst.T;t++){
 		for(int i = 0; i<inst.Gamma+1; i++){
 			for(int j = i; j<inst.Gamma+1; j++){
-				//the arc is in the graph =>
+				// the arc is in the graph =>
 				if(j<=i+inst.deltat[t-1] and (arcsol[t][i][j][0] or arcsol[t][i][j][1])){
 					// cout<<t-1<<" "<<i<<" -> "<<t<<" "<<j<<endl;
 					IloExpr expr(env);
@@ -342,7 +348,7 @@ Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > >
 			}
 		}
 	}
-	//for t = T (T-1 -> T)
+	// for t = T (T-1 -> T)
 	int t = inst.T;
 	for(int i = 0; i<inst.Gamma+1; i++){
 		for(int j = i; j<inst.Gamma+1; j++){
@@ -359,7 +365,7 @@ Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > >
 		}
 	}
 
-	//modeling the arcs of the last (T -> T+1) layer
+	// modeling the arcs of the last (T -> T+1) layer
 	for(int i = 0; i<inst.Gamma+1; i++){
 		if(pibool[t][i]==1){
 			model.add(pi[t+1][0] - pi[t][i] >= 0);
@@ -376,13 +382,13 @@ Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > >
 
 	// model.add(X[inst.T-1]==11.9474);
 
-	//obj
+	// obj
 
 	model.add(IloMinimize(env, pi[inst.T+1][0]));
 
 	// IloExpr expr(env);
 	// for(int t = 0; t<inst.T+2;t++){
-	// 	//for t = 0 and t = T+1 only one variable in the array
+	// 	// for t = 0 and t = T+1 only one variable in the array
 	// 	for(int i = 0; i<inst.Gamma+1; i++){
 	// 		if(pibool[t][i]){
 	// 			expr += pi[t][i];
@@ -431,10 +437,10 @@ Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > >
 }
 
 vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float approx_coeff){
-	vector<vector<vector<vector<int> > > > arcbool; //bool flag to arcs within the worsts scenarios
-	vector<vector<float> > pi_value; //value of the longest path to pi[t][j]
+	vector<vector<vector<vector<int> > > > arcbool; // bool flag to arcs within the worsts scenarios
+	vector<vector<float> > pi_value; // value of the longest path to pi[t][j]
 	vector<vector<bool> > pi_subopt_bool;
-	vector<vector<vector<vector<float> > > > costs = budget_graph_cost(sol); //costs of all arcs
+	vector<vector<vector<vector<float> > > > costs = budget_graph_cost(sol); // costs of all arcs
 
 	pi_value.resize(sol.inst.T+2);
 	pi_subopt_bool.resize(sol.inst.T+2);
@@ -451,13 +457,13 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 		}
 	}
 
-	//dynamic prog. for longest path
+	// dynamic prog. for longest path
 
 	float tmp;
 	pi_value[0][0] = 0;
 	for(int t=1; t<sol.inst.T+1;t++){
 		for(int j = 0; j<sol.inst.Gamma+1; j++){
-			tmp = pi_value[t-1][j]+costs[t][j][j][0];//init of pi_value[t][j]
+			tmp = pi_value[t-1][j]+costs[t][j][j][0];// init of pi_value[t][j]
 			for(int i = 0; i<=j; i++){
 				if(j<=i+sol.inst.deltat[t-1]){
 					if(pi_value[t-1][i]+costs[t][i][j][0] > tmp){
@@ -493,7 +499,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 	
 
 	//==========================now the backtrack
-	//float sub_OPT = -114;
+	// float sub_OPT = -114;
 	float sub_OPT;
 	if(pi_value[sol.inst.T+1][0]>=0){
 		sub_OPT = approx_coeff*pi_value[sol.inst.T+1][0];
@@ -503,9 +509,9 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 	}
 	
 
-	//t = T+1
+	// t = T+1
 	pi_subopt_bool[sol.inst.T+1][0] = true;
-	//cout<<"poeut"<<endl;
+	// cout<<"poeut"<<endl;
 	for(int i = 0; i<sol.inst.Gamma+1;i++){
 		// cout<<i<<" "<<pi_value[sol.inst.T][i]<<" "<<sub_OPT<<endl;
 		if(pi_value[sol.inst.T][i]>=sub_OPT){
@@ -537,7 +543,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 		}
 	}
 
-	//display the subgraph
+	// display the subgraph
 	// cout<<"subgraph:"<<endl;
 	// stringstream bufft;
 	// for(int t = 0; t<sol.inst.T+2; t++){
@@ -566,14 +572,14 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 	return arcbool;
 }
 
-//initialize budget graph  with nominal scenario
+// initialize budget graph  with nominal scenario
 vector<vector<vector<vector<int> > > > init_graph(Instance inst){
 
 	vector<vector<vector<vector<int> > > > arcbool;
 	arcbool.resize(inst.T+2);
 
 	for(int t = 0; t<inst.T+2;t++){
-		//for t = 0 and t = T+1 only one variable in the array
+		// for t = 0 and t = T+1 only one variable in the array
 		arcbool[t].resize(inst.Gamma+1);
 		for(int i = 0; i<inst.Gamma+1; i++){
 			arcbool[t][i].resize(inst.Gamma+1);
@@ -587,14 +593,14 @@ vector<vector<vector<vector<int> > > > init_graph(Instance inst){
 	return arcbool;
 }
 
-//initialize budgetgraph with ALL scenarios
+// initialize budgetgraph with ALL scenarios
 vector<vector<vector<vector<int> > > > init_graph_full(Instance inst){
 
 	vector<vector<vector<vector<int> > > > arcbool;
 	arcbool.resize(inst.T+2);
 
 	for(int t = 0; t<inst.T+2;t++){
-		//for t = 0 and t = T+1 only one variable in the array
+		// for t = 0 and t = T+1 only one variable in the array
 		arcbool[t].resize(inst.Gamma+1);
 		for(int i = 0; i<inst.Gamma+1; i++){
 			arcbool[t][i].resize(inst.Gamma+1);
@@ -609,7 +615,7 @@ vector<vector<vector<vector<int> > > > init_graph_full(Instance inst){
 	return arcbool;
 }
 
-//return the union of budget graphs (technically is larger)
+// return the union of budget graphs (technically is larger)
 vector<vector<vector<vector<int> > > > merge_budget_graph(vector<vector<vector<vector<int> > > > arcbool1, vector<vector<vector<vector<int> > > > arcbool2){
 	vector<vector<vector<vector<int> > > > merge_arcbool;
 
@@ -708,9 +714,9 @@ Solution benders_Master(Instance inst, vector<vector<float> > scenarios){
 	IloModel model(env);
 
 
-	//vars
+	// vars
 	IloNumVar z(env, -IloInfinity, IloInfinity);
-	//IloNumVar z(env, -1000, 70);
+	// IloNumVar z(env, -1000, 70);
 	z.setName("z");
 	IloNumVarArray  X(env, inst.T);
 	IloArray<IloNumVarArray> s(env,scenarios.size());
@@ -742,9 +748,7 @@ Solution benders_Master(Instance inst, vector<vector<float> > scenarios){
 		}
 	}
 
-	//cout<<"pouet1"<<endl;
-
-	//consts
+	// consts
 
 	for(int t = 1; t<inst.T+1;t++){
 		model.add(X[t-1]<=inst.X[t-1]);
@@ -763,7 +767,7 @@ Solution benders_Master(Instance inst, vector<vector<float> > scenarios){
 
 	// model.add(X[inst.T-1]==14);
 
-	//cout<<"pouet2"<<endl;
+	// cout<<"pouet2"<<endl;
 	for(int o = 0; o<scenarios.size();o++){
 		IloExpr expr(env);
 		for(int t = 0; t<inst.T; t++){
@@ -772,12 +776,10 @@ Solution benders_Master(Instance inst, vector<vector<float> > scenarios){
 		model.add(z>= expr);
 	}
 
-	//obj
+	// obj
 	model.add(IloMinimize(env, z));
 
-	//cout<<"pouet3"<<endl;
-
-	//solve
+	// solve
 	IloCplex cplex(model);
 	
 	// cplex.setParam(IloCplex::Param::MIP::Display, 1);
@@ -822,18 +824,18 @@ Solution benders_Master_integer(Instance inst, vector<vector<float> > scenarios)
 	Solution sol;
 	sol.inst = inst;
 
-	//cpo model creation and solving
+	// cpo model creation and solving
 
 	IloEnv env;
 	IloModel model(env);
 
-	//setup cost
+	// setup cost
 	int cP = 2;
 
 
-	//vars
+	// vars
 	IloNumVar z(env, -IloInfinity, IloInfinity);
-	//IloNumVar z(env, -1000, 70);
+	// IloNumVar z(env, -1000, 70);
 	z.setName("z");
 	IloNumVarArray  X(env, inst.T);
 	IloNumVarArray y(env, inst.T);
@@ -870,9 +872,9 @@ Solution benders_Master_integer(Instance inst, vector<vector<float> > scenarios)
 		}
 	}
 
-	//cout<<"pouet1"<<endl;
+	// cout<<"pouet1"<<endl;
 
-	//consts
+	// consts
 
 	for(int t = 1; t<inst.T+1;t++){
 		model.add(X[t-1]<inst.X[t-1]);
@@ -880,18 +882,18 @@ Solution benders_Master_integer(Instance inst, vector<vector<float> > scenarios)
 
 	for(int t = 0; t<inst.T; t++){
 		for(int o = 0; o<scenarios.size();o++){
-			model.add(B[o][t] - I[o][t] == scenarios[o][t] - X[t]); //(2)
+			model.add(B[o][t] - I[o][t] == scenarios[o][t] - X[t]); // (2)
 			IloExpr expr(env);
 			for(int i = 0; i<=t; i++){
 				expr += s[o][i];
 			}
-			model.add(expr == scenarios[o][t]-B[o][t]);			//(3)
+			model.add(expr == scenarios[o][t]-B[o][t]);			// (3)
 		}
 	}
 
 	// model.add(X[inst.T-1]==14);
 
-	//cout<<"pouet2"<<endl;
+	// cout<<"pouet2"<<endl;
 	for(int o = 0; o<scenarios.size();o++){
 		IloExpr expr(env);
 		for(int t = 0; t<inst.T; t++){
@@ -901,7 +903,7 @@ Solution benders_Master_integer(Instance inst, vector<vector<float> > scenarios)
 	}
 
 
-	//constraints for y............
+	// constraints for y............
 	float M = inst.Dt[inst.T-1] + inst.Gamma;
 	model.add(X[1]<=y[1]*M);
 
@@ -909,12 +911,12 @@ Solution benders_Master_integer(Instance inst, vector<vector<float> > scenarios)
 		model.add(X[t]-X[t-1]<=y[t]*M);
 	}
 
-	//obj
+	// obj
 	model.add(IloMinimize(env, z));
 
-	//cout<<"pouet3"<<endl;
+	// cout<<"pouet3"<<endl;
 
-	//solve
+	// solve
 	IloCplex cplex(model);
 	
 	// cplex.setParam(IloCplex::Param::MIP::Display, 1);
@@ -956,21 +958,21 @@ Solution benders_Master_integer(Instance inst, vector<vector<float> > scenarios)
 }
 
 
-//solve subproblem using CPLEX: NOT USED, probably not working
+// solve subproblem using CPLEX: NOT USED, probably not working
 Solution_ADV benders_Subproblem(Solution sol){
 	Solution_ADV sol_adv;
 
 	IloEnv env;
 	IloModel model(env);
 
-	//used to retrieve relevant pi after the solve
+	// used to retrieve relevant pi after the solve
 	vector<vector<bool> > pibool;
 	pibool.resize(sol.inst.T+2);
 
-	//vars
+	// vars
 	IloArray<IloNumVarArray> pi(env,sol.inst.T+2);
 	for(int t = 0; t<sol.inst.T+2;t++){
-		//for t = 0 and t = T+1 only one variable in the array
+		// for t = 0 and t = T+1 only one variable in the array
 		pi[t] = IloNumVarArray(env, sol.inst.Gamma+1);
 		pibool[t].resize(sol.inst.Gamma+1);
 		for(int i = 0; i<sol.inst.Gamma+1; i++){
@@ -981,12 +983,12 @@ Solution_ADV benders_Subproblem(Solution sol){
 		}
 	}
 
-	//csts
-	//for t in 1...T-1
+	// csts
+	// for t in 1...T-1
 	for(int t = 1; t<sol.inst.T;t++){
 		for(int i = 0; i<sol.inst.Gamma+1; i++){
 			for(int j = i; j<sol.inst.Gamma+1; j++){
-				//the arc is in the graph =>
+				// the arc is in the graph =>
 				if(j<=i+sol.inst.deltat[t]){
 					IloExpr expr(env);
 					if(t==1) {
@@ -1002,7 +1004,7 @@ Solution_ADV benders_Subproblem(Solution sol){
 			}
 		}
 	}
-	//for t = T
+	// for t = T
 	int t = sol.inst.T;
 	for(int i = 0; i<sol.inst.Gamma+1; i++){
 		for(int j = i; j<sol.inst.Gamma+1; j++){
@@ -1023,13 +1025,13 @@ Solution_ADV benders_Subproblem(Solution sol){
 	pibool[0][0] = true;
 	pibool[sol.inst.T+1][0] = true;
 
-	//obj
+	// obj
 
-	//model.add(IloMinimize(env, pi[sol.inst.T][0]));
+	// model.add(IloMinimize(env, pi[sol.inst.T][0]));
 
 	IloExpr expr(env);
 	for(int t = 0; t<sol.inst.T+2;t++){
-		//for t = 0 and t = T+1 only one variable in the array
+		// for t = 0 and t = T+1 only one variable in the array
 		for(int i = 0; i<sol.inst.Gamma+1; i++){
 			if(pibool[t][i]){
 				expr += pi[t][i];
@@ -1037,10 +1039,10 @@ Solution_ADV benders_Subproblem(Solution sol){
 		}
 	}
 
-	model.add(IloMinimize(env, expr)); //bon objectif pour etre sur que les potentiels collent leur borne
+	model.add(IloMinimize(env, expr)); // bon objectif pour etre sur que les potentiels collent leur borne
 
 	IloCplex cplex(model);
-	//cplex.exportModel ("lpex1.lp");
+	// cplex.exportModel ("lpex1.lp");
 	cplex.setParam(IloCplex::Param::MIP::Display, 1);
 	cplex.setOut(env.getNullStream());
     if ( !cplex.solve() ) {
@@ -1048,11 +1050,11 @@ Solution_ADV benders_Subproblem(Solution sol){
     	throw(-1);
 	}
 
-	//retrieve value for pi var
+	// retrieve value for pi var
 	vector<vector<float> > pisol;
 	pisol.resize(sol.inst.T+2);
 	for(int t = 0; t<sol.inst.T+2;t++){
-		//for t = 0 and t = T+1 only one variable in the array
+		// for t = 0 and t = T+1 only one variable in the array
 		pisol[t].resize(sol.inst.Gamma+1);
 		for(int i = 0; i<sol.inst.Gamma+1; i++){
 			if(pibool[t][i]){
@@ -1079,7 +1081,7 @@ Solution_ADV benders_Subproblem(Solution sol){
 	// pisol[0][0] = cplex.getValue(pi[0][0]);
 	// pisol[sol.inst.T][0] = cplex.getValue(pi[sol.inst.T][0]);
 
-	//retrieve uncertainty from pi var (where constraints are tights)
+	// retrieve uncertainty from pi var (where constraints are tights)
 
 	cout<<"======================LONGEST PATH : "<<pisol[sol.inst.T+1][0]<<endl;
 	float previous_val = pisol[sol.inst.T+1][0];
@@ -1093,14 +1095,14 @@ Solution_ADV benders_Subproblem(Solution sol){
 		for(int i=previous_budget; i>=0; i--){
 
 			if(t == sol.inst.T){
-				if( pisol[t][previous_budget] - pisol[t-1][i] == sol.inst.cI*(sol.Xt[t]- (sol.inst.Dt[t] - (previous_budget-i))) - sol.inst.bP*(sol.inst.Dt[t] - (previous_budget-i))) { //worse for deltat negative
+				if( pisol[t][previous_budget] - pisol[t-1][i] == sol.inst.cI*(sol.Xt[t]- (sol.inst.Dt[t] - (previous_budget-i))) - sol.inst.bP*(sol.inst.Dt[t] - (previous_budget-i))) { // worse for deltat negative
 					offset[t-1] = -(previous_budget - i);
 					// cout<<"tight constraint found for t = "<<t<<" from " <<previous_budget<< " to "<<i<<endl;
 					previous_budget = i;
 					break;
 					
 				}
-				else if(pisol[t][previous_budget] - pisol[t-1][i] == sol.inst.cB*(sol.inst.Dt[t] + (previous_budget-i) - sol.Xt[t]) - sol.inst.bP*sol.Xt[t]) { //worse for deltat negative
+				else if(pisol[t][previous_budget] - pisol[t-1][i] == sol.inst.cB*(sol.inst.Dt[t] + (previous_budget-i) - sol.Xt[t]) - sol.inst.bP*sol.Xt[t]) { // worse for deltat negative
 					offset[t-1] = (previous_budget - i);
 					// cout<<"tight constraint found for t = "<<t<<" from " <<previous_budget<< " to "<<i<<endl;
 					previous_budget = i;
@@ -1108,14 +1110,14 @@ Solution_ADV benders_Subproblem(Solution sol){
 				}
 			}
 			else if (t == 1) {
-				if( pisol[t][previous_budget] - pisol[0][0] == sol.inst.cI*(sol.Xt[t]- (sol.inst.Dt[t] - (previous_budget-i)))){ //worse for deltat negative
+				if( pisol[t][previous_budget] - pisol[0][0] == sol.inst.cI*(sol.Xt[t]- (sol.inst.Dt[t] - (previous_budget-i)))){ // worse for deltat negative
 					offset[t-1] = -(previous_budget - i);
 					// cout<<"tight constraint found for t = "<<t<<" from " <<previous_budget<< " to "<<i<<endl;
 					previous_budget = i;
 					break;
 					
 				}
-				else if(pisol[t][previous_budget] - pisol[0][0] == sol.inst.cB*(sol.inst.Dt[t] + (previous_budget-i) - sol.Xt[t])) { //worse for deltat negative
+				else if(pisol[t][previous_budget] - pisol[0][0] == sol.inst.cB*(sol.inst.Dt[t] + (previous_budget-i) - sol.Xt[t])) { // worse for deltat negative
 					offset[t-1] = (previous_budget - i);
 					// cout<<"tight constraint found for t = "<<t<<" from " <<previous_budget<< " to "<<i<<endl;
 					previous_budget = i;
@@ -1123,15 +1125,15 @@ Solution_ADV benders_Subproblem(Solution sol){
 					
 				}
 			}
-			//generic case
+			// generic case
 			else{
-				if( pisol[t][previous_budget] - pisol[t-1][i] == sol.inst.cI*(sol.Xt[t]- (sol.inst.Dt[t] - (previous_budget-i)))){ //worse for deltat negative
+				if( pisol[t][previous_budget] - pisol[t-1][i] == sol.inst.cI*(sol.Xt[t]- (sol.inst.Dt[t] - (previous_budget-i)))){ // worse for deltat negative
 					offset[t-1] = -(previous_budget - i);
 					// cout<<"tight constraint found for t = "<<t<<" from " <<previous_budget<< " to "<<i<<endl;
 					previous_budget = i;
 					break;
 				}
-				else if(pisol[t][previous_budget] - pisol[t-1][i] == sol.inst.cB*(sol.inst.Dt[t] + (previous_budget-i) - sol.Xt[t])) { //worse for deltat negative
+				else if(pisol[t][previous_budget] - pisol[t-1][i] == sol.inst.cB*(sol.inst.Dt[t] + (previous_budget-i) - sol.Xt[t])) { // worse for deltat negative
 					offset[t-1] = (previous_budget - i);
 					// cout<<"tight constraint found for t = "<<t<<" from " <<previous_budget<< " to "<<i<<endl;
 					previous_budget = i;
@@ -1163,13 +1165,13 @@ Solution_ADV benders_Subproblem(Solution sol){
 	return sol_adv;
 }
 
-//solve subproblem with dynamic prog
+// solve subproblem with dynamic prog
 Solution_ADV benders_Subproblem_DP(Solution sol){
 	Solution_ADV sol_adv;
-	vector<vector<vector<vector<int> > > > arcbool; //bool flag to arcs within the worsts scenarios
-	vector<vector<float> > pi_value; //value of the longest path to pi[t][j]
+	vector<vector<vector<vector<int> > > > arcbool; // bool flag to arcs within the worsts scenarios
+	vector<vector<float> > pi_value; // value of the longest path to pi[t][j]
 	vector<vector<bool> > pi_subopt_bool;
-	vector<vector<vector<vector<float> > > > costs = budget_graph_cost(sol); //costs of all arcs of the budget graph
+	vector<vector<vector<vector<float> > > > costs = budget_graph_cost(sol); // costs of all arcs of the budget graph
 
 	pi_value.resize(sol.inst.T+2);
 	pi_subopt_bool.resize(sol.inst.T+2);
@@ -1186,13 +1188,13 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 		}
 	}
 
-	//dynamic prog. for longest path
+	// dynamic prog. for longest path
 
 	float tmp;
 	pi_value[0][0] = 0;
 	for(int t=1; t<sol.inst.T+1;t++){
 		for(int j = 0; j<sol.inst.Gamma+1; j++){
-			tmp = pi_value[t-1][j]+costs[t][j][j][0];//init of pi_value[t][j]
+			tmp = pi_value[t-1][j]+costs[t][j][j][0];// init of pi_value[t][j]
 			for(int i = 0; i<=j; i++){
 				if(j<=i+sol.inst.deltat[t-1]){
 					if(pi_value[t-1][i]+costs[t][i][j][0] > tmp){
@@ -1227,16 +1229,16 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 	// cout<<"longest path : "<<pi_value[sol.inst.T+1][0]<<endl;
 	
 
-	//==========================now the backtrack
+	//========================== now the backtrack
 
 	// cout<<"LONGEST PATH VALUE : "<<pi_value[sol.inst.T+1][0]<<endl;;
 
 	vector<float> scenario;
 	scenario.resize(sol.inst.T);
 
-	//t = T+1
+	// t = T+1
 	pi_subopt_bool[sol.inst.T+1][0] = true;
-	//cout<<"poeut"<<endl;
+	// cout<<"poeut"<<endl;
 	for(int i = 0; i<sol.inst.Gamma+1;i++){
 		// cout<<i<<" "<<pi_value[sol.inst.T][i]<<" "<<sub_OPT<<endl;
 		if(pi_value[sol.inst.T][i]==pi_value[sol.inst.T+1][0]){
@@ -1329,7 +1331,7 @@ pair<int, float> benders_Main(Instance inst){
 	float proc_time;
 	vector<vector<float> > scenarios;
 	scenarios.resize(0);
-	//only nominal scenario
+	// only nominal scenario
 	// cout<<"nominal scenario : ";
 	// vector<float> debug = {0,0,0,0,1,1,2,4,5,5,6,9,9,11,11};
 	// scenarios.push_back(debug);
@@ -1377,7 +1379,7 @@ pair<int, float> benders_Main(Instance inst){
 	return make_pair(i, proc_time);
 }
 
-//===========================================main
+//=========================================== main
 
 vector<string> list_dir(const char *path) {
 vector<string> allfile;
@@ -1396,7 +1398,7 @@ vector<string> allfile;
 }
 
 int main(int argc, const char* argv[]){
-	//cout<<"test"<<endl;
+	// cout<<"test"<<endl;
 	// pair<Solution, Solution_ADV> benders_sol;
 	pair<int, float> benders_sol;
 	float approx_coeff;
@@ -1427,11 +1429,11 @@ int main(int argc, const char* argv[]){
 
 				filename = "Parsed_Large_Instances/" + filelist[i];
 				cout<<filename<<" "<<Gamma<<" "<<tau<<" "<<endl;
-				//cout<<"pouet1"<<endl;
+				// cout<<"pouet1"<<endl;
 				inst = read_instance_randomized(filename, Gamma);
-				//cout<<"pouet2"<<endl;
-				//display_vector_float(inst.Dt);
-				//display_vector_float(inst.deltat);
+				// cout<<"pouet2"<<endl;
+				// display_vector_float(inst.Dt);
+				// display_vector_float(inst.deltat);
 				benders_sol = benders_Main(inst);
 				cout<<"STANDARD done"<<endl;
 				// debug2.push_back(benders_sol.first);
@@ -1462,5 +1464,5 @@ int main(int argc, const char* argv[]){
 	}
 
 	result.close();
-	//cout<<"test"<<endl;
+	// cout<<"test"<<endl;
 }

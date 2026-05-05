@@ -1,0 +1,8 @@
+P (Polynomial) : Les problèmes "faciles". Le temps de résolution augmente de manière raisonnable avec la taille des données (ex: trier une liste).
+
+NP (Nondeterministic Polynomial) : Les problèmes où, si on te donne une solution, tu peux vérifier très vite (en temps polynomial) si elle est juste.
+
+NP-Complet : Ce sont les problèmes les plus durs de la classe NP. Si tu trouves un algorithme rapide pour en résoudre un, tu les résous tous.
+
+NP-Dur (NP-Hard) : Des problèmes au moins aussi difficiles que les NP-Complets. Résoudre un problème NP-dur de manière exacte sur de grandes données prend un temps astronomique (souvent exponentiel). C'est pour cela qu'on utilise des heuristiques.
+
