@@ -464,12 +464,12 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 	}
 
 	// dynamic prog. for longest path
-
 	float tmp;
 	pi_value[0][0] = 0;	// start at period 0 cost 0
 	for(int t=1; t<sol.inst.T+1;t++){
 		for(int j = 0; j<sol.inst.Gamma+1; j++){
-			tmp = pi_value[t-1][j]+costs[t][j][j][0]; 	// init of pi_value[t][j]
+			tmp = pi_value[t-1][j]+costs[t][j][j][0]; 	// Init of pi_value[t][j]
+														// It's the value of the dual problem that will store the value of the longest path from the start to t, having consumed j units of budget
 			for(int i = 0; i<=j; i++){
 				if(j<=i+sol.inst.deltat[t-1]){
 					if(pi_value[t-1][i]+costs[t][i][j][0] > tmp){
@@ -505,6 +505,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 	
 
 	//========================== now the backtrack
+	// The variable approx 
 	float sub_OPT;
 	if(pi_value[sol.inst.T+1][0]>=0){
 		sub_OPT = approx_coeff*pi_value[sol.inst.T+1][0];
@@ -1424,8 +1425,8 @@ int main(int argc, const char* argv[]){
   	int seed = 31415;
   	srand (seed);
 
-	for(int Gamma = 1; Gamma<100; Gamma+=20){
-		for(int tau=0; tau <11; tau +=2){
+	for(int Gamma=1; Gamma<100; Gamma+=20){
+		for(int tau=0; tau<11; tau+=2){
 			
 			iter = 0;
 			iterKC = 0;
@@ -1434,12 +1435,11 @@ int main(int argc, const char* argv[]){
 			debug.resize(0);
 			debug2.resize(0);
 			for(int i = 2; i<nbInst; i++ ){
-
 				filename = "Parsed_Large_Instances/" + filelist[i];
 				cout<<filename<<" "<<Gamma<<" "<<tau<<" "<<endl;
-				// cout<<"pouet1"<<endl;
+				
 				inst = read_instance_randomized(filename, Gamma);
-				// cout<<"pouet2"<<endl;
+				
 				// display_vector_float(inst.Dt);
 				// display_vector_float(inst.deltat);
 				benders_sol = benders_Main(inst);
