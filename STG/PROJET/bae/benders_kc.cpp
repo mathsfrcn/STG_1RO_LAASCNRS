@@ -517,7 +517,6 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 
 	// t = T+1
 	pi_subopt_bool[sol.inst.T+1][0] = true;
-	// cout<<"poeut"<<endl;
 	for(int i = 0; i<sol.inst.Gamma+1;i++){
 		// cout<<i<<" "<<pi_value[sol.inst.T][i]<<" "<<sub_OPT<<endl;
 		if(pi_value[sol.inst.T][i]>=sub_OPT){
@@ -665,7 +664,7 @@ pair<int, float> KC_benders_Main(Instance inst, float approx_coeff){
 	vector<vector<vector<vector<int> > > > arcsol = init_graph(inst);
 	// vector<vector<vector<vector<int> > > > arcsol = init_graph_full(inst);
 	vector<vector<vector<vector<int> > > > arcsol_new;
-	//only nominal scenario
+	// only nominal scenario
 	// cout<<"nominal scenario : ";
 	// display_vector_float(inst.Dt);
 
@@ -712,7 +711,6 @@ pair<int, float> KC_benders_Main(Instance inst, float approx_coeff){
 
 
 //=========================================== Standard Benders Decomposition code
-
 Solution benders_Master(Instance inst, vector<vector<float> > scenarios){
 	Solution sol;
 	sol.inst = inst;
@@ -775,8 +773,6 @@ Solution benders_Master(Instance inst, vector<vector<float> > scenarios){
 	}
 
 	// model.add(X[inst.T-1]==14);
-
-	// cout<<"pouet2"<<endl;
 	for(int o = 0; o<scenarios.size();o++){
 		IloExpr expr(env);
 		for(int t = 0; t<inst.T; t++){
@@ -881,10 +877,7 @@ Solution benders_Master_integer(Instance inst, vector<vector<float> > scenarios)
 		}
 	}
 
-	// cout<<"pouet1"<<endl;
-
 	// consts
-
 	for(int t = 1; t<inst.T+1;t++){
 		model.add(X[t-1]<inst.X[t-1]);
 	}
@@ -901,8 +894,6 @@ Solution benders_Master_integer(Instance inst, vector<vector<float> > scenarios)
 	}
 
 	// model.add(X[inst.T-1]==14);
-
-	// cout<<"pouet2"<<endl;
 	for(int o = 0; o<scenarios.size();o++){
 		IloExpr expr(env);
 		for(int t = 0; t<inst.T; t++){
@@ -922,8 +913,6 @@ Solution benders_Master_integer(Instance inst, vector<vector<float> > scenarios)
 
 	// obj
 	model.add(IloMinimize(env, z));
-
-	// cout<<"pouet3"<<endl;
 
 	// solve
 	IloCplex cplex(model);
@@ -1037,7 +1026,7 @@ Solution_ADV benders_Subproblem(Solution sol){
 	// obj
 
 	// model.add(IloMinimize(env, pi[sol.inst.T][0]));
-
+	
 	IloExpr expr(env);
 	for(int t = 0; t<sol.inst.T+2;t++){
 		// for t = 0 and t = T+1 only one variable in the array
@@ -1247,7 +1236,6 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 
 	// t = T+1
 	pi_subopt_bool[sol.inst.T+1][0] = true;
-	// cout<<"poeut"<<endl;
 	for(int i = 0; i<sol.inst.Gamma+1;i++){
 		// cout<<i<<" "<<pi_value[sol.inst.T][i]<<" "<<sub_OPT<<endl;
 		if(pi_value[sol.inst.T][i]==pi_value[sol.inst.T+1][0]){
@@ -1356,7 +1344,7 @@ pair<int, float> benders_Main(Instance inst){
 
 	int i = 2;
 	while(!stopCriterion){
-		// cout<<"=============ITERATION "<<i<<endl;
+		// cout<<"============= ITERATION"<<i<<endl;
 		sol_adv = benders_Subproblem_DP(sol);
 		// sol_adv = benders_Subproblem(sol);
 		scenarios.push_back(sol_adv.Dt);
