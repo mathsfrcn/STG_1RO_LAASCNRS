@@ -503,7 +503,6 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 	pi_value[sol.inst.T+1][0] = tmp;	// Longuest path
 	// cout<<"longest path : "<<pi_value[sol.inst.T+1][0]<<endl;
 	
-
 	//========================== now the backtrack
 	// The variable approx 
 	float sub_OPT;
@@ -756,7 +755,6 @@ Solution benders_Master(Instance inst, vector<vector<float> > scenarios){
 	}
 
 	// consts
-
 	for(int t = 1; t<inst.T+1;t++){
 		model.add(X[t-1]<=inst.X[t-1]);
 	}
@@ -1026,7 +1024,7 @@ Solution_ADV benders_Subproblem(Solution sol){
 	// obj
 
 	// model.add(IloMinimize(env, pi[sol.inst.T][0]));
-	
+
 	IloExpr expr(env);
 	for(int t = 0; t<sol.inst.T+2;t++){
 		// for t = 0 and t = T+1 only one variable in the array

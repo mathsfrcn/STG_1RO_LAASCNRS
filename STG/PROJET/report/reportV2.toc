@@ -1,0 +1,6 @@
+\babel@toc {french}{}\relax 
+\contentsline {section}{\numberline {I}Contexte de la recherche}{3}{}%
+\contentsline {chapter}{\numberline {1}Méthodologie et Implémentation}{5}{}%
+\contentsline {section}{\numberline {I}Modélisation Mathématique}{5}{}%
+\contentsline {section}{\numberline {II}Pseudo-code de l'Algorithme}{5}{}%
+\contentsline {section}{\numberline {III}Implémentation en C++}{6}{}%

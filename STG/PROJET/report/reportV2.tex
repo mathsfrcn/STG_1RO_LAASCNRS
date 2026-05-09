@@ -1,0 +1,314 @@
+\documentclass[12pt, a4paper, twoside]{report}
+
+% --- Encodage et Langue ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+
+% --- Typographie et Couleurs ---
+\usepackage{mathpazo} % Police élégante (Palatino) pour le corps du texte
+\usepackage{helvet}   % Police sans-serif propre pour les titres
+\usepackage{xcolor}
+\definecolor{mainblue}{RGB}{0, 68, 124} % Bleu institutionnel profond
+\definecolor{darkgray}{RGB}{80, 80, 80}
+
+% --- Mise en page ---
+\usepackage[top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{setspace}
+\setstretch{1.15} % Aère le texte pour un rendu plus premium
+
+% ==========================================
+% PACKAGES POUR LES MATHS, LE CODE ET L'ALGO
+% ==========================================
+
+% --- Mathématiques ---
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage[most]{tcolorbox} % Pour les boîtes stylisées
+
+% Définition de couleurs douces pour les fonds
+\definecolor{bgcode}{RGB}{248, 248, 248} % Gris très clair pour le code
+\definecolor{bgmath}{RGB}{246, 249, 252} % Bleu très pâle pour les maths
+
+% Configuration des boîtes mathématiques (Définition, Théorème, Propriété)
+\tcbset{
+    mathstyle/.style={
+        enhanced,
+        colback=bgmath,       % Fond bleu très clair
+        colframe=mainblue,    % Bordure du bleu institutionnel
+        boxrule=0.8pt,        % Épaisseur de la bordure
+        arc=3pt,              % Coins légèrement arrondis
+        left=5pt, right=5pt, top=5pt, bottom=5pt,
+        fonttitle=\sffamily\bfseries,
+        coltitle=white,
+        attach boxed title to top left={yshift=-2mm, xshift=3mm},
+        boxed title style={colback=mainblue, arc=2pt, boxrule=0pt}
+    }
+}
+
+% Création des environnements mathématiques
+% Utilisation : \begin{theoreme}{Titre du théorème}{label}
+\newtcbtheorem[number within=chapter]{theoreme}{Théorème}{mathstyle}{thm}
+\newtcbtheorem[number within=chapter]{definition}{Définition}{mathstyle}{def}
+\newtcbtheorem[number within=chapter]{propriete}{Propriété}{mathstyle}{prop}
+
+% Boîte spécifique et plus légère pour les Preuves (sans fond, juste un trait à gauche)
+\newtcolorbox{preuve}{
+    empty,
+    borderline west={2pt}{0pt}{mainblue!60}, % Ligne verticale bleue à gauche
+    left=10pt,
+    title={\textit{\textbf{Preuve.}}},
+    coltitle=black,
+    detach title,
+    before upper={\tcbtitle\quad}
+}
+
+% --- Code Informatique (C++) ---
+\usepackage{listings}
+\lstset{
+    language=C++,
+    backgroundcolor=\color{bgcode},
+    basicstyle=\ttfamily\footnotesize, % Police machine à écrire
+    keywordstyle=\color{mainblue}\bfseries,
+    stringstyle=\color{darkgray},
+    commentstyle=\color{teal}\itshape,
+    numbers=left,                      % Numéros de ligne à gauche
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=8pt,
+    frame=l,                           % Ligne verticale à gauche
+    framesep=5pt,
+    rulecolor=\color{mainblue},
+    breaklines=true,                   % Retour à la ligne automatique
+    tabsize=4,
+    showstringspaces=false
+}
+
+% --- Pseudo-Code ---
+\usepackage[french, ruled, vlined]{algorithm2e}
+\SetKwInput{KwData}{Données}
+\SetKwInput{KwResult}{Résultat}
+\SetAlFnt{\small}
+\SetAlCapFnt{\small\sffamily}
+
+
+% --- Design des titres de chapitres ---
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\sffamily\Huge\bfseries\color{mainblue}}
+  {\chaptertitlename\ \thechapter}{10pt}{\Huge}[\vspace{0.5ex}\titlerule]
+\titlespacing*{\chapter}{0pt}{-20pt}{30pt}
+\titleformat{\section}
+  {\normalfont\sffamily\Large\bfseries\color{mainblue}}{\thesection}{1em}{}
+
+% --- En-têtes et Pieds de page ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{} % On vide tout par défaut
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+
+% Configuration selon ta demande :
+% À droite (RO, RE) : Logo + Nom de la fac (sur toutes les pages sauf début de chapitre)
+\fancyhead[RO,RE]{%
+    \begin{tabular}{r}
+        \raisebox{-0.3\height}{\includegraphics[height=1cm]{images/inst5.png}} \\
+        %\fontsize{7}{8}\selectfont \sffamily Université Toulouse III - Paul Sabatier
+    \end{tabular}
+}
+
+% À gauche : Alternance (LO = Left Odd / LE = Left Even)
+\fancyhead[LO]{\textcolor{mainblue}{\sffamily \textbf{Rapport de Stage}}}
+\fancyhead[LE]{\textcolor{mainblue}{\sffamily \textbf{Mathis Francine-Habas}}} % Nom du chapitre
+
+% Pied de page : Numéro au centre
+\fancyfoot[C]{\sffamily \thepage}
+
+% Ligne de séparation de l'en-tête
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{mainblue}\leaders\hrule height \headrulewidth\hfill}}
+
+\renewcommand{\thesection}{\Roman{section}}
+\renewcommand{\thesubsection}{\Roman{subsection}}
+\renewcommand{\thesubsubsection}{\Roman{subsubsection}}
+\renewcommand{\theparagraph}{\Roman{paragraph}}
+
+% --- Paragraphes (gestion native de LaTeX) ---
+\setlength{\parindent}{1.5em} % Tabulation pour les paragraphes suivants
+\setlength{\parskip}{0.4em}   % Espace léger entre les paragraphes
+
+% --- Package pour générer du faux texte (à supprimer plus tard) ---
+\usepackage{lipsum}
+
+% --- DÉBUT DU DOCUMENT ---
+\begin{document}
+
+% --- PAGE DE GARDE ---
+\begin{titlepage}
+    \pagecolor{white}
+    
+    % Matrice 2x2 des instituts (Logos + Noms + Adresses)
+    \noindent
+    \begin{minipage}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=4cm, height=2cm, keepaspectratio]{images/inst5.png} \\
+        \vspace{0.2cm}
+        \textbf{\small Université de Toulouse} \\
+        \textit{\footnotesize 118 Route de Narbonne \\ 31062 Toulouse Cedex 9}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=4cm, height=2cm, keepaspectratio]{images/inst1.png} \\
+        \vspace{0.2cm}
+        \textbf{\small Institut de Recherche en Informatique de Toulouse} \\
+        \textit{\footnotesize Cr Rose Dieng-Kuntz \\ 31400 Toulouse}
+    \end{minipage}
+    
+    \vspace{1cm}
+    
+    \noindent
+    \begin{minipage}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=4cm, height=2cm, keepaspectratio]{images/inst3.png} \\
+        \vspace{0.2cm}
+        \textbf{\small LAAS-CNRS} \\
+        \textit{\footnotesize 7 Avenue du Colonel Roche \\ 31400 Toulouse}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=4cm, height=2cm, keepaspectratio]{images/inst4.png} \\
+        \vspace{0.2cm}
+        \textbf{\small ANITI} \\
+        \textit{\footnotesize 3 Rue Tarfaya \\ 31400 Toulouse}
+    \end{minipage}
+
+    \vspace{2.5cm}
+
+    % Titre du rapport stylisé
+    \begin{center}
+        {\color{mainblue}\rule{\textwidth}{2pt}} \\[0.6cm]
+        {\sffamily \Huge \bfseries Amélioration de Méthodes de Benders pour un Problème de Planification Robuste sous Incertitude} \\[0.4cm] 
+        %{\sffamily \Large Rapport de Stage -- Master 1 IMAI / ROO} \\[0.4cm]
+        {\color{mainblue}\rule{\textwidth}{2pt}}
+    \end{center}
+
+    \vspace{1.5cm}
+
+    % Auteur et Tuteurs (Modification ici pour 2 encadrants)
+    \begin{center}
+        {\Large \textbf{Mathis FRANCINE-HABAS}} \\[1cm]
+        
+        \begin{tabular}{ll}
+            \textbf{Encadrants :} & Christian Artigues (Directeur de Recherche au LAAS-CNRS) \\
+                                  & Romain Guillaume (Enseignant-Chercheur à l'IRIT) \\[0.3cm]
+            \textbf{Tuteur Universitaire :} & Mohammed Sbihi (Enseignant-Chercheur à l’ENAC)
+        \end{tabular}
+    \end{center}
+
+    \vfill
+
+    % Date
+    \begin{center}
+        {\large \textbf{Soutenu le :} 31 / 08 / 2026} \\
+        \vspace{0.2cm}
+        {\large 2025-2026}
+    \end{center}
+\end{titlepage}
+
+% --- SOMMAIRE ---
+\clearpage
+\tableofcontents
+\thispagestyle{empty}
+\clearpage
+
+% --- CONTENU DU RAPPORT ---
+\section*{Introduction}
+Voici le tout premier paragraphe de l'introduction. Comme demandé, LaTeX gère les retours à la ligne parfaitement : il n'y a aucun alinéa sur ce premier bloc. La page où débute un chapitre n'a volontairement pas d'en-tête stylisé, c'est le fonctionnement normal.
+
+Dès le deuxième paragraphe, l'alinéa se met en place automatiquement. La combinaison de la typographie serif pour le texte de fond (facile à lire) et de la police sans-serif colorée pour les en-têtes et les titres structure le regard.
+
+\section{Contexte de la recherche}
+Nous allons maintenant passer à la page suivante pour que vous puissiez voir l'en-tête s'afficher correctement, avec l'alternance gauche/droite et le logo.
+
+% Ce texte sert uniquement à passer à la page 2 pour voir l'en-tête en action.
+\lipsum[1-6] 
+
+\chapter{Méthodologie et Implémentation}
+
+\section{Modélisation Mathématique}
+
+Voici comment introduire les concepts formels de manière élégante. Les environnements sont numérotés automatiquement en fonction du chapitre.
+
+\begin{definition}{Problème Maître Restreint (RMP)}{def_rmp}
+Dans le cadre de la décomposition de Benders, le Problème Maître Restreint contient un sous-ensemble des contraintes du problème original. Il coordonne la recherche en proposant une solution partielle qui sera évaluée par le sous-problème.
+\end{definition}
+
+\begin{theoreme}{Convergence de la décomposition}{thm_conv}
+Si le domaine des solutions réalisables est borné et non vide, l'algorithme converge en un nombre fini d'itérations vers l'optimum global du problème de planification.
+\end{theoreme}
+
+\begin{preuve}
+À chaque itération, soit la solution actuelle est optimale, soit une nouvelle coupe (d'optimalité ou de faisabilité) est ajoutée au problème maître. L'espace des coupes possibles étant fini pour un problème linéaire en nombres entiers, l'algorithme ne peut cycler indéfiniment. \hfill $\blacksquare$
+\end{preuve}
+
+\begin{propriete}{Structure des coupes}{}
+Les coupes générées agissent comme des minorants stricts de la fonction objectif dans la région de l'espace explorée.
+\end{propriete}
+
+\section{Pseudo-code de l'Algorithme}
+
+L'environnement \texttt{algorithm2e} est le standard pour les articles scientifiques. Il génère des blocs clairs avec des lignes de structure.
+
+\begin{algorithm}[H]
+    \caption{Décomposition de Benders classique}
+    \KwData{Modèle MILP initial, Tolérance $\epsilon$}
+    \KwResult{Solution optimale $x^*, y^*$}
+    
+    Initialiser le RMP sans coupes\;
+    $UB \leftarrow +\infty$\;
+    $LB \leftarrow -\infty$\;
+    
+    \While{$(UB - LB) > \epsilon$}{
+        Résoudre le RMP pour obtenir $\hat{y}$\;
+        Mettre à jour $LB$\;
+        Résoudre le sous-problème (SP) avec $\hat{y}$ fixé\;
+        
+        \eIf{SP est non-réalisable}{
+            Générer une coupe de faisabilité (rayon extrême)\;
+            Ajouter la coupe au RMP\;
+        }{
+            Mettre à jour $UB$\;
+            Générer une coupe d'optimalité (point extrême)\;
+            Ajouter la coupe au RMP\;
+        }
+    }
+    \Return{Solution courante}
+\end{algorithm}
+
+\section{Implémentation en C++}
+
+Pour l'implémentation de nos heuristiques, nous utilisons les fonctionnalités modernes du langage. Le code est indenté et coloré de manière sobre.
+
+\begin{lstlisting}[caption={Ajout d'une coupe d'optimalité au solveur}, label={lst:cut_benders}]
+#include <iostream>
+#include <vector>
+
+// Fonction permettant d'ajouter une coupe au modele
+void addOptimalityCut(Model& masterProblem, const DualSolution& pi, double objVal) {
+    Expr cutExpression;
+    
+    // Construction de la coupe basique : theta >= pi^T * (b - B*y)
+    for (size_t i = 0; i < pi.size(); ++i) {
+        cutExpression += pi[i] * masterProblem.getSlack(i);
+    }
+    
+    // Ajout effectif de la contrainte au probleme maitre
+    masterProblem.addConstraint( masterProblem.getTheta() >= cutExpression );
+    
+    std::cout << "Coupe ajoutee avec succes." << std::endl;
+}
+\end{lstlisting}
+
+
+\end{document}
