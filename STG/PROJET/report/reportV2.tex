@@ -1,30 +1,32 @@
 \documentclass[12pt, a4paper, twoside]{report}
 
-% --- Encodage et Langue ---
+% ======================================== Encodage et Langue ========================================
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[french]{babel}
+\frenchsetup{IndentFirst=false}
 
-% --- Typographie et Couleurs ---
+% ======================================== Typographie et Couleurs ========================================
 \usepackage{mathpazo} % Police élégante (Palatino) pour le corps du texte
 \usepackage{helvet}   % Police sans-serif propre pour les titres
 \usepackage{xcolor}
 \definecolor{mainblue}{RGB}{0, 68, 124} % Bleu institutionnel profond
 \definecolor{darkgray}{RGB}{80, 80, 80}
 
-% --- Mise en page ---
+% ======================================== Mise en page ========================================
 \usepackage[top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
 \usepackage{graphicx}
 \usepackage{setspace}
 \setstretch{1.15} % Aère le texte pour un rendu plus premium
 
-% ==========================================
+% ================================================================================
 % PACKAGES POUR LES MATHS, LE CODE ET L'ALGO
-% ==========================================
+% ================================================================================
 
 % --- Mathématiques ---
 \usepackage{amsmath, amssymb, amsthm}
 \usepackage[most]{tcolorbox} % Pour les boîtes stylisées
+\usepackage{acronym}
 
 % Définition de couleurs douces pour les fonds
 \definecolor{bgcode}{RGB}{248, 248, 248} % Gris très clair pour le code
@@ -52,10 +54,10 @@
 \newtcbtheorem[number within=chapter]{definition}{Définition}{mathstyle}{def}
 \newtcbtheorem[number within=chapter]{propriete}{Propriété}{mathstyle}{prop}
 
-% Boîte spécifique et plus légère pour les Preuves (sans fond, juste un trait à gauche)
+% Boîte spécifique et plus légère pour les Preuves
 \newtcolorbox{preuve}{
     empty,
-    borderline west={2pt}{0pt}{mainblue!60}, % Ligne verticale bleue à gauche
+    borderline west={2pt}{0pt}{mainblue!60},
     left=10pt,
     title={\textit{\textbf{Preuve.}}},
     coltitle=black,
@@ -68,18 +70,18 @@
 \lstset{
     language=C++,
     backgroundcolor=\color{bgcode},
-    basicstyle=\ttfamily\footnotesize, % Police machine à écrire
+    basicstyle=\ttfamily\footnotesize,
     keywordstyle=\color{mainblue}\bfseries,
     stringstyle=\color{darkgray},
     commentstyle=\color{teal}\itshape,
-    numbers=left,                      % Numéros de ligne à gauche
+    numbers=left,
     numberstyle=\tiny\color{gray},
     stepnumber=1,
     numbersep=8pt,
-    frame=l,                           % Ligne verticale à gauche
+    frame=l,
     framesep=5pt,
     rulecolor=\color{mainblue},
-    breaklines=true,                   % Retour à la ligne automatique
+    breaklines=true,
     tabsize=4,
     showstringspaces=false
 }
@@ -104,7 +106,7 @@
 % --- En-têtes et Pieds de page ---
 \usepackage{fancyhdr}
 \pagestyle{fancy}
-\fancyhf{} % On vide tout par défaut
+\fancyhf{}
 \renewcommand{\chaptermark}[1]{\markboth{#1}{}}
 
 % Configuration selon ta demande :
@@ -132,21 +134,35 @@
 \renewcommand{\thesubsubsection}{\Roman{subsubsection}}
 \renewcommand{\theparagraph}{\Roman{paragraph}}
 
-% --- Paragraphes (gestion native de LaTeX) ---
-\setlength{\parindent}{1.5em} % Tabulation pour les paragraphes suivants
-\setlength{\parskip}{0.4em}   % Espace léger entre les paragraphes
+% MATHS SHORTHANDS
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\U}{\mathbb{U}}
+\newcommand{\K}{\mathbb{K}}
+\newcommand{\M}{\mathcal{M}}
+\newcommand{\B}{\mathcal{B}}
+
+\renewcommand{\epsilon}{\varepsilon}
+\renewcommand{\phi}{\varphi}
+\renewcommand{\rho}{\varrho}
+
+% --- Paragraphes ---
+%\setlength{\parindent}{1.5em} % Tabulation pour les paragraphes suivants
+%\setlength{\parskip}{0.4em}   % Espace léger entre les paragraphes
 
 % --- Package pour générer du faux texte (à supprimer plus tard) ---
 \usepackage{lipsum}
 
-% --- DÉBUT DU DOCUMENT ---
+% ======================================== DÉBUT DU DOCUMENT ========================================
 \begin{document}
 
-% --- PAGE DE GARDE ---
+% ======================================== PAGE DE GARDE ========================================
 \begin{titlepage}
     \pagecolor{white}
     
-    % Matrice 2x2 des instituts (Logos + Noms + Adresses)
     \noindent
     \begin{minipage}[t]{0.48\textwidth}
         \centering
@@ -158,7 +174,7 @@
     \hfill
     \begin{minipage}[t]{0.48\textwidth}
         \centering
-        \includegraphics[width=4cm, height=2cm, keepaspectratio]{images/inst1.png} \\
+        \includegraphics[width=4cm, height=2cm, keepaspectratio]{images/inst1_1.png} \\
         \vspace{0.2cm}
         \textbf{\small Institut de Recherche en Informatique de Toulouse} \\
         \textit{\footnotesize Cr Rose Dieng-Kuntz \\ 31400 Toulouse}
@@ -179,13 +195,12 @@
         \centering
         \includegraphics[width=4cm, height=2cm, keepaspectratio]{images/inst4.png} \\
         \vspace{0.2cm}
-        \textbf{\small ANITI} \\
+        \textbf{\small Artificial and Natural Intelligence Toulouse Institute} \\
         \textit{\footnotesize 3 Rue Tarfaya \\ 31400 Toulouse}
     \end{minipage}
 
     \vspace{2.5cm}
 
-    % Titre du rapport stylisé
     \begin{center}
         {\color{mainblue}\rule{\textwidth}{2pt}} \\[0.6cm]
         {\sffamily \Huge \bfseries Amélioration de Méthodes de Benders pour un Problème de Planification Robuste sous Incertitude} \\[0.4cm] 
@@ -195,14 +210,13 @@
 
     \vspace{1.5cm}
 
-    % Auteur et Tuteurs (Modification ici pour 2 encadrants)
     \begin{center}
         {\Large \textbf{Mathis FRANCINE-HABAS}} \\[1cm]
         
         \begin{tabular}{ll}
-            \textbf{Encadrants :} & Christian Artigues (Directeur de Recherche au LAAS-CNRS) \\
-                                  & Romain Guillaume (Enseignant-Chercheur à l'IRIT) \\[0.3cm]
-            \textbf{Tuteur Universitaire :} & Mohammed Sbihi (Enseignant-Chercheur à l’ENAC)
+            \textbf{Encadrants:} & Christian Artigues \hfill (Directeur de Recherche au LAAS-CNRS) \\
+                                  & Romain Guillaume \hfill (Enseignant-Chercheur à l'IRIT) \\[0.3cm]
+            \textbf{Tuteur Universitaire:} & Mohammed Sbihi \hfill (Enseignant-Chercheur à l’ENAC)
         \end{tabular}
     \end{center}
 
@@ -216,13 +230,57 @@
     \end{center}
 \end{titlepage}
 
-% --- SOMMAIRE ---
+% ======================================== REMERCIEMENTS ========================================
+
+\clearpage
+\newgeometry{top=4cm, bottom=4cm, left=3.5cm, right=3.5cm} 
+\thispagestyle{empty}
+
+\vspace*{\fill}
+
+\begin{center}
+    {\sffamily \Huge \bfseries \textcolor{mainblue}{Remerciements}} \\[1.5cm]
+\end{center}
+
+\begin{spacing}{2}
+Je tiens à remercier toutes les personnes qui ont contribué, de près ou de loin, à la réalisation de ce stage et à la rédaction de ce rapport.
+
+Je remercie tout particulièrement Messieurs Christian Artigues et Romain Guillaume pour la confiance qu'ils m'ont accordée ainsi que pour leur aide tout au long de ce projet de recherche.
+
+Je souhaite également remercier l'ensemble de mes professeurs pour la qualité de leur enseignement, 
+qui m'ont permis d'acquérir les connaissances nécessaires à la réussite de ma formation et de ce stage.
+\end{spacing}
+
+\vspace{1.5cm}
+\begin{flushright}
+    \textit{Mathis FRANCINE-HABAS}
+\end{flushright}
+
+\vspace*{\fill}
+
+\clearpage
+\restoregeometry
+% ========================================
+
+% ======================================== SOMMAIRES ========================================
 \clearpage
 \tableofcontents
 \thispagestyle{empty}
-\clearpage
 
-% --- CONTENU DU RAPPORT ---
+\clearpage
+% \begin{figure}...\caption{}...\end{figure})
+\listoffigures
+
+\clearpage
+% \begin{table}...\caption{}...\end{table})
+\listoftables
+
+\clearpage
+\section*{List of Acronyms}
+%\addcontentsline{toc}{section}{List of Acronyms}
+
+% ======================================== CONTENU DU RAPPORT ========================================
+\clearpage
 \section*{Introduction}
 Voici le tout premier paragraphe de l'introduction. Comme demandé, LaTeX gère les retours à la ligne parfaitement : il n'y a aucun alinéa sur ce premier bloc. La page où débute un chapitre n'a volontairement pas d'en-tête stylisé, c'est le fonctionnement normal.
 
@@ -231,9 +289,10 @@ Dès le deuxième paragraphe, l'alinéa se met en place automatiquement. La comb
 \section{Contexte de la recherche}
 Nous allons maintenant passer à la page suivante pour que vous puissiez voir l'en-tête s'afficher correctement, avec l'alternance gauche/droite et le logo.
 
+%========================================
 % Ce texte sert uniquement à passer à la page 2 pour voir l'en-tête en action.
 \lipsum[1-6] 
-
+%========================================
 \chapter{Méthodologie et Implémentation}
 
 \section{Modélisation Mathématique}
