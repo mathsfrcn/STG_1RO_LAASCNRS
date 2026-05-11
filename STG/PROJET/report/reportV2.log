@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (MiKTeX 24.1) (preloaded format=pdflatex 2025.11.14)  10 MAY 2026 22:45
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (MiKTeX 24.1) (preloaded format=pdflatex 2025.11.14)  11 MAY 2026 20:39
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -615,53 +615,44 @@ Package: fancyhdr 2025/02/07 v5.2 Extensive control of page headers and footers
 \f@nch@widthC=\skip89
 \f@nch@widthR=\skip90
 \@temptokenb=\toks50
-) (C:\Users\Mathis\AppData\Local\Programs\MiKTeX\tex/latex/lipsum\lipsum.sty (C:\Users\Mathis\AppData\Local\Programs\MiKTeX\tex/latex/l3packages/l3keys2e\l3keys2e.sty (C:\Users\Mathis\AppData\Local\Programs\MiKTeX\tex/latex/l3kernel\expl3.sty
-Package: expl3 2024-01-04 L3 programming layer (loader) 
- (C:\Users\Mathis\AppData\Local\Programs\MiKTeX\tex/latex/l3backend\l3backend-pdftex.def
+)
+LaTeX Font Info:    Trying to load font information for T1+ppl on input line 157.
+ (C:\Users\Mathis\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\t1ppl.fd
+File: t1ppl.fd 2001/06/04 font definitions for T1/ppl.
+) (C:\Users\Mathis\AppData\Local\Programs\MiKTeX\tex/latex/l3backend\l3backend-pdftex.def
 File: l3backend-pdftex.def 2024-01-04 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count335
 \l__pdf_internal_box=\box88
-))
-Package: l3keys2e 2023-10-10 LaTeX2e option processing using LaTeX3 keys
-)
-Package: lipsum 2021-09-20 v2.7 150 paragraphs of Lorem Ipsum dummy text
-\g__lipsum_par_int=\count336
-\l__lipsum_a_int=\count337
-\l__lipsum_b_int=\count338
- (C:\Users\Mathis\AppData\Local\Programs\MiKTeX\tex/latex/lipsum\lipsum.ltd.tex))
-LaTeX Font Info:    Trying to load font information for T1+ppl on input line 160.
- (C:\Users\Mathis\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\t1ppl.fd
-File: t1ppl.fd 2001/06/04 font definitions for T1/ppl.
 ) (reportV2.aux)
 \openout1 = `reportV2.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 160.
-LaTeX Font Info:    ... okay on input line 160.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 160.
-LaTeX Font Info:    ... okay on input line 160.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 160.
-LaTeX Font Info:    ... okay on input line 160.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 160.
-LaTeX Font Info:    ... okay on input line 160.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 160.
-LaTeX Font Info:    ... okay on input line 160.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 160.
-LaTeX Font Info:    ... okay on input line 160.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 160.
-LaTeX Font Info:    ... okay on input line 160.
-LaTeX Info: Redefining \degres on input line 160.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 157.
+LaTeX Font Info:    ... okay on input line 157.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 157.
+LaTeX Font Info:    ... okay on input line 157.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 157.
+LaTeX Font Info:    ... okay on input line 157.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 157.
+LaTeX Font Info:    ... okay on input line 157.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 157.
+LaTeX Font Info:    ... okay on input line 157.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 157.
+LaTeX Font Info:    ... okay on input line 157.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 157.
+LaTeX Font Info:    ... okay on input line 157.
+LaTeX Info: Redefining \degres on input line 157.
  (C:\Users\Mathis\AppData\Local\Programs\MiKTeX\tex/context/base/mkii\supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count339
+\scratchcounter=\count336
 \scratchdimen=\dimen295
 \scratchbox=\box89
-\nofMPsegments=\count340
-\nofMParguments=\count341
+\nofMPsegments=\count337
+\nofMParguments=\count338
 \everyMPshowfont=\toks51
-\MPscratchCnt=\count342
+\MPscratchCnt=\count339
 \MPscratchDim=\dimen296
-\MPnumerator=\count343
-\makeMPintoPDFobject=\count344
+\MPnumerator=\count340
+\makeMPintoPDFobject=\count341
 \everyMPtoPDFconversion=\toks52
 ) (C:\Users\Mathis\AppData\Local\Programs\MiKTeX\tex/latex/epstopdf-pkg\epstopdf-base.sty
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
@@ -703,65 +694,65 @@ File: epstopdf-sys.cfg 2021/03/18 v2.0 Configuration of epstopdf for MiKTeX
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
-\c@lstlisting=\count345
+\c@lstlisting=\count342
 <images/inst5.png, id=40, 823.075pt x 344.28625pt>
 File: images/inst5.png Graphic file (type png)
 <use images/inst5.png>
-Package pdftex.def Info: images/inst5.png  used on input line 169.
+Package pdftex.def Info: images/inst5.png  used on input line 168.
 (pdftex.def)             Requested size: 113.81053pt x 47.60611pt.
 <images/inst1_1.png, id=41, 216.81pt x 93.34875pt>
 File: images/inst1_1.png Graphic file (type png)
 <use images/inst1_1.png>
-Package pdftex.def Info: images/inst1_1.png  used on input line 177.
+Package pdftex.def Info: images/inst1_1.png  used on input line 176.
 (pdftex.def)             Requested size: 113.81041pt x 49.0017pt.
 <images/inst3.png, id=43, 315.1775pt x 161.60374pt>
 File: images/inst3.png Graphic file (type png)
 <use images/inst3.png>
-Package pdftex.def Info: images/inst3.png  used on input line 188.
+Package pdftex.def Info: images/inst3.png  used on input line 187.
 (pdftex.def)             Requested size: 110.98225pt x 56.9049pt.
 <images/inst4.png, id=44, 356.33125pt x 142.5325pt>
 File: images/inst4.png Graphic file (type png)
 <use images/inst4.png>
-Package pdftex.def Info: images/inst4.png  used on input line 196.
+Package pdftex.def Info: images/inst4.png  used on input line 195.
 (pdftex.def)             Requested size: 113.81084pt x 45.52432pt.
-LaTeX Font Info:    Trying to load font information for T1+phv on input line 206.
+LaTeX Font Info:    Trying to load font information for T1+phv on input line 205.
 (C:\Users\Mathis\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\t1phv.fd
 File: t1phv.fd 2020/03/25 scalable font definitions for T1/phv.
 )
-LaTeX Font Info:    Trying to load font information for OT1+ppl on input line 216.
+LaTeX Font Info:    Trying to load font information for OT1+ppl on input line 215.
  (C:\Users\Mathis\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ot1ppl.fd
 File: ot1ppl.fd 2001/06/04 font definitions for OT1/ppl.
 )
-LaTeX Font Info:    Trying to load font information for OML+zplm on input line 216.
+LaTeX Font Info:    Trying to load font information for OML+zplm on input line 215.
  (C:\Users\Mathis\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\omlzplm.fd
 File: omlzplm.fd 2002/09/08 Fontinst v1.914 font definitions for OML/zplm.
 )
-LaTeX Font Info:    Trying to load font information for OMS+zplm on input line 216.
+LaTeX Font Info:    Trying to load font information for OMS+zplm on input line 215.
  (C:\Users\Mathis\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\omszplm.fd
 File: omszplm.fd 2002/09/08 Fontinst v1.914 font definitions for OMS/zplm.
 )
-LaTeX Font Info:    Trying to load font information for OMX+zplm on input line 216.
+LaTeX Font Info:    Trying to load font information for OMX+zplm on input line 215.
  (C:\Users\Mathis\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\omxzplm.fd
 File: omxzplm.fd 2002/09/08 Fontinst v1.914 font definitions for OMX/zplm.
 )
-LaTeX Font Info:    Trying to load font information for OT1+zplm on input line 216.
+LaTeX Font Info:    Trying to load font information for OT1+zplm on input line 215.
  (C:\Users\Mathis\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ot1zplm.fd
 File: ot1zplm.fd 2002/09/08 Fontinst v1.914 font definitions for OT1/zplm.
 )
 LaTeX Font Info:    Font shape `U/msa/m/n' will be
-(Font)              scaled to size 12.50409pt on input line 216.
+(Font)              scaled to size 12.50409pt on input line 215.
 LaTeX Font Info:    Font shape `U/msa/m/n' will be
-(Font)              scaled to size 9.37807pt on input line 216.
+(Font)              scaled to size 9.37807pt on input line 215.
 LaTeX Font Info:    Font shape `U/msa/m/n' will be
-(Font)              scaled to size 7.29405pt on input line 216.
+(Font)              scaled to size 7.29405pt on input line 215.
 LaTeX Font Info:    Font shape `U/msb/m/n' will be
-(Font)              scaled to size 12.50409pt on input line 216.
+(Font)              scaled to size 12.50409pt on input line 215.
 LaTeX Font Info:    Font shape `U/msb/m/n' will be
-(Font)              scaled to size 9.37807pt on input line 216.
+(Font)              scaled to size 9.37807pt on input line 215.
 LaTeX Font Info:    Font shape `U/msb/m/n' will be
-(Font)              scaled to size 7.29405pt on input line 216.
+(Font)              scaled to size 7.29405pt on input line 215.
 
-Overfull \hbox (6.77534pt too wide) in paragraph at lines 216--221
+Overfull \hbox (6.77534pt too wide) in paragraph at lines 215--220
  [][] 
  []
 
@@ -829,7 +820,7 @@ Overfull \hbox (6.77534pt too wide) in paragraph at lines 216--221
 ]
 File: images/inst5.png Graphic file (type png)
 <use images/inst5.png>
-Package pdftex.def Info: images/inst5.png  used on input line 283.
+Package pdftex.def Info: images/inst5.png  used on input line 284.
 (pdftex.def)             Requested size: 68.02007pt x 28.45274pt.
 
 
@@ -844,7 +835,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 ]
 File: images/inst5.png Graphic file (type png)
 <use images/inst5.png>
-Package pdftex.def Info: images/inst5.png  used on input line 289.
+Package pdftex.def Info: images/inst5.png  used on input line 290.
 (pdftex.def)             Requested size: 68.02007pt x 28.45274pt.
 
 
@@ -854,12 +845,12 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-19.72638pt}.
 
-[7
+[1
 
 ]
 File: images/inst5.png Graphic file (type png)
 <use images/inst5.png>
-Package pdftex.def Info: images/inst5.png  used on input line 303.
+Package pdftex.def Info: images/inst5.png  used on input line 301.
 (pdftex.def)             Requested size: 68.02007pt x 28.45274pt.
 
 
@@ -869,12 +860,14 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-19.72638pt}.
 
-[8
+[2
+
+] [2
 
 ]
 File: images/inst5.png Graphic file (type png)
 <use images/inst5.png>
-Package pdftex.def Info: images/inst5.png  used on input line 311.
+Package pdftex.def Info: images/inst5.png  used on input line 319.
 (pdftex.def)             Requested size: 68.02007pt x 28.45274pt.
 
 
@@ -884,12 +877,12 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-19.72638pt}.
 
-[9
+[3
 
 ]
 File: images/inst5.png Graphic file (type png)
 <use images/inst5.png>
-Package pdftex.def Info: images/inst5.png  used on input line 311.
+Package pdftex.def Info: images/inst5.png  used on input line 333.
 (pdftex.def)             Requested size: 68.02007pt x 28.45274pt.
 
 
@@ -899,35 +892,53 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-19.72638pt}.
 
-[10]
-Chapitre 1.
-LaTeX Font Info:    Trying to load font information for T1+cmtt on input line 335.
+[4
+
+]
+File: images/inst5.png Graphic file (type png)
+<use images/inst5.png>
+Package pdftex.def Info: images/inst5.png  used on input line 336.
+(pdftex.def)             Requested size: 68.02007pt x 28.45274pt.
+
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 31.72638pt, for example:
+(fancyhdr)                \setlength{\headheight}{31.72638pt}.
+(fancyhdr)                You might also make \topmargin smaller:
+(fancyhdr)                \addtolength{\topmargin}{-19.72638pt}.
+
+[5
+
+]
+Annexe A.
+LaTeX Font Info:    Trying to load font information for T1+cmtt on input line 368.
 (C:\Users\Mathis\AppData\Local\Programs\MiKTeX\tex/latex/base\t1cmtt.fd
 File: t1cmtt.fd 2023/04/13 v2.5m Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `U/msa/m/n' will be
-(Font)              scaled to size 11.40997pt on input line 339.
+(Font)              scaled to size 11.40997pt on input line 372.
 LaTeX Font Info:    Font shape `U/msa/m/n' will be
-(Font)              scaled to size 8.33606pt on input line 339.
+(Font)              scaled to size 8.33606pt on input line 372.
 LaTeX Font Info:    Font shape `U/msa/m/n' will be
-(Font)              scaled to size 6.25204pt on input line 339.
+(Font)              scaled to size 6.25204pt on input line 372.
 LaTeX Font Info:    Font shape `U/msb/m/n' will be
-(Font)              scaled to size 11.40997pt on input line 339.
+(Font)              scaled to size 11.40997pt on input line 372.
 LaTeX Font Info:    Font shape `U/msb/m/n' will be
-(Font)              scaled to size 8.33606pt on input line 339.
+(Font)              scaled to size 8.33606pt on input line 372.
 LaTeX Font Info:    Font shape `U/msb/m/n' will be
-(Font)              scaled to size 6.25204pt on input line 339.
+(Font)              scaled to size 6.25204pt on input line 372.
 
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [11
+ [6
+
 
 ]
 LaTeX Font Info:    Font shape `T1/cmtt/bx/n' in size <10> not available
-(Font)              Font shape `T1/cmtt/m/n' tried instead on input line 368.
+(Font)              Font shape `T1/cmtt/m/n' tried instead on input line 401.
 File: images/inst5.png Graphic file (type png)
 <use images/inst5.png>
-Package pdftex.def Info: images/inst5.png  used on input line 388.
+Package pdftex.def Info: images/inst5.png  used on input line 421.
 (pdftex.def)             Requested size: 68.02007pt x 28.45274pt.
 
 
@@ -937,24 +948,24 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                You might also make \topmargin smaller:
 (fancyhdr)                \addtolength{\topmargin}{-19.72638pt}.
 
-[12] (reportV2.aux)
+[7] (reportV2.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-04>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 26994 strings out of 474486
- 560196 string characters out of 5743282
+ 26562 strings out of 474486
+ 549593 string characters out of 5743282
  2054542 words of memory out of 5000000
- 48776 multiletter control sequences out of 15000+600000
+ 48358 multiletter control sequences out of 15000+600000
  614079 words of font info for 129 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 93i,22n,99p,511b,1364s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 93i,22n,99p,834b,1362s stack positions out of 10000i,1000n,20000p,200000b,200000s
  <C:\Users\Mathis\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecit1000.pk> <C:\Users\Mathis\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ectt1000.pk> <C:\Users\Mathis\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ectt1200.pk><C:/Users/Mathis/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/Mathis/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/Mathis/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/Mathis/AppData/Local/Programs/MiKTeX/fonts/type1/public/mathpazo/fplmr.pfb><C:/Users/Mathis/AppData/Local/Programs/MiKTeX/fonts/type1/public/mathpazo/fplmri.pfb><C:/Users/Mathis/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msam10.pfb><C:/Users/Mathis/AppData/Local/Programs/MiKTeX/fonts/type1/urw/helvetic/uhvb8a.pfb><C:/Users/Mathis/AppData/Local/Programs/MiKTeX/fonts/type1/urw/helvetic/uhvr8a.pfb><C:/Users/Mathis/AppData/Local/Programs/MiKTeX/fonts/type1/urw/palatino/uplb8a.pfb><C:/Users/Mathis/AppData/Local/Programs/MiKTeX/fonts/type1/urw/palatino/uplbi8a.pfb><C:/Users/Mathis/AppData/Local/Programs/MiKTeX/fonts/type1/urw/palatino/uplr8a.pfb><C:/Users/Mathis/AppData/Local/Programs/MiKTeX/fonts/type1/urw/palatino/uplri8a.pfb>
-Output written on reportV2.pdf (12 pages, 270960 bytes).
+Output written on reportV2.pdf (14 pages, 269300 bytes).
 PDF statistics:
- 260 PDF objects out of 1000 (max. 8388607)
+ 267 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
  177 words of extra memory for PDF output out of 10000 (max. 10000000)
 

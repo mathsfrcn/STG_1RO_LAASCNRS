@@ -1,7 +1,15 @@
 \babel@toc {french}{}\relax 
-\contentsline {section}{\numberline {I}Contexte de la recherche}{8}{}%
-\contentsline {section}{\numberline {II}Contexte de la recherche}{9}{}%
-\contentsline {chapter}{\numberline {1}Méthodologie et Implémentation}{11}{}%
-\contentsline {section}{\numberline {I}Modélisation Mathématique}{11}{}%
-\contentsline {section}{\numberline {II}Pseudo-code de l'Algorithme}{11}{}%
-\contentsline {section}{\numberline {III}Implémentation en C++}{12}{}%
+\contentsline {section}{\numberline {I}Contexte de la recherche}{2}{}%
+\contentsline {section}{\numberline {II}Présentation du travail effectué}{3}{}%
+\contentsline {subsection}{\numberline {II.I}Objectifs}{3}{}%
+\contentsline {subsection}{\numberline {II.II}Propositions}{3}{}%
+\contentsline {subsection}{\numberline {II.III}Résultats}{3}{}%
+\contentsline {section}{\numberline {III}Conclusion}{4}{}%
+\contentsline {subsection}{\numberline {III.I}Synthèse sur le travail effectué}{4}{}%
+\contentsline {subsection}{\numberline {III.II}Apports professionnels}{4}{}%
+\contentsline {subsection}{\numberline {III.III}Apports techniques}{4}{}%
+\contentsline {section}{\numberline {IV}Annexes}{5}{}%
+\contentsline {chapter}{\numberline {A}Méthodologie et Implémentation}{6}{}%
+\contentsline {section}{\numberline {I}Modélisation Mathématique}{6}{}%
+\contentsline {section}{\numberline {II}Pseudo-code de l'Algorithme}{6}{}%
+\contentsline {section}{\numberline {III}Implémentation en C++}{7}{}%

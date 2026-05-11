@@ -120,7 +120,7 @@
 
 % À gauche : Alternance (LO = Left Odd / LE = Left Even)
 \fancyhead[LO]{\textcolor{mainblue}{\sffamily \textbf{Rapport de Stage}}}
-\fancyhead[LE]{\textcolor{mainblue}{\sffamily \textbf{Mathis Francine-Habas}}} % Nom du chapitre
+\fancyhead[LE]{\textcolor{mainblue}{\sffamily \textbf{Mathis Francine-Habas}}}
 
 % Pied de page : Numéro au centre
 \fancyfoot[C]{\sffamily \thepage}
@@ -130,9 +130,9 @@
 \renewcommand{\headrule}{\hbox to\headwidth{\color{mainblue}\leaders\hrule height \headrulewidth\hfill}}
 
 \renewcommand{\thesection}{\Roman{section}}
-\renewcommand{\thesubsection}{\Roman{subsection}}
-\renewcommand{\thesubsubsection}{\Roman{subsubsection}}
-\renewcommand{\theparagraph}{\Roman{paragraph}}
+\renewcommand{\thesubsection}{\thesection.\Roman{subsection}}
+\renewcommand{\thesubsubsection}{\thesubsection.\Roman{subsubsection}}
+\renewcommand{\theparagraph}{\thesubsubsection.\Roman{paragraph}}
 
 % MATHS SHORTHANDS
 \newcommand{\C}{\mathbb{C}}
@@ -153,11 +153,10 @@
 %\setlength{\parindent}{1.5em} % Tabulation pour les paragraphes suivants
 %\setlength{\parskip}{0.4em}   % Espace léger entre les paragraphes
 
-% --- Package pour générer du faux texte (à supprimer plus tard) ---
-\usepackage{lipsum}
-
 % ======================================== DÉBUT DU DOCUMENT ========================================
 \begin{document}
+
+\pagenumbering{roman}
 
 % ======================================== PAGE DE GARDE ========================================
 \begin{titlepage}
@@ -168,8 +167,8 @@
         \centering
         \includegraphics[width=4cm, height=2cm, keepaspectratio]{images/inst5.png} \\
         \vspace{0.2cm}
-        \textbf{\small Université de Toulouse} \\
-        \textit{\footnotesize 118 Route de Narbonne \\ 31062 Toulouse Cedex 9}
+        \textbf{\small Ecole Nationale de l'Aviation Civile} \\
+        \textit{\footnotesize 7 Av. Edouard Belin \\ 31400 Toulouse Cedex 9}
     \end{minipage}
     \hfill
     \begin{minipage}[t]{0.48\textwidth}
@@ -263,6 +262,7 @@ qui m'ont permis d'acquérir les connaissances nécessaires à la réussite de m
 % ========================================
 
 % ======================================== SOMMAIRES ========================================
+
 \clearpage
 \tableofcontents
 \thispagestyle{empty}
@@ -280,35 +280,68 @@ qui m'ont permis d'acquérir les connaissances nécessaires à la réussite de m
 %\addcontentsline{toc}{section}{List of Acronyms}
 
 % ======================================== CONTENU DU RAPPORT ========================================
+
 \clearpage
+\pagenumbering{arabic}
+
 \section*{Introduction}
-Voici le tout premier paragraphe de l'introduction. Comme demandé, LaTeX gère les retours à la ligne parfaitement : il n'y a aucun alinéa sur ce premier bloc. La page où débute un chapitre n'a volontairement pas d'en-tête stylisé, c'est le fonctionnement normal.
-
-Dès le deuxième paragraphe, l'alinéa se met en place automatiquement. La combinaison de la typographie serif pour le texte de fond (facile à lire) et de la police sans-serif colorée pour les en-têtes et les titres structure le regard.
-
-\clearpage
-\section{Contexte de la recherche}
-
-Le stage s'est déroulé autour de trois organismes de recherche: ANITI pour Artificial and Natural Intelligence Toulouse Institut est un culster labelisé porté par la Communauté d'universités et d'établissements de Toulouse.
-Son objectif est de garantir que les décisions prises par les systèmes d'IA soient explicables, équitables, fiables et robustes afin de permettre leur utilisation dans des secteurs à haut risque.
-
-l'Institut de Recherche en Informatique de Toulouse (IRIT), un laboratoire de recherche publique sous la tutelle de plusieurs établissements dont les universités toulousaines,
-ainsi que le Centre National de la Recherche Scientifique (CNRS), mais également, le Laboratoire d'Analyse et d'Architecture des Systèmes qui est une unité propre du CNRS. Il traite divers sujets tels que la robotique, la micro nano bio technologies (MNBT) ou notamment la recherche théorique et méthodologique pour la conception de lois mathématiques servant à la commande et à la décision.
-
-C'est dans ce cadre, et plus particulièrement dans l'équipe ROC (Recherche sur des problèmes d'Optimisation Combinatoire) qui est à la frontière entre la Recherche Opérationnelle et l'Intelligence Artificielle que s'inscrit mon stage.
-
-
 
 
 \clearpage
 \section{Contexte de la recherche}
-Nous allons maintenant passer à la page suivante pour que vous puissiez voir l'en-tête s'afficher correctement, avec l'alternance gauche/droite et le logo.
 
-%========================================
-% Ce texte sert uniquement à passer à la page 2 pour voir l'en-tête en action.
-\lipsum[1-6] 
-%========================================
+Ce stage s'inscrit au cœur d'un écosystème scientifique toulousain riche, structuré autour d'une collaboration entre trois acteurs majeurs de la recherche en intelligence artificielle et en informatique : l'institut ANITI, l'IRIT et le LAAS-CNRS.
+
+L'impulsion de cette dynamique est notamment portée par ANITI (Artificial and Natural Intelligence Toulouse Institute), un cluster labellisé par la Communauté d'universités et d'établissements de Toulouse. Son ambition est de concevoir des systèmes d'Intelligence Artificielle dont les prises de décision sont explicables, équitables, fiables et robustes, une condition indispensable pour permettre leur déploiement dans des secteurs critiques à haut risque.
+
+Cette volonté de développer des systèmes décisionnels de confiance s'appuie sur l'expertise de deux laboratoires. D'une part, l'Institut de Recherche en Informatique de Toulouse (IRIT), une unité de recherche publique placée sous la tutelle conjointe du Centre National de la Recherche Scientifique (CNRS) et des universités toulousaines. D'autre part, le Laboratoire d'Analyse et d'Architecture des Systèmes (LAAS) est une unité propre du CNRS. Si le LAAS aborde des thématiques très variées, allant de la robotique aux micro-nano-bio-technologies, il se distingue particulièrement par sa recherche théorique et méthodologique sur la conception de lois mathématiques appliquées à la commande et à la décision.
+
+C'est à l'intersection de ces institutions, et plus spécifiquement au sein de l'équipe ROC (Recherche sur des problèmes d'Optimisation Combinatoire) du LAAS, que s'est déroulé mon stage. Positionnée à la frontière entre la Recherche Opérationnelle et l'Intelligence Artificielle, cette équipe offre un cadre scientifique idéal pour aborder les problématiques d'optimisation robuste qui font l'objet de ce rapport.
+
+\clearpage
+\thispagestyle{empty}
+\null
+\addtocounter{page}{-1}
+
+\clearpage
+\section{Présentation du travail effectué}
+
+
+\subsection{Objectifs}
+
+
+\subsection{Propositions}
+
+
+\subsection{Résultats}
+
+
+\clearpage
+\section{Conclusion}
+
+\subsection{Synthèse sur le travail effectué}
+
+
+
+\subsection{Apports professionnels}
+
+
+
+\subsection{Apports techniques}
+
+
+\clearpage
+\section{Annexes}
+
+\clearpage
+\appendix
+
+
+
+
+
 \chapter{Méthodologie et Implémentation}
+
 
 \section{Modélisation Mathématique}
 
