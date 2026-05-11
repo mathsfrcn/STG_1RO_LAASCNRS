@@ -53,8 +53,9 @@ struct Solution_ADV
 
 };
 
-// ==========================================================================================
-struct Decision_tree
+// ====================================================================== IN PROGRESS ==============================================================================================================
+// ====================================================================================================================================================================================
+struct Arc_Decision
 {
 	int t;
 	int i;	// Budget at the start
@@ -62,12 +63,12 @@ struct Decision_tree
 	int type;	// 0 or 1 (overstock / stockout)
 
 	// Definition of two identical arcs
-	bool operator == (const Decision_tree& other) const{
+	bool operator == (const Arc_Decision& other) const{
 		return (t == other.t && i == other.i && j == other.j && type == other.type);
 	}
 };
 
-typedef vector<Decision_tree> Path;
+typedef vector<Arc_Decision> Path;
 
 // =========================================== Calculate the Jaccard distance for the orthogonality heuristic
 
@@ -89,7 +90,50 @@ float calculate_jaccard_distance(const Path& pathA, const Path& pathB){
 	return 1.0f - jaccard_similarity;
 }
 
-// ==========================================================================================
+// =========================================== Recursive extraction of worst-case scenarios following a Depth-First Search
+void extract_paths_dfs(
+	int t,													
+	int j,													// Current node in the backtrack
+	const vector<vector<float> >& pi_value,					// Dynamic programming matrix
+	const vector<vector<vector<vector<float> > > >& costs,	// Original costs
+	const Solution& sol,
+	Path& current_path,
+	vector<Path>& all_paths
+	){
+		// if we went back to the beginning we stop
+		if(t == 0){
+			Path reversed_path = current_path;	// Because we start at the end, we have to reverse the path of this branch
+			reverse(reversed_path.begin(), reversed_path.end());
+			all_paths.push_back(reversed_path);
+			return;
+		}
+
+		// We are trying to figure out where we came from, its like : what was the budget i? to arrive at j at step t
+		for(int i = 0; i <= j; i++){
+
+			if(j <= i + sol.inst.deltat[t-1] && (t != 1 || i == 0)){
+
+				// Check for arc of type 0
+				if(pi_value[t][j] == pi_value[t-1][i] + costs[t][i][j][0]){
+					Arc_Decision arc = {t, i, j, 0};
+					current_path.push_back(arc);
+					extract_paths_dfs(t-1, i, pi_value, costs, sol, current_path, all_paths);
+					current_path.pop_back();
+				}
+
+				// Check for arc of type 1
+				if(pi_value[t][j] == pi_value[t-1][i] + costs[t][i][j][1]){
+					Arc_Decision arc = {t, i, j, 1};
+					current_path.push_back(arc);
+					extract_paths_dfs(t-1, i, p_value, costs, sol, current_path, all_paths);
+					current_path.pop_back();
+				}
+			}
+		}
+	}
+
+// ====================================================================================================================================================================================
+// ====================================================================================================================================================================================
 
 //=========================================== Misc.
 
@@ -538,7 +582,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 	// cout<<"longest path : "<<pi_value[sol.inst.T+1][0]<<endl;
 	
 	//========================== Now the backtrack
-	
+
 	// The variable approx 
 	float sub_OPT;
 	if(pi_value[sol.inst.T+1][0]>=0){
@@ -612,7 +656,8 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 	return arcbool;
 }
 
-// ==========================================================================================
+// =================================================================== IN PROGRESS =================================================================================================================
+// ====================================================================================================================================================================================
 
 // It works in two phases: 
 //		- forward pass : it calculates the worst-case scenario by traversing the graph
@@ -681,6 +726,16 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 	
 	//========================== Now the backtrack with HOG
 
+
+
+
+
+
+
+
+
+
+
 	// The variable approx 
 	float sub_OPT;
 	if(pi_value[sol.inst.T+1][0]>=0){
@@ -690,7 +745,9 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 		sub_OPT = (1-approx_coeff)*pi_value[sol.inst.T+1][0]+pi_value[sol.inst.T+1][0];
 	}
 	
-
+	// A SUPPRIMER
+	/*
+	
 	// t = T+1
 	pi_subopt_bool[sol.inst.T+1][0] = true;
 	for(int i = 0; i<sol.inst.Gamma+1;i++){
@@ -724,6 +781,11 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 			}
 		}
 	}
+	*/
+
+	
+
+
 
 	// Display the subgraph
 	// cout<<"subgraph:"<<endl;
@@ -754,8 +816,8 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 	return arcbool;
 }
 
-// ==========================================================================================
-
+// ====================================================================================================================================================================================
+// ====================================================================================================================================================================================
 
 // Initialize budget graph  with nominal scenario
 vector<vector<vector<vector<int> > > > init_graph(Instance inst){
