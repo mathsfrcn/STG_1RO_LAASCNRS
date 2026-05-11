@@ -1,6 +1,6 @@
 #include <ilcplex/ilocplex.h>
-#include<vector>
-#include<string>
+#include <vector>
+#include <string>
 #include <bits/stdc++.h> 
 #include <ctime>
 #include <algorithm>
@@ -52,6 +52,44 @@ struct Solution_ADV
 	vector<float> dt;
 
 };
+
+// ==========================================================================================
+struct Decision_tree
+{
+	int t;
+	int i;	// Budget at the start
+	int j;	// Budget at the end
+	int type;	// 0 or 1 (overstock / stockout)
+
+	// Definition of two identical arcs
+	bool operator == (const Decision_tree& other) const{
+		return (t == other.t && i == other.i && j == other.j && type == other.type);
+	}
+};
+
+typedef vector<Decision_tree> Path;
+
+// =========================================== Calculate the Jaccard distance for the orthogonality heuristic
+
+float calculate_jaccard_distance(const Path& pathA, const Path& pathB){
+	int intersection_size = 0;
+
+	for(size_t k = 0; k < pathA.size(); k++){
+		if(pathA[k] == pathB[k]){
+			intersection_size++;
+		}
+	}
+
+	int union_size = pathA.size() + pathB.size() - intersection_size;
+
+	// Calculate the Jaccard index
+	float jaccard_similarity = (float)intersection_size / (float)union_size;
+
+	// Return the dissimilarity
+	return 1.0f - jaccard_similarity;
+}
+
+// ==========================================================================================
 
 //=========================================== Misc.
 
@@ -500,6 +538,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 	// cout<<"longest path : "<<pi_value[sol.inst.T+1][0]<<endl;
 	
 	//========================== Now the backtrack
+	
 	// The variable approx 
 	float sub_OPT;
 	if(pi_value[sol.inst.T+1][0]>=0){
@@ -572,6 +611,151 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 	// }
 	return arcbool;
 }
+
+// ==========================================================================================
+
+// It works in two phases: 
+//		- forward pass : it calculates the worst-case scenario by traversing the graph
+//		- backpropagation : it retrieves the most interesting sub-graph (containing the worst-case scenario)
+// In this alternative, we had initialized the orthogonality heuristic 
+vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, float approx_coeff){
+	vector<vector<vector<vector<int> > > > arcbool; // Bool flag to arcs within the worsts scenarios (if a specific decision by the opponent is part of the subgraph)
+	vector<vector<float> > pi_value; 				// Value of the longest path to pi[t][j] (It stores the "maximum cumulative cost" to reach period t having consumed j budget units)
+	vector<vector<bool> > pi_subopt_bool;
+	vector<vector<vector<vector<float> > > > costs = budget_graph_cost(sol); // Costs of all arcs
+
+	pi_value.resize(sol.inst.T+2);
+	pi_subopt_bool.resize(sol.inst.T+2);
+	arcbool.resize(sol.inst.T+2);
+	for(int t = 0; t<sol.inst.T+2;t++){
+		pi_value[t].resize(sol.inst.Gamma+1);
+		pi_subopt_bool[t].resize(sol.inst.Gamma+1);
+		arcbool[t].resize(sol.inst.Gamma+1);
+		for(int i = 0; i<sol.inst.Gamma+1; i++){
+			arcbool[t][i].resize(sol.inst.Gamma+1);
+			for(int j = 0; j<sol.inst.Gamma+1; j++){
+				arcbool[t][i][j].resize(2);
+			}
+		}
+	}
+
+	// Dynamic prog. for longest path
+	float tmp;
+	pi_value[0][0] = 0;	// Start at period 0 cost 0
+	for(int t=1; t<sol.inst.T+1;t++){
+		for(int j = 0; j<sol.inst.Gamma+1; j++){
+			tmp = pi_value[t-1][j]+costs[t][j][j][0]; 	// Init of pi_value[t][j]
+														// It's the value of the dual problem that will store the value of the longest path from the start to t, having consumed j units of budget
+			for(int i = 0; i<=j; i++){
+				if(j<=i+sol.inst.deltat[t-1]){
+					if(pi_value[t-1][i]+costs[t][i][j][0] > tmp){
+						// if(j== 0){
+						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][0]<<endl;
+						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][1]<<endl;
+						// }
+						tmp = pi_value[t-1][i]+costs[t][i][j][0];	// Maximum cost to reach i + the cost of arc(i, j) in overstock/ stockout and keeps the worst of the two
+					} 
+					if(pi_value[t-1][i]+costs[t][i][j][1] > tmp){
+						// if(j== 0){
+						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][0]<<endl;
+						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][1]<<endl;
+						// }
+						tmp = pi_value[t-1][i]+costs[t][i][j][1];
+					} 
+				}
+			}
+			pi_value[t][j] = tmp;
+		}
+		// cout<<"=============="<<t<<" "<<pi_value[t][0]<<endl;
+	}
+
+	tmp = pi_value[sol.inst.T][0];
+	for(int i = 0; i<sol.inst.Gamma+1;i++){
+		if(pi_value[sol.inst.T][i]>tmp){
+			tmp = pi_value[sol.inst.T][i];
+		} 
+		// cout<<i<<", "<<pi_value[sol.inst.T][i]<<endl;
+	}
+	pi_value[sol.inst.T+1][0] = tmp;	// Longuest path
+	// cout<<"longest path : "<<pi_value[sol.inst.T+1][0]<<endl;
+	
+	//========================== Now the backtrack with HOG
+
+	// The variable approx 
+	float sub_OPT;
+	if(pi_value[sol.inst.T+1][0]>=0){
+		sub_OPT = approx_coeff*pi_value[sol.inst.T+1][0];
+	}
+	else{
+		sub_OPT = (1-approx_coeff)*pi_value[sol.inst.T+1][0]+pi_value[sol.inst.T+1][0];
+	}
+	
+
+	// t = T+1
+	pi_subopt_bool[sol.inst.T+1][0] = true;
+	for(int i = 0; i<sol.inst.Gamma+1;i++){
+		// cout<<i<<" "<<pi_value[sol.inst.T][i]<<" "<<sub_OPT<<endl;
+		if(pi_value[sol.inst.T][i]>=sub_OPT){
+			arcbool[sol.inst.T+1][i][0][0] = 1;
+			arcbool[sol.inst.T+1][i][0][1] = 1;
+			pi_subopt_bool[sol.inst.T][i] = true;
+		} 
+	}
+
+	for(int t=sol.inst.T; t>0; t--){
+		for(int j = 0; j<sol.inst.Gamma+1; j++){
+			for(int i = 0; i<=j; i++){
+				// cout<<t<<" "<<j<<" -> "<<t-1<<" "<<i<<endl;
+				// cout<<" "<<BoolToString(pi_subopt_bool[t][j])<<" "<<pi_value[t][j]<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][0]<<endl;
+				// cout<<" "<<BoolToString(pi_subopt_bool[t][j])<<" "<<pi_value[t][j]<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][1]<<endl;
+				if(pi_subopt_bool[t][j] and j<=i+sol.inst.deltat[t-1] and (t!=1 or i==0)){ //last and is specific for first layer of the graph
+					// if ==, we go through (t, j) in the matrix and we start again form the node (t-1, i)
+					if(pi_value[t][j] == pi_value[t-1][i]+costs[t][i][j][0]){
+						arcbool[t][i][j][0] = 1;
+						pi_subopt_bool[t-1][i] = true;
+						// cout<<"test passed : "<<t<<" "<<j<<" -> "<<t-1<<" "<<i<<" "<<"0"<<endl;
+					}
+					if(pi_value[t][j] == pi_value[t-1][i]+costs[t][i][j][1]){
+						arcbool[t][i][j][1] = 1;
+						pi_subopt_bool[t-1][i] = true;
+						// cout<<"test passed : "<<t<<" "<<j<<" -> "<<t-1<<" "<<i<<" "<<"1"<<endl;
+					}
+				}
+			}
+		}
+	}
+
+	// Display the subgraph
+	// cout<<"subgraph:"<<endl;
+	// stringstream bufft;
+	// for(int t = 0; t<sol.inst.T+2; t++){
+	// 	bufft<<t;
+	// 	bufft<<" ";
+	// }
+	// cout<<bufft.str()<<endl;
+	// for(int i = sol.inst.Gamma; i>=0; i--){
+	// 	string buff = "";
+	// 	for(int t = 0; t<sol.inst.T+2; t++){
+	// 		buff += BoolToString(pi_subopt_bool[t][i])+" " ;
+	// 	}
+	// 	cout<<buff<<endl;
+	// }
+
+	// cout<<endl;
+	// //display the subgraph
+	// for(int i = sol.inst.Gamma; i>=0; i--){
+	// 	stringstream buff;
+	// 	for(int t = 0; t<sol.inst.T+2; t++){
+	// 		buff<< " ";
+	// 		buff<<pi_value[t][i];
+	// 	}
+	// 	cout<<buff.str()<<endl;
+	// }
+	return arcbool;
+}
+
+// ==========================================================================================
+
 
 // Initialize budget graph  with nominal scenario
 vector<vector<vector<vector<int> > > > init_graph(Instance inst){
