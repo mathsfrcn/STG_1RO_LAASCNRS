@@ -15,13 +15,12 @@
 using namespace std;
 using namespace std::chrono;
 
-
 //=========================================== Structures
 
 struct Instance
 {
 	int T, cI, cB, bP;
-	float Gamma;
+	float Gamma;	// Uncertainty budget
 	vector<float> deltat;
 	vector<float> Dt;
 	vector<float> dt;
@@ -57,7 +56,7 @@ struct Solution_ADV
 // ====================================================================================================================================================================================
 struct Arc_Decision
 {
-	int t;
+	int t;	// Time
 	int i;	// Budget at the start
 	int j;	// Budget at the end
 	int type;	// 0 or 1 (overstock / stockout)
@@ -91,6 +90,7 @@ float calculate_jaccard_distance(const Path& pathA, const Path& pathB){
 }
 
 // =========================================== Recursive extraction of worst-case scenarios following a Depth-First Search
+
 void extract_paths_dfs(
 	int t,													
 	int j,													// Current node in the backtrack
@@ -726,17 +726,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 	
 	//========================== Now the backtrack with HOG
 
-
-
-
-
-
-
-
-
-
-
-	// The variable approx 
+	// Tolerance threshold in relation to the worst possible cost
 	float sub_OPT;
 	if(pi_value[sol.inst.T+1][0]>=0){
 		sub_OPT = approx_coeff*pi_value[sol.inst.T+1][0];
@@ -745,6 +735,88 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 		sub_OPT = (1-approx_coeff)*pi_value[sol.inst.T+1][0]+pi_value[sol.inst.T+1][0];
 	}
 	
+	// ================================================== IN PROGRESS ==================================================
+
+	vector<Path> candidate_paths;	// Store the worst-case scenarios
+	Path current_path_buffer;		// Use for recursion
+
+	// After the recursion, candidate_paths contains all the worst-case paths that exceed the sub_OPT budget
+	for(int i = 0; i < sol.inst.Gamma+1; i++){
+		if(pi_value[sol.inst.T][i] >= sub_OPT){
+			extract_paths_dfs(sol.inst.T, i, pi_value, costs, sol, current_path_buffer, candidate_paths);
+		}
+	}
+
+	vector<Path>& selected_paths = candidate_paths;
+
+	int nb_path_to_select = 5;	?
+
+	/*
+		FAIRE CODE GREEDY + JACCARD
+
+		TQ nb_chemin_a_ramener < nb_chemins_voulu ET il existe encore des candidats FAIRE :
+			best_distance = -infini
+			best_candidate = -1
+			POUR CHAQUE candidate FAIRE :
+				initialiser la meilleur distance de jaccard à +infini
+				POUR CHAQUE chemin FAIRE :
+					calculer la distance de jaccard gra^ce à la fonction
+					SI distance < min FAIRE :
+						associer distance à best_distance
+				
+				SI min_distance == best_distance FAIRE :
+					associer best_distance
+					associer best_candidate
+			
+			push_back(candidat)
+			erase(candidat)
+	*/
+
+
+
+	// attention faut choisir le select 
+	// !!!!!!!!!!!!A MODIFIER!!!!!!!!!!!!!!!!!!
+
+	
+	while(selected_paths.size() < nb_path_to_select && !candidate_paths.empty()){
+		float best_max_min_distance = -1.0;
+		int best_candidate_index = -1;
+
+		for(size_t c = 0; c < candidate_paths.size(); c++){
+			float min_distance_selected = 2.0;	// Jaccard distance is in [0, 1]
+			
+			for(size_t s = 0; s < selected_paths.size(); s++){
+				float dist = calculate_jaccard_distance(candidate_paths[c], selected_paths[s]);
+				if(dist < min_distance_selected){
+					min_distance_selected = dist;
+				}
+			}
+
+			if(min_distance_selected > best_max_min_distance){
+				best_max_min_distance = min_distance_selected;
+				best_candidate_index = c;
+			}
+		}
+	}
+
+	// Reser arcbool
+	for(int t = 0; t < sol.inst.T+2; t++){
+		for(int i = 0; i < sol.inst.Gamma+1; i++){
+			for(int j = 0; j < sol.inst.Gamma+1; j++){
+				arcbool[t][i][j][0] = 0;
+				arcbool[t][i][j][1] = 0;
+			}
+		}
+	}
+
+	// Flip only the arcs that are on the paths
+	for(size_t p = 0; p < selected_paths.size(); p++){
+		for(size_t a = 0; a < selected_paths[p].size(); a++){
+			Arc_Decision arc = selected_paths[p][a];
+			arcbool[arc.t][arc.i][arc.j][arc.type] = 1;
+		}
+	}
+
 	// A SUPPRIMER
 	/*
 	
@@ -783,7 +855,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 	}
 	*/
 
-	
+	// =================================================================================================================
 
 
 
