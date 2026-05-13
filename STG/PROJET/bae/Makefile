@@ -8,9 +8,9 @@ CFLAGS=-g -W -m64 -O -fPIC -fno-strict-aliasing -fexceptions -DNDEBUG -DIL_STD -
 #CFLAGS=-W -Wall -m64 -O -fPIC -fno-strict-aliasing -fexceptions -DNDEBUG -DIL_STD 
 
 #CPLEX_DIR=/Users/idir/Applications/IBM/ILOG/CPLEX_Studio1263
-CPLEX_DIR=/net/phorcys/data/roc/Logiciels/CPLEX_Studio201/
+CPLEX_DIR=/net/cubitus/projects/Partage_ROC/Logiciels/CPLEX_Studio2212
 INCLUDES=-I$(CPLEX_DIR)/cplex/include -I$(CPLEX_DIR)/concert/include
-LIBDIRS=-L$(CPLEX_DIR)/cplex/lib/x86-64_linux/static_pic/ -L/$(CPLEX_DIR)/concert/lib/x86-64_linux/static_pic/
+LIBDIRS=-L$(CPLEX_DIR)/cplex/lib/x86-64_linux/static_pic/ -L$(CPLEX_DIR)/concert/lib/x86-64_linux/static_pic/
 LIBS=-lconcert -lilocplex -lcplex -lm -lpthread -ldl 
 #Valable pour le 1271
 #LIBS=-lilocplex -lcplex -lconcert -lm -lpthread 
@@ -28,5 +28,3 @@ $(EXEC): $(OBJS)
 
 clean:
 	rm -f *.o
-
-
