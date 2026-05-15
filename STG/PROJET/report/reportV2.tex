@@ -296,6 +296,19 @@ C'est précisément sur ce dernier point que la Recherche Opérationnelle conver
 En effet, l'instabilité de la demande, des prix et du climat complexifie la planification au quotidien. La production, la logistique et les approvisionnements subissent des risques accrus amplifiés par l'interdépendance des chaînes mondiales.
 Les modèles classiques supposent souvent un monde ``parfait''. Optimiser ce scénario crée une stratégie fragile qui ne fonctionnera plus au premier aléa. L'enjeu n'est donc plus seulement d'optimiser un plan idéal, mais également d'anticiper les écarts malgré ces intertitudes, c'est la naissance de l'optimisation robuste.
 
+Ce nouveau concept permet de poser un cadre pour décider dans l'incertain. Nous pourrions le définir de la façon suivante: l'Optimisation robuste cherche la meilleure décision qui reste faisable et performante face à toutes les incertitudes futures, quelques soient les scénarios à venir.
+Nous avons deux types d'incertitude, elles peuvent être continues (température, volume de ventes) ou discrètes (scénarios définis). Les incertitudes s'appuient sur des historiques, des retours métiers ou des scénarios critiques identifiés.
+Les applications couvrent notamment la supply chain, la maintenance et la production où les aléas locaux peuvent déclencher des effets systèmatiques sur la performances globales.
+
+
+
+developper sur les nouvelles méthodes 
+
+
+
+Comment les méthodes de benders peuvent optimiser la planficiation robuste sous incertitude?
+Nous ferons tout d'abord un point sur les avancées scientifiques dans ce domaine, puis nous présenterons le contexte de la recherche, la recherche en elle-même, ses résultats ainsi que les apports techniques et professionnels de cette expérience.
+
 
 
 
@@ -340,10 +353,16 @@ Cette volonté de développer des systèmes décisionnels de confiance s'appuie 
 C'est à l'intersection de ces institutions, et plus spécifiquement au sein de l'équipe ROC (Recherche sur des problèmes d'Optimisation Combinatoire) du LAAS, que s'est déroulé mon stage. Positionnée à la frontière entre la Recherche Opérationnelle et l'Intelligence Artificielle, cette équipe offre un cadre scientifique idéal pour aborder les problématiques d'optimisation robuste qui font l'objet de ce rapport.
 
 
+
+IMPORTANT : parler de l'utilisation à terme du modèle par AIRBUS.
+
+
+% ============================== LITTERATURE ==============================
 \clearpage
-\thispagestyle{empty}
-\null
-\addtocounter{page}{-1}
+\section{Litterature}
+
+TODO : STATE OF THE ART
+
 
 % ============================== TRAVAIL EFFECTUE ==============================
 \clearpage
@@ -464,6 +483,11 @@ void addOptimalityCut(Model& masterProblem, const DualSolution& pi, double objVa
     std::cout << "Coupe ajoutee avec succes." << std::endl;
 }
 \end{lstlisting}
+
+\clearpage
+\thispagestyle{empty}
+\null
+\addtocounter{page}{-1}
 
 
 \end{document}
