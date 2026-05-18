@@ -64,14 +64,13 @@ def visualize_benders_graph(json_file_path):
             colorscale='Viridis',
             color=[G.nodes[n]['pi'] for n in G.nodes()],
             size=10,
-            colorbar=dict(thickness=15, title='Valeur Pi', xanchor='left', titleside='right')
+            colorbar=dict(thickness=15, title='Valeur Pi', xanchor='left')
         )
     )
 
     fig = go.Figure(data=[edges_trace, worst_edges_trace, nodes_trace],
              layout=go.Layout(
                 title='Graphe de Budget Benders - Compilation de Connaissances',
-                titlefont_size=16,
                 showlegend=True,
                 hovermode='closest',
                 margin=dict(b=20,l=5,r=5,t=40),
@@ -82,4 +81,4 @@ def visualize_benders_graph(json_file_path):
     fig.show()
 
 if __name__ == "__main__":
-    visualize_benders_graph("benders_graph_output.json")
+    visualize_benders_graph("STG/PROJET/bae/benders_graph_output.json")
