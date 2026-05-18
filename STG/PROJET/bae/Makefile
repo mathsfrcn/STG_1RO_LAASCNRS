@@ -7,7 +7,6 @@ CC = g++ -O0
 CFLAGS=-g -W -m64 -O -fPIC -fno-strict-aliasing -fexceptions -DNDEBUG -DIL_STD -std=c++17
 #CFLAGS=-W -Wall -m64 -O -fPIC -fno-strict-aliasing -fexceptions -DNDEBUG -DIL_STD 
 
-#CPLEX_DIR=/Users/idir/Applications/IBM/ILOG/CPLEX_Studio1263
 CPLEX_DIR=/net/cubitus/projects/Partage_ROC/Logiciels/CPLEX_Studio2212
 INCLUDES=-I$(CPLEX_DIR)/cplex/include -I$(CPLEX_DIR)/concert/include
 LIBDIRS=-L$(CPLEX_DIR)/cplex/lib/x86-64_linux/static_pic/ -L$(CPLEX_DIR)/concert/lib/x86-64_linux/static_pic/

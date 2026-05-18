@@ -12,6 +12,8 @@
 #include <sys/types.h>
 #include <thread>
 
+#include <fstream>
+
 using namespace std;
 using namespace std::chrono;
 
@@ -139,7 +141,7 @@ void extract_paths_dfs(
 
 			if(j <= i + sol.inst.deltat[t-1] && (t != 1 || i == 0)){
 
-				// Check for arc of type 0
+				// Check for arc #include <fstream>of type 0
 				if(pi_value[t][j] == pi_value[t-1][i] + costs[t][i][j][0]){
 					Arc_Decision arc = {t, i, j, 0};
 					current_path.push_back(arc);
@@ -157,6 +159,68 @@ void extract_paths_dfs(
 			}
 		}
 	}
+
+
+
+
+// Utilities
+
+void export_budget_graph_json(
+		const Solution& sol, 
+		const vector<vector<float>>& pi_value, 
+		const vector<vector<vector<vector<float>>>>& costs, 
+		const vector<vector<vector<vector<int>>>>& arcbool, 
+		string filename){
+
+    ofstream out(filename);
+
+	if (!out.is_open()) {
+        cerr << "ERREUR CRITIQUE : Impossible de créer ou d'ouvrir le fichier " << filename << endl;
+        cerr << "Vérifiez vos droits d'écriture ou le chemin d'accès." << endl;
+    	return;
+	}
+
+    out << "{\n";
+    out << "  \"T\": " << sol.inst.T << ",\n";
+    out << "  \"Gamma\": " << sol.inst.Gamma << ",\n";
+    
+    // Export des Nœuds
+    out << "  \"nodes\": [\n";
+    bool first_node = true;
+    for(int t = 0; t < sol.inst.T+2; t++) {
+        for(int b = 0; b < sol.inst.Gamma+1; b++) {
+            if(!first_node) out << ",\n";
+            out << "    {\"id\": \"" << t << "_" << b << "\", \"t\": " << t << ", \"b\": " << b << ", \"pi\": " << pi_value[t][b] << "}";
+            first_node = false;
+        }
+    }
+    out << "\n  ],\n";
+    
+    // Export des Arcs
+    out << "  \"links\": [\n";
+    bool first_arc = true;
+    for(int t = 1; t < sol.inst.T+2; t++) {
+        for(int i = 0; i < sol.inst.Gamma+1; i++) {
+            for(int j = i; j < sol.inst.Gamma+1; j++){
+                if(t <= sol.inst.T && j > i+sol.inst.deltat[t-1]) continue;
+                
+                for(int type = 0; type < 2; type++) {
+                    if (t == sol.inst.T + 1 && j != 0) continue;	// Do not export the arcs of the last layer if it is not the well
+                    
+                    if(!first_arc) out << ",\n";
+                    float cost = (t == sol.inst.T+1) ? 0 : costs[t][i][j][type];
+                    int is_worst = arcbool[t][i][j][type];
+                    
+                    out << "    {\"source\": \"" << t-1 << "_" << i << "\", \"target\": \"" << t << "_" << j 
+                        << "\", \"type\": " << type << ", \"cost\": " << cost << ", \"is_worst\": " << is_worst << "}";
+                    first_arc = false;
+                }
+            }
+        }
+    }
+    out << "\n  ]\n}\n";
+    out.close();
+}
 
 // ====================================================================================================================================================================================
 // ====================================================================================================================================================================================
@@ -567,6 +631,8 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 		}
 	}
 
+	cout << "testtttt"<<endl;
+
 	// Dynamic prog. for longest path
 	float tmp;
 	pi_value[0][0] = 0;	// Start at period 0 cost 0
@@ -653,227 +719,17 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 		}
 	}
 
-	// Display the subgraph
-	// cout<<"subgraph:"<<endl;
-	// stringstream bufft;
-	// for(int t = 0; t<sol.inst.T+2; t++){
-	// 	bufft<<t;
-	// 	bufft<<" ";
-	// }
-	// cout<<bufft.str()<<endl;
-	// for(int i = sol.inst.Gamma; i>=0; i--){
-	// 	string buff = "";
-	// 	for(int t = 0; t<sol.inst.T+2; t++){
-	// 		buff += BoolToString(pi_subopt_bool[t][i])+" " ;
-	// 	}
-	// 	cout<<buff<<endl;
-	// }
+	
 
-	// cout<<endl;
-	// //display the subgraph
-	// for(int i = sol.inst.Gamma; i>=0; i--){
-	// 	stringstream buff;
-	// 	for(int t = 0; t<sol.inst.T+2; t++){
-	// 		buff<< " ";
-	// 		buff<<pi_value[t][i];
-	// 	}
-	// 	cout<<buff.str()<<endl;
-	// }
+	export_budget_graph_json(sol, pi_value, costs, arcbool, "/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/benders_graph_output.json");
+
 	return arcbool;
 }
 
 // =================================================================== IN PROGRESS =================================================================================================================
 // ====================================================================================================================================================================================
 
-// It works in two phases: 
-//		- forward pass : it calculates the worst-case scenario by traversing the graph
-//		- backpropagation : it retrieves the most interesting sub-graph (containing the worst-case scenario)
-// In this alternative, we had initialized the orthogonality heuristic 
-vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, float approx_coeff, int nb_path_to_select, Bool display){
-	vector<vector<vector<vector<int> > > > arcbool; // Bool flag to arcs within the worsts scenarios (if a specific decision by the opponent is part of the subgraph)
-	vector<vector<float> > pi_value; 				// Value of the longest path to pi[t][j] (It stores the "maximum cumulative cost" to reach period t having consumed j budget units)
-	vector<vector<bool> > pi_subopt_bool;
-	vector<vector<vector<vector<float> > > > costs = budget_graph_cost(sol); // Costs of all arcs
 
-	pi_value.resize(sol.inst.T+2);
-	pi_subopt_bool.resize(sol.inst.T+2);
-	arcbool.resize(sol.inst.T+2);
-	for(int t = 0; t<sol.inst.T+2;t++){
-		pi_value[t].resize(sol.inst.Gamma+1);
-		pi_subopt_bool[t].resize(sol.inst.Gamma+1);
-		arcbool[t].resize(sol.inst.Gamma+1);
-		for(int i = 0; i<sol.inst.Gamma+1; i++){
-			arcbool[t][i].resize(sol.inst.Gamma+1);
-			for(int j = 0; j<sol.inst.Gamma+1; j++){
-				arcbool[t][i][j].resize(2);
-			}
-		}
-	}
-
-	// Dynamic prog. for longest path
-	float tmp;
-	pi_value[0][0] = 0;	// Start at period 0 cost 0
-	for(int t=1; t<sol.inst.T+1;t++){
-		for(int j = 0; j<sol.inst.Gamma+1; j++){
-			tmp = pi_value[t-1][j]+costs[t][j][j][0]; 	// Init of pi_value[t][j]
-														// It's the value of the dual problem that will store the value of the longest path from the start to t, having consumed j units of budget
-			for(int i = 0; i<=j; i++){
-				if(j<=i+sol.inst.deltat[t-1]){
-					if(pi_value[t-1][i]+costs[t][i][j][0] > tmp){
-						// if(j== 0){
-						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][0]<<endl;
-						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][1]<<endl;
-						// }
-						tmp = pi_value[t-1][i]+costs[t][i][j][0];	// Maximum cost to reach i + the cost of arc(i, j) in overstock/ stockout and keeps the worst of the two
-					} 
-					if(pi_value[t-1][i]+costs[t][i][j][1] > tmp){
-						// if(j== 0){
-						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][0]<<endl;
-						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][1]<<endl;
-						// }
-						tmp = pi_value[t-1][i]+costs[t][i][j][1];
-					} 
-				}
-			}
-			pi_value[t][j] = tmp;
-		}
-		// cout<<"=============="<<t<<" "<<pi_value[t][0]<<endl;
-	}
-
-	tmp = pi_value[sol.inst.T][0];
-	for(int i = 0; i<sol.inst.Gamma+1;i++){
-		if(pi_value[sol.inst.T][i]>tmp){
-			tmp = pi_value[sol.inst.T][i];
-		} 
-		// cout<<i<<", "<<pi_value[sol.inst.T][i]<<endl;
-	}
-	pi_value[sol.inst.T+1][0] = tmp;	// Longuest path
-	// cout<<"longest path : "<<pi_value[sol.inst.T+1][0]<<endl;
-	
-	//========================== Now the backtrack with HOG
-
-	// Tolerance threshold in relation to the worst possible cost
-	float sub_OPT;
-	if(pi_value[sol.inst.T+1][0]>=0){
-		sub_OPT = approx_coeff*pi_value[sol.inst.T+1][0];
-	}
-	else{
-		sub_OPT = (1-approx_coeff)*pi_value[sol.inst.T+1][0]+pi_value[sol.inst.T+1][0];
-	}
-	
-	// ================================================== IN PROGRESS ==================================================
-
-	vector<Path> candidates_path;	// Store the worst-case scenarios
-	Path current_path_buffer;		// Use for recursion
-
-	// After the recursion, candidates_path contains all the worst-case paths that exceed the sub_OPT budget
-	for(int i = 0; i < sol.inst.Gamma+1; i++){
-		if(pi_value[sol.inst.T][i] >= sub_OPT){
-			extract_paths_dfs(sol.inst.T, i, pi_value, costs, sol, current_path_buffer, candidates_path);
-		}
-	}
-
-	//vector<Path>& selected_paths = candidates_path;
-	vector<Path> selected_paths;
-
-	//int nb_path_to_select = 5;	// A AJUSTER
-
-	if(!candidates_path.empty()){
-		// We take the first scénario we have for reference
-		selected_paths.push_back(candidates_path[0]);
-		candidates_path.erase(candidates_path.begin());	
-		
-		// MaxMin loop
-		while(selected_paths.size() < nb_path_to_select && !candidates_path.empty()){
-			float best_max_min_distance = -1.0;
-			int best_candidate_index = -1;
-
-			for(size_t c = 0; c < candidates_path.size(); c++){
-				float min_distance_selected = 2.0;	// Brays-Curtis distance is in [0, 1]
-				
-				for(size_t s = 0; s < selected_paths.size(); s++){
-					//float dist = calculate_jaccard_distance(candidates_path[c], selected_paths[s]);
-					float dist = calculate_BC_distance(candidates_path[c], selected_paths[s]);
-					if(dist < min_distance_selected){
-						min_distance_selected = dist;
-					}
-				}
-
-				if(min_distance_selected > best_max_min_distance){
-					best_max_min_distance = min_distance_selected;
-					best_candidate_index = c;
-				}
-			}
-
-			selected_paths.push_back(candidates_path[best_candidate_index]);
-			candidates_path.erase(candidates_path.begin() + best_candidate_index);
-		}
-	}
-
-	// Reset arcbool
-	for(int t = 0; t < sol.inst.T+2; t++){
-		for(int i = 0; i < sol.inst.Gamma+1; i++){
-			for(int j = 0; j < sol.inst.Gamma+1; j++){
-				arcbool[t][i][j][0] = 0;
-				arcbool[t][i][j][1] = 0;
-			}
-		}
-	}
-
-	// Flip only the arcs that are on the paths
-	for(size_t p = 0; p < selected_paths.size(); p++){
-		for(size_t a = 0; a < selected_paths[p].size(); a++){
-			Arc_Decision arc = selected_paths[p][a];
-			arcbool[arc.t][arc.i][arc.j][arc.type] = 1;
-		}
-
-		// Reconnected the end of the path to node T+1 like in the previuos code
-		int final_budget = selected_paths[p].back().j;
-		arcbool[sol.inst.T+1][final_budget][0][0] = 1;
-		arcbool[sol.inst.T+1][final_budget][0][1] = 1;
-	}
-
-	// =================================================================================================================
-
-	if(display){
-		// Display the subgraph
-	 	cout<<"subgraph:"<<endl;
-	 	stringstream bufft;
-	 	
-		for(int t = 0; t<sol.inst.T+2; t++){
-			bufft<<t;
-			bufft<<" ";
-		}
-		
-		cout<<bufft.str()<<endl;
-		
-		for(int i = sol.inst.Gamma; i>=0; i--){
-			string buff = "";
-			
-			for(int t = 0; t<sol.inst.T+2; t++){
-				buff += BoolToString(pi_subopt_bool[t][i])+" " ;
-			}
-			
-			cout<<buff<<endl;
-		}
-
-		cout<<endl;
-		
-		//display the subgraph
-		for(int i = sol.inst.Gamma; i>=0; i--){
-			stringstream buff;
-			
-			for(int t = 0; t<sol.inst.T+2; t++){
-				buff<< " ";
-				buff<<pi_value[t][i];
-			}
-		
-			cout<<buff.str()<<endl;
-		}
-	}
-	
-	return arcbool;
-}
 
 
 // ====================================================================================================================================================================================
@@ -901,7 +757,7 @@ vector<vector<vector<vector<int> > > > init_graph(Instance inst){
 }
 
 // Initialize budgetgraph with ALL scenarios
-vector<vectcurrent_path_bufferor<vector<vector<int> > > > init_graph_full(Instance inst){
+vector<vector<vector<vector<int> > > > init_graph_full(Instance inst){
 
 	vector<vector<vector<vector<int> > > > arcbool;
 	arcbool.resize(inst.T+2);
@@ -911,7 +767,7 @@ vector<vectcurrent_path_bufferor<vector<vector<int> > > > init_graph_full(Instan
 		arcbool[t].resize(inst.Gamma+1);
 		for(int i = 0; i<inst.Gamma+1; i++){
 			arcbool[t][i].resize(inst.Gamma+1);
-			current_path_bufferfor(int j = 0; j<inst.Gamma+1; j++){
+			for(int j = 0; j<inst.Gamma+1; j++){
 				arcbool[t][i][j].resize(2);
 				arcbool[t][i][j][0] = 1;
 				arcbool[t][i][j][1] = 1;
@@ -975,8 +831,11 @@ pair<int, float> KC_benders_Main(Instance inst, float approx_coeff){
 	// display_vector_float(sol.Xt);
 
 	// vector<vector<vector<vector<int> > > > tmp =  KC_benders_Subproblem(sol,approx_coeff);
-
 	while(!stopCriterion){	// While the solution is not satisfactory we do the merge loop
+		
+		cout << "testtttte"<<endl;
+		
+		
 		arcsol_new = KC_benders_Subproblem(sol, approx_coeff);	// Proposes a new worst solution according to the master solution
 		// cout<<"subproblem solved"<<endl;
 		arcsol = merge_budget_graph(arcsol, arcsol_new);		// Merge the worst solution with the current solution
@@ -1419,7 +1278,7 @@ Solution_ADV benders_Subproblem(Solution sol){
 					break;
 					
 				}
-			}./benders_kc
+			}
 			// Generic case
 			else{
 				if( pisol[t][previous_budget] - pisol[t-1][i] == sol.inst.cI*(sol.Xt[t]- (sol.inst.Dt[t] - (previous_budget-i)))){ // worse for deltat negative
@@ -1698,10 +1557,30 @@ int main(int argc, const char* argv[]){
 	float time, timeKC;
 	int iter, iterKC;
 	ofstream result;
-  	result.open ("result.txt");
+  	result.open ("result_test_smal_instance.txt");
   	string filename;
-  	vector<string> filelist = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/Parsed_Large_Instances/");
-  	int nbInst = filelist.size() - 2;
+
+
+
+
+
+  	//vector<string> filelist = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/Parsed_Large_Instances/");
+	vector<string> filelist = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/test/");
+  	
+	if (filelist.empty()) {
+    	cerr << "ERREUR : Aucun fichier trouvé. Vérifiez le chemin du dossier d'instances." << endl;
+    	return -1;
+	}
+
+	cout << "Succès : " << filelist.size() << " fichiers trouvés dans le dossier." << endl;
+
+
+	int nbInst = filelist.size();	// - 2
+
+
+
+
+	
   	Instance inst;
   	vector<int> debug;
   	vector<int> debug2;
@@ -1719,7 +1598,13 @@ int main(int argc, const char* argv[]){
 			debug.resize(0);
 			debug2.resize(0);
 			for(int i = 2; i<nbInst; i++ ){
-				filename = "Parsed_Large_Instances/" + filelist[i];
+				
+				
+				//filename = "Parsed_Large_Instances/" + filelist[i];
+				filename = "test/" + filelist[i];
+
+
+
 				cout<<filename<<" "<<Gamma<<" "<<tau<<" "<<endl;
 				
 				inst = read_instance_randomized(filename, Gamma);
@@ -1756,5 +1641,4 @@ int main(int argc, const char* argv[]){
 	}
 
 	result.close();
-	// cout<<"test"<<endl;
 }
