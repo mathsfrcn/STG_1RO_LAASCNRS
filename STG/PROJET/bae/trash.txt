@@ -60,6 +60,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 		} 
 		// cout<<i<<", "<<pi_value[sol.inst.T][i]<<endl;
 	}
+
 	pi_value[sol.inst.T+1][0] = tmp;	// Longuest path
 	// cout<<"longest path : "<<pi_value[sol.inst.T+1][0]<<endl;
 	
@@ -125,15 +126,16 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 
 	// Reset arcbool
 	for(int t = 0; t < sol.inst.T+2; t++){
-	if(pi_value[sol.inst.T+1][0]>=0){
-		sub_OPT = approx_coeff*pi_value[sol.inst.T+1][0];
-	}
-	else{
-		sub_OPT = (1-approx_coeff)*pi_value[sol.inst.T+1][0]+pi_v
-		for(int i = 0; i < sol.inst.Gamma+1; i++){
-			for(int j = 0; j < sol.inst.Gamma+1; j++){
-				arcbool[t][i][j][0] = 0;
-				arcbool[t][i][j][1] = 0;
+		if(pi_value[sol.inst.T+1][0]>=0){
+			sub_OPT = approx_coeff*pi_value[sol.inst.T+1][0];
+		}
+		else{
+			sub_OPT = (1-approx_coeff)*pi_value[sol.inst.T+1][0]+pi_v
+			for(int i = 0; i < sol.inst.Gamma+1; i++){
+				for(int j = 0; j < sol.inst.Gamma+1; j++){
+					arcbool[t][i][j][0] = 0;
+					arcbool[t][i][j][1] = 0;
+				}
 			}
 		}
 	}
@@ -174,30 +176,29 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 			
 			cout<<buff<<endl;
 		}
-
-		cout<<endl;
 		
-		//display the subgraph
+		// Display the subgraph
 		for(int i = sol.inst.Gamma; i>=0; i--){
 			stringstream buff;
 			
 			for(int t = 0; t<sol.inst.T+2; t++){
 				buff<< " ";
-	if(pi_value[sol.inst.T+1][0]>=0){
-		sub_OPT = approx_coeff*pi_value[sol.inst.T+1][0];
-	}
-	else{
-		sub_OPT = (1-approx_coeff)*pi_value[sol.inst.T+1][0]+pi_v
-				buff<<pi_value[t][i];
-			}
+				if(pi_value[sol.inst.T+1][0]>=0){
+					sub_OPT = approx_coeff*pi_value[sol.inst.T+1][0];
+				}
+				else{
+					sub_OPT = (1-approx_coeff)*pi_value[sol.inst.T+1][0]+pi_v
+					buff<<pi_value[t][i];
+				}
 		
-			cout<<buff.str()<<endl;
+				cout<<buff.str()<<endl;
+			}
 		}
 	}
 	
 
 
-	export_budget_graph_json("benders_graph_output.json")
+	export_budget_graph_json(sol, pi_value, costs, arcbool, "/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/benders_graph_output.json");
 
 
 

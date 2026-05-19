@@ -1,0 +1,9 @@
+Format:
+  nbPeriods
+  nbItems
+  demands
+  stocking cost
+  transition costs
+  optimal cost (or bounds)
+
+An instance of the PSP is made as follows. The first and the second lines give the number of periods nbPeriods and the number of item types nbItems, respectively. The following nbItems lines (one line per item type) provide the orders with their due dates. Such a line is made of nbPeriods boolean integers. Set the pth element to 1 means there is an order of the given item type for which the deadline is p. The next line gives the stocking cost h. And, the nbItems lines represent the changeover costs. Finally, the last line gives the optimal cost (or bounds).

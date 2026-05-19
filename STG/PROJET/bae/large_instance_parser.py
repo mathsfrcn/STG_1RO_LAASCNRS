@@ -1,7 +1,7 @@
 import os
 
-indir = "ValidationInstances"
-outdir = "Parsed_Large_Instances"
+indir = "validation_instances"
+outdir = "parsed_large_instances"
 file_list = os.listdir(indir)
 filename = file_list[0]
 
