@@ -1,13 +1,13 @@
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import tkinter as tk
+import os
 from tkinter import filedialog
 
-def analyze_benders_results(filepath):
+def analyze_benders_results(file_path):
     try:
-        df = pd.read_csv(filepath, sep=r'[,\s]+', engine='python', 
+        df = pd.read_csv(file_path, sep=r'[,\s]+', engine='python', 
                          names=['Method', 'Gamma', 'Tau', 'Iterations', 'Time'])
     except Exception as e:
         print("Erreur lors de la lecture du fichier :", e)
@@ -23,72 +23,67 @@ def analyze_benders_results(filepath):
     pivot_df['Time_Saved_by_KC'] = pivot_df['Time_STANDARD'] - pivot_df['Time_KC']
     pivot_df['Iter_Saved_by_KC'] = pivot_df['Iterations_STANDARD'] - pivot_df['Iterations_KC']
 
-    total_instances = len(pivot_df)
-    kc_faster_count = (pivot_df['Time_Saved_by_KC'] > 0).sum()
-    kc_fewer_iters_count = (pivot_df['Iter_Saved_by_KC'] > 0).sum()
-    avg_speedup = (pivot_df['Time_STANDARD'] / pivot_df['Time_KC']).mean()
+    file_name = os.path.basename(file_path)
+    sns.set_theme(style='whitegrid')
+    fig = plt.figure
+    fig = plt.figure(figsize=(16, 12))
+    fig.canvas.manager.set_window_title(f"Analyse Benders - {file_name}")
+    axes = fig.subplots(2, 2)
+    fig.suptitle(f'Analyse Comparative : {file_name}', fontsize=16, fontweight='bold')
 
-    print("\n" + "="*40)
-    print("RAPPORT D'ANALYSE DE PERFORMANCE")
-    print("="*40)
-    print(f"Total de configurations (Gamma, tau) testées : {total_instances}")
-    print(f"KC plus rapide sur : {kc_faster_count}/{total_instances} instances ({(kc_faster_count/total_instances)*100:.1f}%)")
-    print(f"KC fait moins d'itérations sur : {kc_fewer_iters_count}/{total_instances} instances ({(kc_fewer_iters_count/total_instances)*100:.1f}%)")
-    print("-" * 40)
-    print(f"Temps moyen STANDARD : {pivot_df['Time_STANDARD'].mean():.5f} s")
-    print(f"Temps moyen KC       : {pivot_df['Time_KC'].mean():.5f} s")
-    print(f"Speedup moyen (Std/KC): x{avg_speedup:.2f}")
-    print("="*40 + "\n")
-
-    sns.set_theme(style="whitegrid")
-    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-    fig.suptitle('Analyse Comparative : Décomposition Standard vs Heuristique KC', fontsize=18, fontweight='bold')
-
+    # Fig01
     ax = axes[0, 0]
     max_time = max(pivot_df['Time_STANDARD'].max(), pivot_df['Time_KC'].max()) * 1.1
-    sns.scatterplot(data=pivot_df, x='Time_STANDARD', y='Time_KC', hue='Gamma', 
-                    size='Tau', sizes=(20, 200), palette='viridis', ax=ax, alpha=0.8)
-    
-    ax.plot([0, max_time], [0, max_time], 'r--', label='Égalité (Temps Std = Temps KC)')
-    ax.fill_between([0, max_time], [0, max_time], [0, 0], color='green', alpha=0.1, label='Zone de victoire KC')
+    sns.scatterplot(data=pivot_df, x='Time_STANDARD', y='Time_KC', hue='Gamma', size='Tau', sizes=(20, 200), palette='viridis', ax=ax, alpha=0.8)
+    ax.plot([0, max_time], [0, max_time], 'r--', label='Égalité')
+    ax.fill_between([0, max_time], [0, max_time], [0, 0], color='green', alpha=0.1, label='Zone de victoire de KC')
     ax.set_title("Temps de Résolution Global (s)")
     ax.set_xlim(0, max_time)
     ax.set_ylim(0, max_time)
     ax.legend(title='Budget Gamma')
 
+    # Fig02
     ax = axes[0, 1]
     df_iter = df.groupby(['Tau', 'Method'])['Iterations'].mean().reset_index()
-    sns.lineplot(data=df_iter, x='Tau', y='Iterations', hue='Method', marker='o', 
-                 palette={'STANDARD': '#d62728', 'KC': '#2ca02c'}, ax=ax, linewidth=2.5, markersize=8)
-    ax.set_title("Impact du coefficient d'approximation Gamma sur les Itérations")
-    ax.set_ylabel("Nombre moyen d'itérations")
+    sns.lineplot(data=df_iter, x='Tau', y='Iterations', hue='Method', marker='o', palette={'STANDARD': '#d62728', 'KC': '#2ca02c'}, ax=ax)
+    ax.set_title("Impact de tau sur les Itérations")
 
+    # Fig03
     ax = axes[1, 0]
     heat_time = pivot_df.pivot(index="Gamma", columns="Tau", values="Time_Saved_by_KC")
-    sns.heatmap(heat_time, cmap="RdYlGn", center=0, annot=True, fmt=".4f", 
-                cbar_kws={'label': 'Temps économisé par KC (s)'}, ax=ax)
-    ax.set_title("Où KC est-il plus rapide ? (Matrice Gain de Temps)")
+    sns.heatmap(heat_time, cmap="RdYlGn", center=0, annot=True, fmt=".4f", ax=ax)
+    ax.set_title("Matrice Gain de Temps (s)")
 
+    # Fig04
     ax = axes[1, 1]
     heat_iter = pivot_df.pivot(index="Gamma", columns="Tau", values="Iter_Saved_by_KC")
-    sns.heatmap(heat_iter, cmap="RdYlGn", center=0, annot=True, fmt=".1f", 
-                cbar_kws={'label': 'Itérations économisées par KC'}, ax=ax)
-    ax.set_title("Où KC réduit-il les coupes ? (Matrice Gain Itérations)")
+    sns.heatmap(heat_iter, cmap="RdYlGn", center=0, annot=True, fmt=".1f", ax=ax)
+    ax.set_title("Matrice Gain Itérations")
 
     plt.tight_layout()
     plt.subplots_adjust(top=0.92)
+
+    base_name_no_ext = os.path.splitext(file_name)[0]
+    output_image_name = base_name_no_ext + "_analytics.png"
+    target_directory = os.path.dirname(file_path)
+    output_image_path = os.path.join(target_directory, output_image_name)
+
+    plt.savefig(output_image_path, dpi=300, bbox_inches='tight')
     plt.show()
 
-if __name__ == "__main__":
+def main():
     root = tk.Tk()
     root.withdraw()
     
     file_path = filedialog.askopenfilename(
-        title="Sélectionnez le fichier de résultats :",
+        title="Sélectionnez le fichier de résultats",
         filetypes=[("Données", "*.csv *.txt"), ("Tous", "*.*")]
     )
     
     if file_path:
         analyze_benders_results(file_path)
     else:
-        print("Aucun fichier sélectionné. Arrêt de l'analyse.")
+        print("Aucun fichier sélectionné.")
+
+if __name__ == "__main__":
+    main()
