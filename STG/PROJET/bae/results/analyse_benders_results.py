@@ -31,7 +31,7 @@ def analyze_benders_results(filepath):
     print("\n" + "="*40)
     print("RAPPORT D'ANALYSE DE PERFORMANCE")
     print("="*40)
-    print(f"Total de configurations (\u0393, \u03C4) testées : {total_instances}")
+    print(f"Total de configurations (Gamma, tau) testées : {total_instances}")
     print(f"KC plus rapide sur : {kc_faster_count}/{total_instances} instances ({(kc_faster_count/total_instances)*100:.1f}%)")
     print(f"KC fait moins d'itérations sur : {kc_fewer_iters_count}/{total_instances} instances ({(kc_fewer_iters_count/total_instances)*100:.1f}%)")
     print("-" * 40)
@@ -54,13 +54,13 @@ def analyze_benders_results(filepath):
     ax.set_title("Temps de Résolution Global (s)")
     ax.set_xlim(0, max_time)
     ax.set_ylim(0, max_time)
-    ax.legend(title='Budget \u0393')
+    ax.legend(title='Budget Gamma')
 
     ax = axes[0, 1]
     df_iter = df.groupby(['Tau', 'Method'])['Iterations'].mean().reset_index()
     sns.lineplot(data=df_iter, x='Tau', y='Iterations', hue='Method', marker='o', 
                  palette={'STANDARD': '#d62728', 'KC': '#2ca02c'}, ax=ax, linewidth=2.5, markersize=8)
-    ax.set_title("Impact du coefficient d'approximation (\u03C4) sur les Itérations")
+    ax.set_title("Impact du coefficient d'approximation Gamma sur les Itérations")
     ax.set_ylabel("Nombre moyen d'itérations")
 
     ax = axes[1, 0]
