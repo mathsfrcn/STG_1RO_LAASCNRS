@@ -109,6 +109,7 @@ float calculate_BC_distance(const Path& pathA, const Path& pathB){
 
 		sum_diff += abs(delta_A - delta_B);	// Manhattan local distance
 		sum_total += (delta_A + delta_B);	// Total budget consumed by both routes
+	}
 
 	if(sum_total == 0){
 		return 0.0f;
@@ -116,51 +117,56 @@ float calculate_BC_distance(const Path& pathA, const Path& pathB){
 
 	// Return the dissimilarity
 	return static_cast<float>(sum_diff) / static_cast<float>(sum_total);
-	}
 }
 
 // =========================================== Recursive extraction of worst-case scenarios following a Depth-First Search
 
 void extract_paths_dfs(
-	int t,													
-	int j,													// Current node in the backtrack
-	const vector<vector<float> >& pi_value,					// Dynamic programming matrix
-	const vector<vector<vector<vector<float> > > >& costs,	// Original costs
-	const Solution& sol,
-	Path& current_path,
-	vector<Path>& all_paths
-	){
-		// if we went back to the beginning we stop
-		if(t == 0){
-			Path reversed_path = current_path;	// Because we start at the end, we have to reverse the path of this branch
-			reverse(reversed_path.begin(), reversed_path.end());
-			all_paths.push_back(reversed_path);
-			return;
-		}
+			int t,													
+			int j,													// Current node in the backtrack
+			const vector<vector<float> >& pi_value,					// Dynamic programming matrix
+			const vector<vector<vector<vector<float> > > >& costs,	// Original costs
+			const Solution& sol,
+			Path& current_path,
+			vector<Path>& all_paths
+			){
+	
+	//////////////// TEST
+	if(all_paths.size() >= 2000){
+		return;
+	}
 
-		// We are trying to figure out where we came from, its like : what was the budget i? to arrive at j at step t
-		for(int i = 0; i <= j; i++){
+	// if we went back to the beginning we stop
+	if(t == 0){
+		Path reversed_path = current_path;	// Because we start at the end, we have to reverse the path of this branch
+		reverse(reversed_path.begin(), reversed_path.end());
+		all_paths.push_back(reversed_path);
+		return;
+	}
 
-			if(j <= i + sol.inst.deltat[t-1] && (t != 1 || i == 0)){
+	// We are trying to figure out where we came from, its like : what was the budget i? to arrive at j at step t
+	for(int i = 0; i <= j; i++){
 
-				// Check for arc #include <fstream>of type 0
-				if(pi_value[t][j] == pi_value[t-1][i] + costs[t][i][j][0]){
-					Arc_Decision arc = {t, i, j, 0};
-					current_path.push_back(arc);
-					extract_paths_dfs(t-1, i, pi_value, costs, sol, current_path, all_paths);
-					current_path.pop_back();
-				}
+		if(j <= i + sol.inst.deltat[t-1] && (t != 1 || i == 0)){
 
-				// Check for arc of type 1
-				if(pi_value[t][j] == pi_value[t-1][i] + costs[t][i][j][1]){
-					Arc_Decision arc = {t, i, j, 1};
-					current_path.push_back(arc);
-					extract_paths_dfs(t-1, i, pi_value, costs, sol, current_path, all_paths);
-					current_path.pop_back();
-				}
+			// Check for arc of type 0
+			if(abs(pi_value[t][j] - (pi_value[t-1][i] + costs[t][i][j][0])) < 1e-4){
+				Arc_Decision arc = {t, i, j, 0};
+				current_path.push_back(arc);
+				extract_paths_dfs(t-1, i, pi_value, costs, sol, current_path, all_paths);
+				current_path.pop_back();
+			}
+
+			// Check for arc of type 1
+			if(abs(pi_value[t][j] - (pi_value[t-1][i] + costs[t][i][j][1]) < 1e-4)){
+				Arc_Decision arc = {t, i, j, 1};
+				current_path.push_back(arc);
+				extract_paths_dfs(t-1, i, pi_value, costs, sol, current_path, all_paths);
+				current_path.pop_back();
 			}
 		}
 	}
+}
 
 
 
@@ -1008,7 +1014,7 @@ pair<int, float> KC_benders_Main(Instance inst, float approx_coeff){
 		// cout<<"============ "<< new_sol.obj_val << " " << sol.obj_val<<endl;
 		
 		// If the cost increased, the opponent has found a computer breach and we continue in the loop
-		if(new_sol.obj_val == sol.obj_val){	
+		if(abs(new_sol.obj_val - sol.obj_val) < 1e-5){	
 			stopCriterion = true;
 			break;
 		}
@@ -1727,8 +1733,8 @@ int main(int argc, const char* argv[]){
 
 	cout << "Enregistrement des résultats dans : " << oss.str() << endl;
 
-  	//vector<string> file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/parsed_large_instances/");
-	vector<string> file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/test/");
+  	vector<string> file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/parsed_large_instances/");
+	//vector<string> file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/test/");
   	int total_files = file_list.size();
 
 	if (total_files <= 2) {
@@ -1764,8 +1770,8 @@ int main(int argc, const char* argv[]){
 	//=========================================================================================================================================================
 				
 				
-				//filename = "parsed_large_instances/" + file_list[i];
-				filename = "test/" + file_list[i];
+				filename = "parsed_large_instances/" + file_list[i];
+				//filename = "test/" + file_list[i];
 
 
 	//=========================================================================================================================================================
