@@ -134,8 +134,7 @@ void extract_paths_dfs(
 			vector<Path>& all_paths
 			){
 	
-	//////////////// TEST
-	if(all_paths.size() >= 2000){
+	if(all_paths.size() >= 2000){	// This solution can be a problem if we come in a choke point, maybe we can add a seed
 		return;
 	}
 
@@ -1151,7 +1150,7 @@ Solution benders_Master_integer(Instance inst, vector<vector<float> > scenarios)
 	}
 
 
-	// Constraints for y............
+	// Constraints for y
 	float M = inst.Dt[inst.T-1] + inst.Gamma;
 	model.add(X[1]<=y[1]*M);
 
@@ -1306,7 +1305,6 @@ Solution_ADV benders_Subproblem(Solution sol){
 
 	for(int t = sol.inst.T; t>=1; t--){
 		for(int i=previous_budget; i>=0; i--){
-
 			if(t == sol.inst.T){
 				if( pisol[t][previous_budget] - pisol[t-1][i] == sol.inst.cI*(sol.Xt[t]- (sol.inst.Dt[t] - (previous_budget-i))) - sol.inst.bP*(sol.inst.Dt[t] - (previous_budget-i))) { // worse for deltat negative
 					offset[t-1] = -(previous_budget - i);
@@ -1434,6 +1432,7 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 			tmp = pi_value[sol.inst.T][i];
 		} 
 	}
+
 	pi_value[sol.inst.T+1][0] = tmp;
 	
 	//========================== Now the backtrack
@@ -1459,7 +1458,6 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 						arcbool[t][i][j][0] = 1;
 						pi_subopt_bool[t-1][i] = true;
 						scenario[t-1] = sol.inst.Dt[t-1] - (j-i);
-						
 						break;
 					}
 
@@ -1609,7 +1607,7 @@ int main(int argc, const char* argv[]){
 	ostringstream oss_augmented; 
 	ostringstream oss_augmented_HOG;
 	oss_classic 	  << folder_path << experience_name << "_classic.csv";
-	oss_augmented 	  << folder_path << experience_name << "_augmented.csv";
+	oss_augmented 	  << folder_path << experience_name << "_HOG.csv";
 	oss_augmented_HOG << folder_path << experience_name << "_augmented_HOG.csv";
 
 	ofstream output_classic(oss_classic.str());
@@ -1618,8 +1616,8 @@ int main(int argc, const char* argv[]){
 
 	cout << "Enregistrement des résultats dans : " << folder_path << endl;
 
-  	//vector<string> file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/parsed_large_instances/");
-	vector<string> file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/test/");
+  	vector<string> file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/parsed_large_instances/");
+	//vector<string> file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/test/");
   	int total_files = file_list.size();
 
 	if (total_files <= 2) {
@@ -1655,8 +1653,8 @@ int main(int argc, const char* argv[]){
 	//=========================================================================================================================================================
 				
 				
-				//filename = "parsed_large_instances/" + file_list[i];
-				filename = "test/" + file_list[i];
+				filename = "parsed_large_instances/" + file_list[i];
+				//filename = "test/" + file_list[i];
 
 
 	//=========================================================================================================================================================
@@ -1683,7 +1681,7 @@ int main(int argc, const char* argv[]){
 				pair<int, float> benders_sol_augmented_HOG = KC_benders_Main(inst, approx_coeff, true, false);
 				iterKCHOG += benders_sol_augmented_HOG.first;
 				timeKCHOG += benders_sol_augmented_HOG.second;
-				cout<<"KC done"<<endl;
+				cout<<"KC HOG done"<<endl;
 			}
 
 			// Standard with KC standard 
@@ -1709,5 +1707,5 @@ int main(int argc, const char* argv[]){
 	output_classic.close();
 	output_augmented.close();
 	output_augmented_HOG.close();
-	cout<<"==========END OF THE PROGRAM=========="<<endl; 
+	cout<<"========== END OF THE PROGRAM =========="<<endl; 
 }
