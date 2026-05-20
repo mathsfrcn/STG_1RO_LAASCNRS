@@ -15,9 +15,12 @@
 
 #include <fstream>
 #include <sstream>
+#include <iostream>
+#include <filesystem>
 
 using namespace std;
 using namespace std::chrono;
+namespace fs = std::filesystem;
 
 //=========================================== Structures
 
@@ -599,7 +602,7 @@ Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > >
 // It works in two phases: 
 //		- forward pass : it calculates the worst-case scenario by traversing the graph
 //		- backpropagation : it retrieves the most interesting sub-graph (containing the worst-case scenario)
-vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float approx_coeff){
+vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float approx_coeff, bool use_export){
 	vector<vector<vector<vector<int> > > > arcbool; // Bool flag to arcs within the worsts scenarios (if a specific decision by the opponent is part of the subgraph)
 	vector<vector<float> > pi_value; 				// Value of the longest path to pi[t][j] (It stores the "maximum cumulative cost" to reach period t having consumed j budget units)
 	vector<vector<bool> > pi_subopt_bool;
@@ -702,12 +705,10 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 		}
 	}
 
-	// =============================================================== IN PROGRESS =======================================================================================================
-
-	export_budget_graph_json(sol, pi_value, costs, arcbool);
-
-	// ====================================================================================================================================================================================
-
+	if(use_export){
+		export_budget_graph_json(sol, pi_value, costs, arcbool);
+	}
+	
 	return arcbool;
 }
 
@@ -718,7 +719,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 //		- forward pass : it calculates the worst-case scenario by traversing the graph
 //		- backpropagation : it retrieves the most interesting sub-graph (containing the worst-case scenario)
 // In this alternative, we had initialized the orthogonality heuristic with greedy & Brays-Curtis
-vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, float approx_coeff, int nb_path_to_select){
+vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, float approx_coeff, int nb_path_to_select, bool use_export){
 	vector<vector<vector<vector<int> > > > arcbool; // Bool flag to arcs within the worsts scenarios (if a specific decision by the opponent is part of the subgraph)
 	vector<vector<float> > pi_value; 				// Value of the longest path to pi[t][j] (It stores the "maximum cumulative cost" to reach period t having consumed j budget units)
 	vector<vector<bool> > pi_subopt_bool;
@@ -850,8 +851,10 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 		arcbool[sol.inst.T+1][final_budget][0][1] = 1;
 	}
 
-	export_budget_graph_json(sol, pi_value, costs, arcbool);
-
+	if(use_export){
+		export_budget_graph_json(sol, pi_value, costs, arcbool);
+	}
+	
 	// =================================================================================================================
 
 	return arcbool;
@@ -930,59 +933,36 @@ vector<vector<vector<vector<int> > > > merge_budget_graph(vector<vector<vector<v
 }
 
 
-pair<int, float> KC_benders_Main(Instance inst, float approx_coeff){
-	auto start = high_resolution_clock::now();
-
+pair<int, float> KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, bool use_export){
 	Solution sol;
 	Solution new_sol;
 	Solution_ADV sol_adv;
+	auto start = high_resolution_clock::now();
 	int iter = 0;
 	bool stopCriterion = false;
 	float proc_time;
 	vector<vector<vector<vector<int> > > > arcsol = init_graph(inst);
-	// vector<vector<vector<vector<int> > > > arcsol = init_graph_full(inst);
 	vector<vector<vector<vector<int> > > > arcsol_new;
-	// Only nominal scenario
-	// cout<<"nominal scenario : ";
-	// display_vector_float(inst.Dt);
 
 	sol = KC_benders_Master(inst, arcsol);	// Proposes a first (unsatisfactory) solution compared to the nominal scenario
-
-	// cout<<"first sol cost : "<<sol.obj_val<<endl;;
-	// display_vector_float(sol.Xt);
-
-	// vector<vector<vector<vector<int> > > > tmp =  KC_benders_Subproblem(sol,approx_coeff);
 	
 	while(!stopCriterion){	// While the solution is not satisfactory we do the merge loop		
-		//arcsol_new = KC_benders_Subproblem(sol, approx_coeff);	// Proposes a new worst solution according to the master solution
+		if(use_HOG){
+			arcsol_new = KC_benders_Subproblem_HOG(sol, approx_coeff, 5, use_export);	// Proposes a new worst solution according to the master solution
+		} else{
+			arcsol_new = KC_benders_Subproblem(sol, approx_coeff, use_export);	// Proposes a new worst solution according to the master solution
+		}
 
-		arcsol_new = KC_benders_Subproblem_HOG(sol, approx_coeff, 5);	// Proposes a new worst solution according to the master solution
-
-
-
-
-
-
-		// cout<<"subproblem solved"<<endl;
 		arcsol = merge_budget_graph(arcsol, arcsol_new);		// Merge the worst solution with the current solution
-		// cout<<"budget graphs merged"<<endl;
 		new_sol = KC_benders_Master(inst, arcsol);				// Proposes a new solution according to the merge
 		iter++;
-		// cout<<"master problem solved"<<endl;
-		// cout<<"new sol : ";
-		// display_vector_float(new_sol.Xt);
-		// cout<<"new sol value : "<<new_sol.obj_val<<endl;
-
-		// cout<<"============ "<< new_sol.obj_val << " " << sol.obj_val<<endl;
-		
+			
 		// If the cost increased, the opponent has found a computer breach and we continue in the loop
 		if(abs(new_sol.obj_val - sol.obj_val) < 1e-5){	
 			stopCriterion = true;
 			break;
 		}
 
-		// cout<<"worst case : ";
-		// display_vector_float(sol_adv.Dt);
 		sol = new_sol;
 	}
 
@@ -1602,24 +1582,44 @@ int main(int argc, const char* argv[]){
 	// pair<Solution, Solution_ADV> benders_sol;
 	pair<int, float> benders_sol;
 	float approx_coeff;
-	float time, timeKC;
-	int iter, iterKC;
+	float time, timeKC, timeKCHOG;
+	int iter, iterKC, iterKCHOG;
 
 	//====================================================================== IN PROGRESS ======================================================================
 
+	// Création of the folder architecture
 	auto t = std::time(nullptr);
 	auto tm = *std::localtime(&t);
 
-	ostringstream oss;
-	oss << "results/result_benders_" << put_time(&tm, "%Y-%m-%d_%H%M%S") << ".csv";
+	ostringstream oss_exp;
+    oss_exp << "/result_benders_" << put_time(&tm, "%Y-%m-%d_%H%M");
+    std::string experience_name = oss_exp.str();
 
-	ofstream output;
-  	output.open(oss.str());
+    ostringstream oss_folder;
+    oss_folder << "results" << experience_name;
+    std::string folder_path = oss_folder.str();
 
-	cout << "Enregistrement des résultats dans : " << oss.str() << endl;
+    if(fs::create_directories(folder_path)){
+        std::cout << "Le dossier '" << folder_path << "' a été créé avec succès." << std::endl;
+    } else{
+        std::cout << "Le dossier '" << folder_path << "' existe déjà." << std::endl;
+    }
 
-  	vector<string> file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/parsed_large_instances/");
-	//vector<string> file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/test/");
+	ostringstream oss_classic; 
+	ostringstream oss_augmented; 
+	ostringstream oss_augmented_HOG;
+	oss_classic 	  << folder_path << experience_name << "_classic.csv";
+	oss_augmented 	  << folder_path << experience_name << "_augmented.csv";
+	oss_augmented_HOG << folder_path << experience_name << "_augmented_HOG.csv";
+
+	ofstream output_classic(oss_classic.str());
+	ofstream output_augmented(oss_augmented.str());
+	ofstream output_augmented_HOG(oss_augmented_HOG.str());
+
+	cout << "Enregistrement des résultats dans : " << folder_path << endl;
+
+  	//vector<string> file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/parsed_large_instances/");
+	vector<string> file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/test/");
   	int total_files = file_list.size();
 
 	if (total_files <= 2) {
@@ -1642,10 +1642,12 @@ int main(int argc, const char* argv[]){
 
 	for(int Gamma=1; Gamma<100; Gamma+=20){
 		for(int tau=0; tau<11; tau+=2){		
-			iter = 0;
-			iterKC = 0;
-			time = 0;
-			timeKC=0;
+			iter      = 0;
+			iterKC    = 0;
+			iterKCHOG  = 0;
+			time      = 0;
+			timeKC    = 0;
+			timeKCHOG = 0;
 			debug.resize(0);
 			debug2.resize(0);
 			for(int i = 2; i<total_files; i++ ){
@@ -1653,8 +1655,8 @@ int main(int argc, const char* argv[]){
 	//=========================================================================================================================================================
 				
 				
-				filename = "parsed_large_instances/" + file_list[i];
-				//filename = "test/" + file_list[i];
+				//filename = "parsed_large_instances/" + file_list[i];
+				filename = "test/" + file_list[i];
 
 
 	//=========================================================================================================================================================
@@ -1662,30 +1664,50 @@ int main(int argc, const char* argv[]){
 				cout<<filename<<" "<<Gamma<<" "<<tau<<" "<<endl;
 				
 				inst = read_instance_randomized(filename, Gamma);
-				
+
+				// Classique
 				benders_sol = benders_Main(inst);
-				cout<<"STANDARD done"<<endl;
-				
 				iter += benders_sol.first;
 				time += benders_sol.second;
+				cout<<"STANDARD done"<<endl;
 
 				approx_coeff = float(tau)/10;
 
-				benders_sol = KC_benders_Main(inst, approx_coeff);
+				// KC
+				pair<int, float> benders_sol_augmented = KC_benders_Main(inst, approx_coeff, false, false);	// First bool is to use KC with HOG, the second is to export the final graph
+				iterKC += benders_sol_augmented.first;
+				timeKC += benders_sol_augmented.second;
 				cout<<"KC done"<<endl;
 
-				iterKC+= benders_sol.first;
-				timeKC+= benders_sol.second;
+				// KC with HOG
+				pair<int, float> benders_sol_augmented_HOG = KC_benders_Main(inst, approx_coeff, true, false);
+				iterKCHOG += benders_sol_augmented_HOG.first;
+				timeKCHOG += benders_sol_augmented_HOG.second;
+				cout<<"KC done"<<endl;
 			}
-			
-			output<<"STANDARD,"<<Gamma<<","<<tau<<",";
-			output<<float(iter)/nbInst<<","<<float(time)/nbInst<<endl;
 
-			output<<"KC,"<<Gamma<<","<<tau<<",";
-			output<<float(iterKC)/nbInst<<","<<float(timeKC)/nbInst<<endl;
-		}	
+			// Standard with KC standard 
+			output_classic << "STANDARD," << Gamma << "," << tau << ","
+                           << float(iter)/nbInst << "," << float(time)/nbInst << endl;
+            output_classic << "KC," << Gamma << "," << tau << ","
+                           << float(iterKC)/nbInst << "," << float(timeKC)/nbInst << endl;
+
+			// Standard with KC augmented (HOG)
+            output_augmented << "STANDARD," << Gamma << "," << tau << ","
+                             << float(iter)/nbInst << "," << float(time)/nbInst << endl;
+            output_augmented << "KC_HOG," << Gamma << "," << tau << ","
+                             << float(iterKCHOG)/nbInst << "," << float(timeKCHOG)/nbInst << endl;
+
+			// KC standard with KC augmented
+			output_augmented_HOG << "KC," << Gamma << "," << tau << ","
+                             << float(iterKC)/nbInst << "," << float(timeKC)/nbInst << endl;
+            output_augmented_HOG << "KC_HOG," << Gamma << "," << tau << ","
+                             << float(iterKCHOG)/nbInst << "," << float(timeKCHOG)/nbInst << endl;
+		}
 	}
 
-	output.close();
+	output_classic.close();
+	output_augmented.close();
+	output_augmented_HOG.close();
 	cout<<"==========END OF THE PROGRAM=========="<<endl; 
 }
