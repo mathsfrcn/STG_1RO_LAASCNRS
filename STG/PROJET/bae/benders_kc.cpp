@@ -61,6 +61,12 @@ struct Solution_ADV
 
 // ====================================================================== IN PROGRESS ==============================================================================================================
 // ====================================================================================================================================================================================
+struct Benders_Result{
+	int iter;
+	float time;
+	float obj_value;
+};
+
 struct Arc_Decision
 {
 	int t;	// Time
@@ -931,7 +937,7 @@ vector<vector<vector<vector<int> > > > merge_budget_graph(vector<vector<vector<v
 }
 
 
-pair<int, float> KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, bool use_export, int limit_number_paths, int number_orthogonal_axes){
+Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, bool use_export, int limit_number_paths, int number_orthogonal_axes){
 	Solution sol;
 	Solution new_sol;
 	Solution_ADV sol_adv;
@@ -969,7 +975,8 @@ pair<int, float> KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG
 	float accuracy = (1./100000);
 	proc_time = accuracy*float(duration.count());
 
-	return make_pair(iter, proc_time);
+	//return make_pair(iter, proc_time);
+	return {iter, proc_time, sol.obj_val};
 }
 
 
@@ -1513,7 +1520,7 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 }
 
 
-pair<int, float> benders_Main(Instance inst){
+Benders_Result benders_Main(Instance inst){
 	auto start = high_resolution_clock::now();
 
 	Solution sol;
@@ -1553,7 +1560,9 @@ pair<int, float> benders_Main(Instance inst){
 	auto duration = duration_cast<microseconds>(stop - start);
 	float accuracy = (1./100000);
 	proc_time = accuracy*float(duration.count());
-	return make_pair(i, proc_time);
+	
+	//return make_pair(i, proc_time);
+	return {i, proc_time, sol.obj_val};
 }
 
 // =========================================== Main
@@ -1576,7 +1585,9 @@ vector<string> allfile;
 }
 
 int main(int argc, const char* argv[]){
-	pair<int, float> benders_sol;
+	Benders_Result benders_sol;
+	Benders_Result benders_sol_augmented;
+	Benders_Result benders_sol_augmented_HOG;
 	float approx_coeff;
 	float time, timeKC, timeKCHOG;
 	int iter, iterKC, iterKCHOG;
@@ -1659,7 +1670,7 @@ int main(int argc, const char* argv[]){
 		for(int tau=0; tau<11; tau+=2){		
 			iter      = 0;
 			iterKC    = 0;
-			iterKCHOG  = 0;
+			iterKCHOG = 0;
 			time      = 0;
 			timeKC    = 0;
 			timeKCHOG = 0;
@@ -1685,23 +1696,31 @@ int main(int argc, const char* argv[]){
 
 				// Classique
 				benders_sol = benders_Main(inst);
-				iter += benders_sol.first;
-				time += benders_sol.second;
-				cout<<"STANDARD-done"<<endl;
+				iter += benders_sol.iter;
+				time += benders_sol.time;
+				cout << "STANDARD-done (Obj :" << benders_sol.obj_value << ")" << endl;
 
 				approx_coeff = float(tau)/10;
 
 				// KC
-				pair<int, float> benders_sol_augmented = KC_benders_Main(inst, approx_coeff, false, use_export, limit_number_paths, number_orthogonal_axes);	// First bool is to use KC with HOG
-				iterKC += benders_sol_augmented.first;
-				timeKC += benders_sol_augmented.second;
-				cout<<"KC-------done"<<endl;
+				benders_sol_augmented = KC_benders_Main(inst, approx_coeff, false, use_export, limit_number_paths, number_orthogonal_axes);	// First bool is to use KC with HOG
+				iterKC += benders_sol_augmented.iter;
+				timeKC += benders_sol_augmented.time;
+				cout << "KC-------done (Obj :" << benders_sol_augmented.obj_value << ")" <<endl;
 
 				// KC with HOG
-				pair<int, float> benders_sol_augmented_HOG = KC_benders_Main(inst, approx_coeff, true, use_export, limit_number_paths, number_orthogonal_axes);
-				iterKCHOG += benders_sol_augmented_HOG.first;
-				timeKCHOG += benders_sol_augmented_HOG.second;
-				cout<<"KC_HOG---done"<<endl;
+				benders_sol_augmented_HOG = KC_benders_Main(inst, approx_coeff, true, use_export, limit_number_paths, number_orthogonal_axes);
+				iterKCHOG += benders_sol_augmented_HOG.iter;
+				timeKCHOG += benders_sol_augmented_HOG.time;
+				cout << "KC_HOG---done (Obj :" << benders_sol_augmented_HOG.obj_value << ")"<< endl;
+
+				// Quality control of the solution
+				float eps = 1e-4;
+				if(abs(benders_sol.obj_value - benders_sol_augmented.obj_value) > eps || abs(benders_sol.obj_value - benders_sol_augmented_HOG.obj_value) > eps){
+					cout << "ALERTE DEGRADATION" << endl;
+				} else{
+					cout << "Qualité valide" << endl;
+				}
 			}
 
 			// Standard with KC standard 
