@@ -24,8 +24,6 @@ def analyze_benders_results(file_path):
     ref_method = methods_sorted[0]
     alt_method = methods_sorted[1]
 
-    print(f"--- Comparative analysis : reference {ref_method} vs Alternative {alt_method} ---")
-
     pivot_df = df.pivot_table(index=['Gamma', 'Tau'], 
                               columns='Method', 
                               values=['Iterations', 'Time']).reset_index()
