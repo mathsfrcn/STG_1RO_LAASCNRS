@@ -131,10 +131,11 @@ void extract_paths_dfs(
 			const vector<vector<vector<vector<float> > > >& costs,	// Original costs
 			const Solution& sol,
 			Path& current_path,
-			vector<Path>& all_paths
+			vector<Path>& all_paths,
+			int limit_number_paths
 			){
 	
-	if(all_paths.size() >= 8000){	// This solution can be a problem if we come in a choke point, maybe we can add a seed
+	if(all_paths.size() >= limit_number_paths){	// This solution can be a problem if we come in a choke point, maybe we can add a seed
 		return;
 	}
 
@@ -153,7 +154,7 @@ void extract_paths_dfs(
 			if(abs(pi_value[t][j] - (pi_value[t-1][i] + costs[t][i][j][0])) < 1e-4){
 				Arc_Decision arc = {t, i, j, 0};
 				current_path.push_back(arc);
-				extract_paths_dfs(t-1, i, pi_value, costs, sol, current_path, all_paths);
+				extract_paths_dfs(t-1, i, pi_value, costs, sol, current_path, all_paths, limit_number_paths);
 				current_path.pop_back();
 			}
 
@@ -161,7 +162,7 @@ void extract_paths_dfs(
 			if(abs(pi_value[t][j] - (pi_value[t-1][i] + costs[t][i][j][1]) < 1e-4)){
 				Arc_Decision arc = {t, i, j, 1};
 				current_path.push_back(arc);
-				extract_paths_dfs(t-1, i, pi_value, costs, sol, current_path, all_paths);
+				extract_paths_dfs(t-1, i, pi_value, costs, sol, current_path, all_paths, limit_number_paths);
 				current_path.pop_back();
 			}
 		}
@@ -718,7 +719,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 //		- forward pass : it calculates the worst-case scenario by traversing the graph
 //		- backpropagation : it retrieves the most interesting sub-graph (containing the worst-case scenario)
 // In this alternative, we had initialized the orthogonality heuristic with greedy & Brays-Curtis
-vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, float approx_coeff, int nb_path_to_select, bool use_export){
+vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, float approx_coeff, int nb_path_to_select, bool use_export, int limit_number_paths){
 	vector<vector<vector<vector<int> > > > arcbool; // Bool flag to arcs within the worsts scenarios (if a specific decision by the opponent is part of the subgraph)
 	vector<vector<float> > pi_value; 				// Value of the longest path to pi[t][j] (It stores the "maximum cumulative cost" to reach period t having consumed j budget units)
 	vector<vector<bool> > pi_subopt_bool;
@@ -790,7 +791,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 	// After the recursion, candidates_path contains all the worst-case paths that exceed the sub_OPT budget
 	for(int i = 0; i < sol.inst.Gamma+1; i++){
 		if(pi_value[sol.inst.T][i] >= sub_OPT){
-			extract_paths_dfs(sol.inst.T, i, pi_value, costs, sol, current_path_buffer, candidates_path);
+			extract_paths_dfs(sol.inst.T, i, pi_value, costs, sol, current_path_buffer, candidates_path, limit_number_paths);
 		}
 	}
 
@@ -932,7 +933,7 @@ vector<vector<vector<vector<int> > > > merge_budget_graph(vector<vector<vector<v
 }
 
 
-pair<int, float> KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, bool use_export){
+pair<int, float> KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, bool use_export, int limit_number_paths, int number_orthogonal_axes){
 	Solution sol;
 	Solution new_sol;
 	Solution_ADV sol_adv;
@@ -947,7 +948,7 @@ pair<int, float> KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG
 	
 	while(!stopCriterion){	// While the solution is not satisfactory we do the merge loop		
 		if(use_HOG){
-			arcsol_new = KC_benders_Subproblem_HOG(sol, approx_coeff, 5, use_export);	// Proposes a new worst solution according to the master solution
+			arcsol_new = KC_benders_Subproblem_HOG(sol, approx_coeff, number_orthogonal_axes, use_export, limit_number_paths);	// Proposes a new worst solution according to the master solution
 		} else{
 			arcsol_new = KC_benders_Subproblem(sol, approx_coeff, use_export);	// Proposes a new worst solution according to the master solution
 		}
@@ -1577,11 +1578,14 @@ vector<string> allfile;
 }
 
 int main(int argc, const char* argv[]){
-	// pair<Solution, Solution_ADV> benders_sol;
 	pair<int, float> benders_sol;
 	float approx_coeff;
 	float time, timeKC, timeKCHOG;
 	int iter, iterKC, iterKCHOG;
+	int limit_number_paths;		// Used for the DFS algo
+	limit_number_paths = 2000;
+	int number_orthogonal_axes;	// Number of orthogonal axes we want for the heuristics
+	number_orthogonal_axes = 5;
 
 	//====================================================================== IN PROGRESS ======================================================================
 
@@ -1590,7 +1594,7 @@ int main(int argc, const char* argv[]){
 	auto tm = *std::localtime(&t);
 
 	ostringstream oss_exp;
-    oss_exp << "/result_benders_" << put_time(&tm, "%Y-%m-%d_%H%M");
+    oss_exp << "/result_benders_" << put_time(&tm, "%Y-%m-%d_%H%M") << "_n=" << number_orthogonal_axes << "_l=" << limit_number_paths;
     std::string experience_name = oss_exp.str();
 
     ostringstream oss_folder;
@@ -1619,14 +1623,14 @@ int main(int argc, const char* argv[]){
 	//================================================================= TEMPORAIRE ========================================================================================
 	vector<string> file_list;
 	int choice_instances;
-	choice_instances = 1;
+	choice_instances = 3;
 	
 	if(choice_instances == 1){
 		file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/parsed_large_instances/");
 	} else if(choice_instances == 2){
-		file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/test/");
-	} else{
 		file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/other_instances/");
+	} else{
+		file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/test/");
 	}
   	
 	//=========================================================================================================================================================
@@ -1668,14 +1672,14 @@ int main(int argc, const char* argv[]){
 				if(choice_instances == 1){
 					filename = "parsed_large_instances/" + file_list[i];
 				} else if(choice_instances == 2){
-					filename = "test/" + file_list[i];
-				} else{
 					filename = "other_instances/" + file_list[i];
+				} else{
+					filename = "test/" + file_list[i];
 				}
 				
 				//=========================================================================================================================================================
 
-				cout<<filename<<" "<<Gamma<<" "<<tau<<" "<<endl;
+				cout << "\n" << filename << " " << Gamma << " " << tau << " " << endl;
 				
 				inst = read_instance_randomized(filename, Gamma);
 
@@ -1683,21 +1687,21 @@ int main(int argc, const char* argv[]){
 				benders_sol = benders_Main(inst);
 				iter += benders_sol.first;
 				time += benders_sol.second;
-				cout<<"STANDARD done"<<endl;
+				cout<<"STANDARD-done"<<endl;
 
 				approx_coeff = float(tau)/10;
 
 				// KC
-				pair<int, float> benders_sol_augmented = KC_benders_Main(inst, approx_coeff, false, false);	// First bool is to use KC with HOG, the second is to export the final graph
+				pair<int, float> benders_sol_augmented = KC_benders_Main(inst, approx_coeff, number_orthogonal_axes, false, false, limit_number_paths);	// First bool is to use KC with HOG, the second is to export the final graph
 				iterKC += benders_sol_augmented.first;
 				timeKC += benders_sol_augmented.second;
-				cout<<"KC done"<<endl;
+				cout<<"KC-------done"<<endl;
 
 				// KC with HOG
-				pair<int, float> benders_sol_augmented_HOG = KC_benders_Main(inst, approx_coeff, true, false);
+				pair<int, float> benders_sol_augmented_HOG = KC_benders_Main(inst, approx_coeff, number_orthogonal_axes, true, false, limit_number_paths);
 				iterKCHOG += benders_sol_augmented_HOG.first;
 				timeKCHOG += benders_sol_augmented_HOG.second;
-				cout<<"KC HOG done"<<endl;
+				cout<<"KC_HOG---done"<<endl;
 			}
 
 			// Standard with KC standard 
