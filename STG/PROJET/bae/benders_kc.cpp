@@ -1616,8 +1616,21 @@ int main(int argc, const char* argv[]){
 
 	cout << "Enregistrement des résultats dans : " << folder_path << endl;
 
-  	vector<string> file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/parsed_large_instances/");
-	//vector<string> file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/test/");
+	//================================================================= TEMPORAIRE ========================================================================================
+	vector<string> file_list;
+	int choice_instances;
+	choice_instances = 3;
+	
+	if(choice_instances == 1){
+		file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/parsed_large_instances/");
+	} else if(choice_instances == 2){
+		file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/test/");
+	} else{
+		file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/other_instances/");
+	}
+  	
+	//=========================================================================================================================================================
+
   	int total_files = file_list.size();
 
 	if (total_files <= 2) {
@@ -1650,14 +1663,17 @@ int main(int argc, const char* argv[]){
 			debug2.resize(0);
 			for(int i = 2; i<total_files; i++ ){
 				
-	//=========================================================================================================================================================
+				//=========================================================================================================================================================
+					
+				if(choice_instances == 1){
+					filename = "parsed_large_instances/" + file_list[i];
+				} else if(choice_instances == 2){
+					filename = "test/" + file_list[i];
+				} else{
+					filename = "other_instances/" + file_list[i];
+				}
 				
-				
-				filename = "parsed_large_instances/" + file_list[i];
-				//filename = "test/" + file_list[i];
-
-
-	//=========================================================================================================================================================
+				//=========================================================================================================================================================
 
 				cout<<filename<<" "<<Gamma<<" "<<tau<<" "<<endl;
 				
