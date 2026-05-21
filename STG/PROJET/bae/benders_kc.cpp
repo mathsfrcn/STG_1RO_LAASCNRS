@@ -918,12 +918,10 @@ vector<vector<vector<vector<int> > > > merge_budget_graph(vector<vector<vector<v
 				merge_arcbool[t][i][j].resize(2);
 				
 				if(arcbool1[t][i][j][0] == 1 or arcbool2[t][i][j][0] == 1){
-					// cout<<t<<" "<<i<<" "<<j<<" "<<arcbool1[t][i][j][0]<<" "<<arcbool2[t][i][j][0]<<endl;
 					merge_arcbool[t][i][j][0] = 1;
 				}
 
 				if(arcbool1[t][i][j][1] == 1 or arcbool2[t][i][j][1] == 1){
-					// cout<<t<<" "<<i<<" "<<j<<" "<<arcbool1[t][i][j][1]<<" "<<arcbool2[t][i][j][1]<<endl;
 					merge_arcbool[t][i][j][1] = 1;
 				}
 			}
@@ -1454,7 +1452,7 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 	for(int t=sol.inst.T; t>0; t--){
 		for(int j = 0; j<sol.inst.Gamma+1; j++){
 			for(int i = 0; i<=j; i++){
-				if(pi_subopt_bool[t][j] and j<=i+sol.inst.deltat[t-1] and (t!=1 or i==0)){ //last and is specific for first layer of the graph
+				if(pi_subopt_bool[t][j] and j<=i+sol.inst.deltat[t-1] and (t!=1 or i==0)){ // Last and is specific for first layer of the graph
 					if(pi_value[t][j] == pi_value[t-1][i]+costs[t][i][j][0]){
 						arcbool[t][i][j][0] = 1;
 						pi_subopt_bool[t-1][i] = true;
@@ -1582,10 +1580,12 @@ int main(int argc, const char* argv[]){
 	float approx_coeff;
 	float time, timeKC, timeKCHOG;
 	int iter, iterKC, iterKCHOG;
+	// Simulation parameters
 	int limit_number_paths;		// Used for the DFS algo
-	limit_number_paths = 2000;
+	limit_number_paths = 1000;	// 2000
 	int number_orthogonal_axes;	// Number of orthogonal axes we want for the heuristics
-	number_orthogonal_axes = 5;
+	number_orthogonal_axes = 5;	// 5
+	bool use_export = false;	// To be corrected before use
 
 	//====================================================================== IN PROGRESS ======================================================================
 
@@ -1623,7 +1623,7 @@ int main(int argc, const char* argv[]){
 	//================================================================= TEMPORAIRE ========================================================================================
 	vector<string> file_list;
 	int choice_instances;
-	choice_instances = 3;
+	choice_instances = 1;
 	
 	if(choice_instances == 1){
 		file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/parsed_large_instances/");
@@ -1692,13 +1692,13 @@ int main(int argc, const char* argv[]){
 				approx_coeff = float(tau)/10;
 
 				// KC
-				pair<int, float> benders_sol_augmented = KC_benders_Main(inst, approx_coeff, number_orthogonal_axes, false, false, limit_number_paths);	// First bool is to use KC with HOG, the second is to export the final graph
+				pair<int, float> benders_sol_augmented = KC_benders_Main(inst, approx_coeff, false, use_export, limit_number_paths, number_orthogonal_axes);	// First bool is to use KC with HOG
 				iterKC += benders_sol_augmented.first;
 				timeKC += benders_sol_augmented.second;
 				cout<<"KC-------done"<<endl;
 
 				// KC with HOG
-				pair<int, float> benders_sol_augmented_HOG = KC_benders_Main(inst, approx_coeff, number_orthogonal_axes, true, false, limit_number_paths);
+				pair<int, float> benders_sol_augmented_HOG = KC_benders_Main(inst, approx_coeff, true, use_export, limit_number_paths, number_orthogonal_axes);
 				iterKCHOG += benders_sol_augmented_HOG.first;
 				timeKCHOG += benders_sol_augmented_HOG.second;
 				cout<<"KC_HOG---done"<<endl;
@@ -1727,5 +1727,5 @@ int main(int argc, const char* argv[]){
 	output_classic.close();
 	output_augmented.close();
 	output_augmented_HOG.close();
-	cout<<"========== END OF THE PROGRAM =========="<<endl; 
+	cout<<"========== END OF THE PROGRAM =========="<<endl;
 }
