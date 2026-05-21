@@ -795,8 +795,20 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 	Path current_path_buffer;		// Use for recursion
 
 	// After the recursion, candidates_path contains all the worst-case paths that exceed the sub_OPT budget
+	//for(int i = 0; i < sol.inst.Gamma+1; i++){
+	//	if(pi_value[sol.inst.T][i] >= sub_OPT){
+	//		extract_paths_dfs(sol.inst.T, i, pi_value, costs, sol, current_path_buffer, candidates_path, limit_number_paths);
+	//	}
+	//}
+
 	for(int i = 0; i < sol.inst.Gamma+1; i++){
-		if(pi_value[sol.inst.T][i] >= sub_OPT){
+		if(abs(pi_value[sol.inst.T][i] - pi_value[sol.inst.T+1][0]) < 1e-4){	// pi_value[sol.inst.T+1][0] is the worst path, so we will prioritize taking paths with minimal difference in price.
+			extract_paths_dfs(sol.inst.T, i, pi_value, costs, sol, current_path_buffer, candidates_path, limit_number_paths);
+		}
+	}
+
+	for(int i = 0; i < sol.inst.Gamma+1; i++){
+		if(pi_value[sol.inst.T][i] >= sub_OPT && abs(pi_value[sol.inst.T][i] - pi_value[sol.inst.T+1][0]) >= 1e-4){	
 			extract_paths_dfs(sol.inst.T, i, pi_value, costs, sol, current_path_buffer, candidates_path, limit_number_paths);
 		}
 	}
@@ -1004,7 +1016,7 @@ Solution benders_Master(Instance inst, vector<vector<float> > scenarios){
 		I[o] = IloNumVarArray(env, inst.T);
 		for(int t = 0; t<inst.T; t++){
 			char name[80];
-			s[o][t] = IloNumVar(env);	// Sales
+			s[o][t] = IloNumVar(env, -IloInfinity, IloInfinity);	// Sales
 			sprintf(name,"s_%d_%d",o,t);
 			s[o][t].setName(name);
 
@@ -1056,8 +1068,6 @@ Solution benders_Master(Instance inst, vector<vector<float> > scenarios){
 	// Solve
 	IloCplex cplex(model);
 	
-	// cplex.setParam(IloCplex::Param::MIP::Display, 1);
-	// cplex.exportModel ("ben_main.lp");
 	cplex.setParam(IloCplex::Param::MIP::Display, 0);
 	cplex.setOut(env.getNullStream());
     if ( !cplex.solve() ) {
@@ -1065,7 +1075,6 @@ Solution benders_Master(Instance inst, vector<vector<float> > scenarios){
     	throw(-1);
 	}
 
-	// cout<<"solved"<<endl;
 	vector<float> Xt;
 	Xt.resize(inst.T);
 	for(int t = 0; t<inst.T; t++){
@@ -1593,7 +1602,7 @@ int main(int argc, const char* argv[]){
 	int iter, iterKC, iterKCHOG;
 	// Simulation parameters
 	int limit_number_paths;		// Used for the DFS algo
-	limit_number_paths = 1000;	// 2000
+	limit_number_paths = 2000;	// 2000
 	int number_orthogonal_axes;	// Number of orthogonal axes we want for the heuristics
 	number_orthogonal_axes = 5;	// 5
 	bool use_export = false;	// To be corrected before use
