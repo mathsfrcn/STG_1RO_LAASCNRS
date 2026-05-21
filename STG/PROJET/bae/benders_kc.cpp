@@ -134,7 +134,7 @@ void extract_paths_dfs(
 			vector<Path>& all_paths
 			){
 	
-	if(all_paths.size() >= 2000){	// This solution can be a problem if we come in a choke point, maybe we can add a seed
+	if(all_paths.size() >= 8000){	// This solution can be a problem if we come in a choke point, maybe we can add a seed
 		return;
 	}
 
@@ -947,7 +947,7 @@ pair<int, float> KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG
 	
 	while(!stopCriterion){	// While the solution is not satisfactory we do the merge loop		
 		if(use_HOG){
-			arcsol_new = KC_benders_Subproblem_HOG(sol, approx_coeff, 10, use_export);	// Proposes a new worst solution according to the master solution
+			arcsol_new = KC_benders_Subproblem_HOG(sol, approx_coeff, 5, use_export);	// Proposes a new worst solution according to the master solution
 		} else{
 			arcsol_new = KC_benders_Subproblem(sol, approx_coeff, use_export);	// Proposes a new worst solution according to the master solution
 		}
