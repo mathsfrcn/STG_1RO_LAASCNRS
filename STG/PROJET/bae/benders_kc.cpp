@@ -947,7 +947,7 @@ pair<int, float> KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG
 	
 	while(!stopCriterion){	// While the solution is not satisfactory we do the merge loop		
 		if(use_HOG){
-			arcsol_new = KC_benders_Subproblem_HOG(sol, approx_coeff, 5, use_export);	// Proposes a new worst solution according to the master solution
+			arcsol_new = KC_benders_Subproblem_HOG(sol, approx_coeff, 10, use_export);	// Proposes a new worst solution according to the master solution
 		} else{
 			arcsol_new = KC_benders_Subproblem(sol, approx_coeff, use_export);	// Proposes a new worst solution according to the master solution
 		}
@@ -1619,7 +1619,7 @@ int main(int argc, const char* argv[]){
 	//================================================================= TEMPORAIRE ========================================================================================
 	vector<string> file_list;
 	int choice_instances;
-	choice_instances = 3;
+	choice_instances = 1;
 	
 	if(choice_instances == 1){
 		file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/parsed_large_instances/");
