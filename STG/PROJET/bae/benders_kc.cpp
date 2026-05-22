@@ -1604,7 +1604,7 @@ int main(int argc, const char* argv[]){
 	int limit_number_paths;		// Used for the DFS algo
 	limit_number_paths = 2000;	// 2000
 	int number_orthogonal_axes;	// Number of orthogonal axes we want for the heuristics
-	number_orthogonal_axes = 5;	// 5
+	number_orthogonal_axes = 8;	// 5
 	bool use_export = false;	// To be corrected before use
 
 	//====================================================================== IN PROGRESS ======================================================================
