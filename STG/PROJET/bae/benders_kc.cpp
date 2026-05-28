@@ -194,7 +194,7 @@ void export_budget_graph_json(
 	ofstream output(oss.str());
 
 	if (!output.is_open()) {
-		cerr << "ERREUR CRITIQUE : Le dossier 'graph_visualization' n'existe peut-être pas." << endl;
+		cerr << "Erreur : Le dossier 'graph_visualization' n'existe peut-être pas." << endl;
 		return;
 	}
 
@@ -334,14 +334,14 @@ Instance read_instance(string filename, int budget){
 	*/
 
 
-
 	// Ajustement des parametres temporaires
 	inst.cI = 1; 	// Stock cost
 	inst.cB = 2; 	// Backorder cost
-	inst.bP = 10; 	// Selling price
+	inst.bP = 0; 	// Selling price
 	inst.Gamma = 2;
 	inst.deltat.resize(inst.T);
-	
+	//rajout
+	inst.X.resize(inst.T);
 
 
 	// \Delta_i=2 \forall i
@@ -396,10 +396,26 @@ Instance read_instance_randomized(string filename, int budget){
 
 	inst.Dt = standardToCumul(inst.dt);
 
+
+
+
+
+
+
+
+
+
+
 	
 	inst.cB = rand() % 10 + 10;	// Backorder cost
 	inst.cI = rand() % 10 + 10; // Stock cost
 	inst.bP = rand() % 10 + 10; // Selling price
+
+
+
+
+
+
 	inst.Gamma = budget;
 	inst.Dt = standardToCumul(inst.dt);
 	inst.deltat.resize(inst.T);
@@ -549,10 +565,16 @@ Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > >
 		X[t].setName(name);
 	}
 
-	// Bounbds for X variables
-	for(int t = 1; t<inst.T+1;t++){
-		model.add(X[t-1]<=inst.X[t-1]);
-	}
+	//======================================================================
+
+	
+	// Consts
+	//for(int t = 1; t<inst.T+1;t++){
+	//	model.add(X[t-1]<=inst.X[t-1]);
+	//}
+
+
+	//======================================================================
 
 	// for t in 1...T-1
 	for(int t = 1; t<inst.T;t++){
@@ -632,7 +654,7 @@ Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > >
 // It works in two phases: 
 //		- forward pass : it calculates the worst-case scenario by traversing the graph
 //		- backpropagation : it retrieves the most interesting sub-graph (containing the worst-case scenario)
-vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float approx_coeff, bool use_export, float ub_cost){
+vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float approx_coeff, bool use_export, float& ub_cost){
 	vector<vector<vector<vector<int> > > > arcbool; // Bool flag to arcs within the worsts scenarios (if a specific decision by the opponent is part of the subgraph)
 	vector<vector<float> > pi_value; 				// Value of the longest path to pi[t][j] (It stores the "maximum cumulative cost" to reach period t having consumed j budget units)
 	vector<vector<bool> > pi_subopt_bool;
@@ -766,7 +788,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 //		- forward pass : it calculates the worst-case scenario by traversing the graph
 //		- backpropagation : it retrieves the most interesting sub-graph (containing the worst-case scenario)
 // In this alternative, we had initialized the orthogonality heuristic with greedy & Brays-Curtis
-vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, float approx_coeff, int nb_path_to_select, bool use_export, int limit_number_paths, float ub_cost){
+vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, float approx_coeff, int nb_path_to_select, bool use_export, int limit_number_paths, float& ub_cost){
 	vector<vector<vector<vector<int> > > > arcbool; // Bool flag to arcs within the worsts scenarios (if a specific decision by the opponent is part of the subgraph)
 	vector<vector<float> > pi_value; 				// Value of the longest path to pi[t][j] (It stores the "maximum cumulative cost" to reach period t having consumed j budget units)
 	vector<vector<bool> > pi_subopt_bool;
@@ -1109,10 +1131,30 @@ Solution benders_Master(Instance inst, vector<vector<float> > scenarios){
 		}
 	}
 
+
+
+
+
+	//======================================================================
+
+	
 	// Consts
-	for(int t = 1; t<inst.T+1;t++){
-		model.add(X[t-1]<=inst.X[t-1]);
-	}
+	//for(int t = 1; t<inst.T+1;t++){
+	//	model.add(X[t-1]<=inst.X[t-1]);
+	//}
+
+
+	//======================================================================
+
+
+
+
+
+
+
+
+
+
 
 	for(int t = 0; t<inst.T; t++){
 		for(int o = 0; o<scenarios.size();o++){
@@ -1212,10 +1254,16 @@ Solution benders_Master_integer(Instance inst, vector<vector<float> > scenarios)
 		}
 	}
 
+	//======================================================================
+
+	
 	// Consts
-	for(int t = 1; t<inst.T+1;t++){
-		model.add(X[t-1]<inst.X[t-1]);
-	}
+	//for(int t = 1; t<inst.T+1;t++){
+	//	model.add(X[t-1]<=inst.X[t-1]);
+	//}
+
+
+	//======================================================================
 
 	for(int t = 0; t<inst.T; t++){
 		for(int o = 0; o<scenarios.size();o++){
@@ -1674,20 +1722,34 @@ Benders_Result benders_Main(Instance inst){
 // =========================================== Main
 
 vector<string> list_dir(const char *path) {
-vector<string> allfile;
-   struct dirent *entry;
-   DIR *dir = opendir(path);
+	vector<string> allfile;
+   	struct dirent *entry;
+   	DIR *dir = opendir(path);
    
-   if (dir == NULL) {
-      return allfile;
-   }
+	if (dir == NULL) {
+		return allfile;
+	}
 
-   while ((entry = readdir(dir)) != NULL) {
-   allfile.push_back(entry->d_name);
-   }
 
-   closedir(dir);
-   return allfile;
+
+
+
+	// ============================IN PROGRESS==========================================
+	while((entry = readdir(dir)) != NULL){
+		string filename = entry -> d_name;
+		if(filename == "." || filename == ".."){
+			continue;
+		}
+
+		allfile.push_back(filename);
+	}
+
+
+	// ================================================================================
+
+
+	closedir(dir);
+	return allfile;
 }
 
 int main(int argc, const char* argv[]){
@@ -1740,26 +1802,35 @@ int main(int argc, const char* argv[]){
 	//================================================================= TEMPORAIRE ========================================================================================
 	vector<string> file_list;
 	int choice_instances;
-	choice_instances = 1;
+	choice_instances = 3;
 	
 	if(choice_instances == 1){
 		file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/parsed_large_instances/");
 	} else if(choice_instances == 2){
 		file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/other_instances/");
 	} else{
-		file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/test/");
+		file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/hand_benders_instances/parsed_instances/");
 	}
   	
 	//=========================================================================================================================================================
 
   	int total_files = file_list.size();
 
-	if (total_files <= 2) {
+	/*if (total_files <= 2) {
     	cerr << "ERREUR : Aucun fichier d'instance trouvé. Vérifiez le chemin du dossier." << endl;
     	return -1;
-	}
+	}*/
 
-	int nbInst = total_files-2;
+
+
+
+	//int nbInst = total_files-2;
+
+
+
+	int nbInst = total_files;
+
+
 	cout << "Succès : " << nbInst << " fichiers trouvés dans le dossier." << endl;
 
 	//=========================================================================================================================================================
@@ -1772,7 +1843,7 @@ int main(int argc, const char* argv[]){
   	int seed = 31415;
   	srand (seed);
 
-	for(int Gamma=1; Gamma<100; Gamma+=20){
+	//for(int Gamma=1; Gamma<100; Gamma+=20){
 		//for(int tau=0; tau<11; tau+=2){		
 			iter      = 0;
 			iterKC    = 0;
@@ -1782,8 +1853,15 @@ int main(int argc, const char* argv[]){
 			timeKCHOG = 0;
 			debug.resize(0);
 			debug2.resize(0);
-			for(int i = 2; i<total_files; i++ ){
-				
+
+
+
+			int Gamma=2;
+
+
+
+			//for(int i = 2; i<total_files; i++ ){
+			for(int i = 0; i<total_files; i++ ){	
 				//=========================================================================================================================================================
 					
 				if(choice_instances == 1){
@@ -1791,17 +1869,29 @@ int main(int argc, const char* argv[]){
 				} else if(choice_instances == 2){
 					filename = "other_instances/" + file_list[i];
 				} else{
-					filename = "test/" + file_list[i];
+					filename = "hand_benders_instances/parsed_instances/" + file_list[i];
 				}
 				
-				//=========================================================================================================================================================
+				
 
 				int tau = 1;
-
-
+				
+				
 				cout << "\n" << filename << " " << Gamma << " " << tau << " " << endl;
 				
-				inst = read_instance_randomized(filename, Gamma);
+
+				inst = read_instance(filename, Gamma);
+
+
+
+				//inst = read_instance_randomized(filename, Gamma);
+
+
+
+				//=========================================================================================================================================================
+
+
+
 
 				// Classique
 				benders_sol = benders_Main(inst);
@@ -1870,7 +1960,7 @@ int main(int argc, const char* argv[]){
             output_augmented_HOG << "KC_HOG," << Gamma << "," << tau << ","
                              << float(iterKCHOG)/nbInst << "," << float(timeKCHOG)/nbInst << endl;
 		//}
-	}
+	//}
 
 	output_classic.close();
 	output_augmented.close();
