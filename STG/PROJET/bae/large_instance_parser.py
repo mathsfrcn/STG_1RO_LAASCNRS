@@ -5,20 +5,18 @@ import os
 # indir = "validation_instances"
 # outdir = "parsed_large_instances"
 #
-# indir = "hand_benders_instances/instances"
-# outdir = "hand_benders_instances/parsed_instances"
+indir = "STG/PROJET/bae/hand_benders_instances/instances"
+outdir = "STG/PROJET/bae/hand_benders_instances/parsed_instances"
 #
 ##############################
 
-indir = "hand_benders_instances/instances"
-outdir = "hand_benders_instances/parsed_instances"
 file_list = os.listdir(indir)
 filename = file_list[0]
 
 def parse_instance(filename):
 	filepath = indir + '/' + filename
 	infile = open(filepath, 'r')
-	outfile = open(outdir + '/' + filename + "_parsed", 'a')
+	outfile = open(outdir + '/' + filename + "_parsed", 'w')
 	tmp = infile.read()
 	tmp = tmp.split('\n')
 	count = 0
