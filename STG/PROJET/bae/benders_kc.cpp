@@ -340,6 +340,7 @@ Instance read_instance(string filename, int budget){
 	inst.bP = 0; 	// Selling price
 	inst.Gamma = 2;
 	inst.deltat.resize(inst.T);
+	
 	//rajout
 	inst.X.resize(inst.T);
 
@@ -715,13 +716,13 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 	pi_value[sol.inst.T+1][0] = tmp;	// Longuest path
 	
 
-
+	cout << "\npi_value :" << tmp << endl;
 
 
 
 	ub_cost = pi_value[sol.inst.T+1][0];
 
-
+	cout << "\nub_cost :" << ub_cost << endl;
 
 
 
@@ -841,13 +842,14 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 	pi_value[sol.inst.T+1][0] = tmp;	// Longuest path
 	
 
+	cout << "\npi_value :" << tmp << endl;
 
 
 
 	ub_cost = pi_value[sol.inst.T+1][0];
 
 
-
+	cout << "\nub_cost :" << ub_cost << endl;
 
 
 
@@ -1052,6 +1054,9 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, 
 		
 		iter++;
 		sol = new_sol;
+
+		cout << sol.obj_val << endl;
+
 	}
 
 	/*
@@ -1570,10 +1575,12 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 	pi_value[sol.inst.T+1][0] = tmp;	// VALEUR DE COUT A RECUPERER ?
 	
 
+	cout << "\npi_value :" << tmp;
 
 
 	sol_adv.cost = pi_value[sol.inst.T+1][0];
 
+	cout << "\nsol_adv :" << sol_adv.cost;
 
 
 
@@ -1688,6 +1695,9 @@ Benders_Result benders_Main(Instance inst){
 		scenarios.push_back(sol_adv.Dt);
 		sol = benders_Master(inst, scenarios);
 		
+		
+		cout << sol.obj_val << endl;
+
 		i++;
 	}
 
@@ -1768,6 +1778,8 @@ int main(int argc, const char* argv[]){
 
 	//====================================================================== IN PROGRESS ======================================================================
 
+
+	/*
 	// Création of the folder architecture
 	auto t = std::time(nullptr);
 	auto tm = *std::localtime(&t);
@@ -1798,6 +1810,8 @@ int main(int argc, const char* argv[]){
 	ofstream output_augmented_HOG(oss_augmented_HOG.str());
 
 	cout << "Enregistrement des résultats dans : " << folder_path << endl;
+
+	*/
 
 	//================================================================= TEMPORAIRE ========================================================================================
 	vector<string> file_list;
@@ -1897,7 +1911,7 @@ int main(int argc, const char* argv[]){
 				benders_sol = benders_Main(inst);
 				iter += benders_sol.iter;
 				time += benders_sol.time;
-				cout << "STANDARD-done (Obj :" << benders_sol.obj_value << ")" << endl;
+				cout << "\nSTANDARD-done (Obj :" << benders_sol.obj_value << ")" << endl;
 
 
 
@@ -1916,20 +1930,20 @@ int main(int argc, const char* argv[]){
 				benders_sol_augmented = KC_benders_Main(inst, approx_coeff, false, use_export, limit_number_paths, number_orthogonal_axes);	// First bool is to use KC with HOG
 				iterKC += benders_sol_augmented.iter;
 				timeKC += benders_sol_augmented.time;
-				cout << "KC-------done (Obj :" << benders_sol_augmented.obj_value << ")" <<endl;
+				cout << "\nKC-------done (Obj :" << benders_sol_augmented.obj_value << ")" <<endl;
 
 				// KC with HOG
 				benders_sol_augmented_HOG = KC_benders_Main(inst, approx_coeff, true, use_export, limit_number_paths, number_orthogonal_axes);
 				iterKCHOG += benders_sol_augmented_HOG.iter;
 				timeKCHOG += benders_sol_augmented_HOG.time;
-				cout << "KC_HOG---done (Obj :" << benders_sol_augmented_HOG.obj_value << ")"<< endl;
+				cout << "\nKC_HOG---done (Obj :" << benders_sol_augmented_HOG.obj_value << ")"<< endl;
 
 				// Quality control of the solution
 				float eps = 1e-4;
 				if(abs(benders_sol.obj_value - benders_sol_augmented.obj_value) > eps || abs(benders_sol.obj_value - benders_sol_augmented_HOG.obj_value) > eps){
-					cout << "ALERTE DEGRADATION" << endl;
+					cout << "\nALERTE DEGRADATION" << endl;
 				} else{
-					cout << "Qualité valide" << endl;
+					cout << "\nQualité valide" << endl;
 				}
 			}
 
@@ -1939,7 +1953,7 @@ int main(int argc, const char* argv[]){
 			int tau = 1;
 
 
-
+			/*
 
 
 			// Standard with KC standard 
@@ -1959,11 +1973,20 @@ int main(int argc, const char* argv[]){
                              << float(iterKC)/nbInst << "," << float(timeKC)/nbInst << endl;
             output_augmented_HOG << "KC_HOG," << Gamma << "," << tau << ","
                              << float(iterKCHOG)/nbInst << "," << float(timeKCHOG)/nbInst << endl;
+
+
+
+			*/
 		//}
 	//}
 
-	output_classic.close();
-	output_augmented.close();
-	output_augmented_HOG.close();
-	cout<<"========== END OF THE PROGRAM =========="<<endl;
+//	output_classic.close();
+//	output_augmented.close();
+//	output_augmented_HOG.close();
+
+
+
+
+
+cout<<"========== END OF THE PROGRAM =========="<<endl;
 }
