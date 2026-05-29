@@ -340,7 +340,7 @@ Instance read_instance(string filename, int budget){
 	inst.bP = 0; 	// Selling price
 	inst.Gamma = 2;
 	inst.deltat.resize(inst.T);
-	
+
 	//rajout
 	inst.X.resize(inst.T);
 
@@ -492,6 +492,7 @@ vector<vector<vector<vector<float> > > > budget_graph_cost(Solution sol){
 			for(int j = 0; j<sol.inst.Gamma+1; j++){
 				costs[t][i][j].resize(2);
 				if(j<=i+sol.inst.deltat[t-1] and j>=i){
+					/*
 					if(t<sol.inst.T){
 																	// (sol.inst.Dt[t-1] - (j-i)): reduced demand
 																	// (sol.inst.Dt[t-1] + (j-i)): increased demand
@@ -500,6 +501,15 @@ vector<vector<vector<vector<float> > > > budget_graph_cost(Solution sol){
 					} else if(t==sol.inst.T){
 						costs[t][i][j][0] = sol.inst.cI*(sol.Xt[t-1]- (sol.inst.Dt[t-1] - (j-i))) - sol.inst.bP*(sol.inst.Dt[t-1] - (j-i));
 						costs[t][i][j][1] = sol.inst.cB*(sol.inst.Dt[t-1] + (j-i) - sol.Xt[t-1]) - sol.inst.bP*sol.Xt[t-1];
+					}
+					*/
+
+					if(t<sol.inst.T){
+						costs[t][i][j][0] = max(0.0f, sol.inst.cI*(sol.Xt[t-1]- (sol.inst.Dt[t-1] - j)));
+						costs[t][i][j][1] = max(0.0f, sol.inst.cB*(sol.inst.Dt[t-1] + j - sol.Xt[t-1]));
+					} else if(t==sol.inst.T){
+						costs[t][i][j][0] = max(0.0f, sol.inst.cI*(sol.Xt[t-1]- (sol.inst.Dt[t-1] - j))) - sol.inst.bP*(sol.inst.Dt[t-1] - j);
+						costs[t][i][j][1] = max(0.0f, sol.inst.cB*(sol.inst.Dt[t-1] + j - sol.Xt[t-1])) - sol.inst.bP*sol.Xt[t-1];
 					}
 				}
 			}
@@ -588,9 +598,27 @@ Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > >
 					if(t==1) {
 						expr = pi[0][0];
 						pibool[0][0] = 1;
-					} else{ expr = pi[t-1][i];}
+					} else{
+						expr = pi[t-1][i];
+					}
+
+
+					/*
 					model.add(pi[t][j] - expr >= inst.cI*(X[t-1]- (inst.Dt[t-1] - (j-i))));
 					model.add(pi[t][j] - expr >= inst.cB*(inst.Dt[t-1] + (j-i) - X[t-1]));
+					*/
+
+
+
+
+
+					model.add(pi[t][j] - expr >= inst.cI*(X[t-1] - (inst.Dt[t-1] - j)));
+					model.add(pi[t][j] - expr >= inst.cB*(inst.Dt[t-1] + j - X[t-1]));
+					model.add(pi[t][j] - expr >= 0);	// Prevent negative costs
+
+
+
+
 					pibool[t][j] = 1;
 				}
 			}
@@ -607,8 +635,22 @@ Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > >
 			// cout<<t-1<<" "<<i<<" -> "<<t<<" "<<j<<" "<<arcsol[t][i][j][1]<<" "<<inst.deltat[t]<<endl;
 			if(j<=i+inst.deltat[t-1] and (arcsol[t][i][j][0] or arcsol[t][i][j][1])){
 				// cout<<t-1<<" "<<i<<" -> "<<t<<" "<<j<<" "<<endl;
+				
+				
+
+				/*
 				model.add(pi[t][j] - pi[t-1][i] >= inst.cI*(X[t-1]- (inst.Dt[t-1] - (j-i))) - inst.bP*(inst.Dt[t-1] - (j-i)));
 				model.add(pi[t][j] - pi[t-1][i] >= inst.cB*(inst.Dt[t-1] + (j-i) - X[t-1]) - inst.bP*X[t-1]);
+				*/
+
+				
+				
+				model.add(pi[t][j] - pi[t-1][i] >= inst.cI*(X[t-1] - (inst.Dt[t-1] - j)) - inst.bP*(inst.Dt[t-1] - j));
+				model.add(pi[t][j] - pi[t-1][i] >= inst.cB*(inst.Dt[t-1] + j - X[t-1]) - inst.bP*X[t-1]);
+				
+				
+				
+				
 				pibool[t][j] = 1;
 			}
 		}
@@ -1606,14 +1648,40 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 					if(pi_value[t][j] == pi_value[t-1][i]+costs[t][i][j][0]){
 						arcbool[t][i][j][0] = 1;
 						pi_subopt_bool[t-1][i] = true;
+						
+						
+						
+						
+						/*
 						scenario[t-1] = sol.inst.Dt[t-1] - (j-i);
+						*/
+						
+						
+						scenario[t-1] = sol.inst.Dt[t-1] - j;
+						
+						
+						
+						
+						
+						
 						break;
 					}
 
 					if(pi_value[t][j] == pi_value[t-1][i]+costs[t][i][j][1]){
 						arcbool[t][i][j][1] = 1;
 						pi_subopt_bool[t-1][i] = true;
+
+
+						/*
 						scenario[t-1] = sol.inst.Dt[t-1] + (j-i);
+						*/
+
+
+
+						scenario[t-1] = sol.inst.Dt[t-1] + j;
+						
+						
+						
 						break;
 					}
 				}
