@@ -166,7 +166,7 @@ void extract_paths_dfs(
 			}
 
 			// Check for arc of type 1
-			if(abs(pi_value[t][j] - (pi_value[t-1][i] + costs[t][i][j][1]) < 1e-4)){
+			if(abs(pi_value[t][j] - (pi_value[t-1][i] + costs[t][i][j][1])) < 1e-4){
 				Arc_Decision arc = {t, i, j, 1};
 				current_path.push_back(arc);
 				extract_paths_dfs(t-1, i, pi_value, costs, sol, current_path, all_paths, limit_number_paths);
@@ -347,15 +347,19 @@ Instance read_instance(string filename, int budget){
 
 	// \Delta_i=2 \forall i
 	for(int t = 0; t < inst.T; t++){
-		inst.deltat[t] = 2;
-		inst.X[t] = inst.Dt[t];
+		if(t == 0){
+			inst.deltat[t] = 1;
+			inst.X[t] = inst.Dt[t];
+		} else{
+			inst.deltat[t] = 2;
+			inst.X[t] = inst.Dt[t];
+		}
 	}
 
 
 
 
 
-	
 	// =================================================================== IN PROGRESS ====================================================================================================
 	// ====================================================================================================================================================================================
 
@@ -721,6 +725,24 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 	// Dynamic prog. for longest path
 	float tmp;
 	pi_value[0][0] = 0;	// Start at period 0 cost 0
+
+
+
+
+
+
+
+
+	for(int i = 1; i <= sol.inst.Gamma; i++){
+		pi_value[0][i] = -1e9;
+	}
+
+
+
+
+
+
+
 	for(int t=1; t<sol.inst.T+1;t++){
 		for(int j = 0; j<sol.inst.Gamma+1; j++){
 			tmp = pi_value[t-1][j]+costs[t][j][j][0]; 	// Init of pi_value[t][j]
@@ -788,7 +810,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 	// t = T+1
 	pi_subopt_bool[sol.inst.T+1][0] = true;
 	for(int i = 0; i<sol.inst.Gamma+1;i++){
-		if(pi_value[sol.inst.T][i]>=sub_OPT){
+		if(pi_value[sol.inst.T][i] >= sub_OPT){
 			arcbool[sol.inst.T+1][i][0][0] = 1;
 			arcbool[sol.inst.T+1][i][0][1] = 1;
 			pi_subopt_bool[sol.inst.T][i] = true;
@@ -796,8 +818,8 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 	}
 
 	for(int t=sol.inst.T; t>0; t--){
-		for(int j = 0; j<sol.inst.Gamma+1; j++){
-			for(int i = 0; i<=j; i++){
+		for(int j = 0; j < sol.inst.Gamma+1; j++){
+			for(int i = 0; i <= j; i++){
 				// cout<<t<<" "<<j<<" -> "<<t-1<<" "<<i<<endl;
 				// cout<<" "<<BoolToString(pi_subopt_bool[t][j])<<" "<<pi_value[t][j]<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][0]<<endl;
 				// cout<<" "<<BoolToString(pi_subopt_bool[t][j])<<" "<<pi_value[t][j]<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][1]<<endl;
@@ -855,6 +877,23 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 	// Dynamic prog. for longest path
 	float tmp;
 	pi_value[0][0] = 0;	// Start at period 0 cost 0
+
+
+
+
+
+
+	for(int i = 1; i <= sol.inst.Gamma; i++){
+		pi_value[0][i] = -1e9;
+	}
+
+
+
+
+
+
+
+
 	for(int t=1; t<sol.inst.T+1;t++){
 		for(int j = 0; j<sol.inst.Gamma+1; j++){
 			tmp = pi_value[t-1][j]+costs[t][j][j][0]; 	// Init of pi_value[t][j]
@@ -870,6 +909,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 					} 
 				}
 			}
+
 			pi_value[t][j] = tmp;
 		}
 	}
@@ -1029,6 +1069,7 @@ vector<vector<vector<vector<int> > > > init_graph_full(Instance inst){
 			
 		}
 	}
+
 	return arcbool;
 }
 
@@ -1055,6 +1096,7 @@ vector<vector<vector<vector<int> > > > merge_budget_graph(vector<vector<vector<v
 			}
 		}
 	}
+
 	return merge_arcbool;
 }
 
@@ -1067,7 +1109,7 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, 
 	int iter = 0;
 	bool stopCriterion = false;
 	float proc_time;
-	float eps = 1e-5;
+	float eps = 1e-4;
 	vector<vector<vector<vector<int> > > > arcsol = init_graph(inst);
 	vector<vector<vector<vector<int> > > > arcsol_new;
 
@@ -1098,7 +1140,6 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, 
 		sol = new_sol;
 
 		cout << sol.obj_val << endl;
-
 	}
 
 	/*
@@ -1133,7 +1174,6 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, 
 	//return make_pair(iter, proc_time);
 	return {iter, proc_time, sol.obj_val};
 }
-
 
 //=========================================== Standard Benders Decomposition code
 Solution benders_Master(Instance inst, vector<vector<float> > scenarios){
@@ -1316,9 +1356,11 @@ Solution benders_Master_integer(Instance inst, vector<vector<float> > scenarios)
 		for(int o = 0; o<scenarios.size();o++){
 			model.add(B[o][t] - I[o][t] == scenarios[o][t] - X[t]); // (2)
 			IloExpr expr(env);
+			
 			for(int i = 0; i<=t; i++){
 				expr += s[o][i];
 			}
+
 			model.add(expr == scenarios[o][t]-B[o][t]);				// (3)
 		}
 	}
@@ -1326,9 +1368,11 @@ Solution benders_Master_integer(Instance inst, vector<vector<float> > scenarios)
 	// model.add(X[inst.T-1]==14);
 	for(int o = 0; o<scenarios.size();o++){
 		IloExpr expr(env);
+		
 		for(int t = 0; t<inst.T; t++){
 			expr += (inst.cI*I[o][t] + inst.cB*B[o][t] - inst.bP*s[o][t]+cP*y[t]);
 		}
+
 		model.add(z>= expr);
 	}
 
@@ -1581,6 +1625,24 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 	float tmp;
 	pi_value[0][0] = 0;
 
+
+
+
+
+
+	for(int i = 1; i <= sol.inst.Gamma; i++){
+		pi_value[0][i] = -1e9;
+	}
+
+
+
+
+
+
+
+
+
+
 	for(int t=1; t<sol.inst.T+1;t++){
 		for(int j = 0; j<sol.inst.Gamma+1; j++){
 			tmp = pi_value[t-1][j]+costs[t][j][j][0];	// Init of pi_value[t][j]
@@ -1603,6 +1665,7 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 					} 
 				}
 			}
+			
 			pi_value[t][j] = tmp;
 		}
 	}
@@ -1633,8 +1696,12 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 
 	// t = T+1
 	pi_subopt_bool[sol.inst.T+1][0] = true;
-	for(int i = 0; i<sol.inst.Gamma+1;i++){
-		if(pi_value[sol.inst.T][i]==pi_value[sol.inst.T+1][0]){
+	for(int i = 0; i < sol.inst.Gamma+1; i++){
+
+		//epsilon
+		if(abs(pi_value[sol.inst.T][i] - pi_value[sol.inst.T+1][0]) < 1e-4){
+		
+		
 			arcbool[sol.inst.T+1][i][0][0] = 1;
 			arcbool[sol.inst.T+1][i][0][1] = 1;
 			pi_subopt_bool[sol.inst.T][i] = true;
@@ -1645,7 +1712,7 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 		for(int j = 0; j<sol.inst.Gamma+1; j++){
 			for(int i = 0; i<=j; i++){
 				if(pi_subopt_bool[t][j] and j<=i+sol.inst.deltat[t-1] and (t!=1 or i==0)){ // Last and is specific for first layer of the graph
-					if(pi_value[t][j] == pi_value[t-1][i]+costs[t][i][j][0]){
+					if(abs(pi_value[t][j] - (pi_value[t-1][i] + costs[t][i][j][0])) < 1e-4){
 						arcbool[t][i][j][0] = 1;
 						pi_subopt_bool[t-1][i] = true;
 						
@@ -1667,7 +1734,7 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 						break;
 					}
 
-					if(pi_value[t][j] == pi_value[t-1][i]+costs[t][i][j][1]){
+					if(abs(pi_value[t][j] - (pi_value[t-1][i] + costs[t][i][j][1])) < 1e-4){
 						arcbool[t][i][j][1] = 1;
 						pi_subopt_bool[t-1][i] = true;
 
@@ -1738,7 +1805,7 @@ Benders_Result benders_Main(Instance inst){
 	Solution_ADV sol_adv;
 	bool stopCriterion = false;
 	float proc_time;
-	float eps = 1e-5;
+	float eps = 1e-4;
 	int i = 2;	// Number of itérations
 	
 	vector<vector<float> > scenarios;
@@ -1843,7 +1910,7 @@ int main(int argc, const char* argv[]){
 	int number_orthogonal_axes;		// Number of orthogonal axes we want for the heuristics
 	number_orthogonal_axes = 5;		// 5
 	bool use_graph_export = false;		// To be corrected before use
-	bool use_result_export = false;	// True if you want to export the results
+	bool use_result_export = true;	// True if you want to export the results
 
 	//====================================================================== IN PROGRESS ======================================================================
 
