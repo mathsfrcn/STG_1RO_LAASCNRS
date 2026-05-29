@@ -697,7 +697,7 @@ Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > >
 // It works in two phases: 
 //		- forward pass : it calculates the worst-case scenario by traversing the graph
 //		- backpropagation : it retrieves the most interesting sub-graph (containing the worst-case scenario)
-vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float approx_coeff, bool use_export, float& ub_cost){
+vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float approx_coeff, bool use_graph_export, float& ub_cost){
 	vector<vector<vector<vector<int> > > > arcbool; // Bool flag to arcs within the worsts scenarios (if a specific decision by the opponent is part of the subgraph)
 	vector<vector<float> > pi_value; 				// Value of the longest path to pi[t][j] (It stores the "maximum cumulative cost" to reach period t having consumed j budget units)
 	vector<vector<bool> > pi_subopt_bool;
@@ -758,13 +758,13 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 	pi_value[sol.inst.T+1][0] = tmp;	// Longuest path
 	
 
-	cout << "\npi_value :" << tmp << endl;
+	cout << "\npi_value:" << tmp << endl;
 
 
 
 	ub_cost = pi_value[sol.inst.T+1][0];
 
-	cout << "\nub_cost :" << ub_cost << endl;
+	//cout << "ub_cost:" << ub_cost << endl;
 
 
 
@@ -817,7 +817,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 		}
 	}
 
-	if(use_export){
+	if(use_graph_export){
 		export_budget_graph_json(sol, pi_value, costs, arcbool);
 	}
 	
@@ -831,7 +831,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 //		- forward pass : it calculates the worst-case scenario by traversing the graph
 //		- backpropagation : it retrieves the most interesting sub-graph (containing the worst-case scenario)
 // In this alternative, we had initialized the orthogonality heuristic with greedy & Brays-Curtis
-vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, float approx_coeff, int nb_path_to_select, bool use_export, int limit_number_paths, float& ub_cost){
+vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, float approx_coeff, int nb_path_to_select, bool use_graph_export, int limit_number_paths, float& ub_cost){
 	vector<vector<vector<vector<int> > > > arcbool; // Bool flag to arcs within the worsts scenarios (if a specific decision by the opponent is part of the subgraph)
 	vector<vector<float> > pi_value; 				// Value of the longest path to pi[t][j] (It stores the "maximum cumulative cost" to reach period t having consumed j budget units)
 	vector<vector<bool> > pi_subopt_bool;
@@ -884,14 +884,14 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 	pi_value[sol.inst.T+1][0] = tmp;	// Longuest path
 	
 
-	cout << "\npi_value :" << tmp << endl;
+	cout << "\npi_value:" << tmp << endl;
 
 
 
 	ub_cost = pi_value[sol.inst.T+1][0];
 
 
-	cout << "\nub_cost :" << ub_cost << endl;
+	//cout << "ub_cost:" << ub_cost << endl;
 
 
 
@@ -979,7 +979,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 		arcbool[sol.inst.T+1][final_budget][0][1] = 1;
 	}
 
-	if(use_export){
+	if(use_graph_export){
 		export_budget_graph_json(sol, pi_value, costs, arcbool);
 	}
 	
@@ -1059,7 +1059,7 @@ vector<vector<vector<vector<int> > > > merge_budget_graph(vector<vector<vector<v
 }
 
 
-Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, bool use_export, int limit_number_paths, int number_orthogonal_axes){
+Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, bool use_graph_export, int limit_number_paths, int number_orthogonal_axes){
 	Solution sol;
 	Solution new_sol;
 	Solution_ADV sol_adv;
@@ -1080,9 +1080,9 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, 
 	
 	while(!stopCriterion){	// While the solution is not satisfactory we do the merge loop		
 		if(use_HOG){
-			arcsol_new = KC_benders_Subproblem_HOG(sol, approx_coeff, number_orthogonal_axes, use_export, limit_number_paths, ub_cost);	// Proposes a new worst solution according to the master solution
+			arcsol_new = KC_benders_Subproblem_HOG(sol, approx_coeff, number_orthogonal_axes, use_graph_export, limit_number_paths, ub_cost);	// Proposes a new worst solution according to the master solution
 		} else{
-			arcsol_new = KC_benders_Subproblem(sol, approx_coeff, use_export, ub_cost);	// Proposes a new worst solution according to the master solution
+			arcsol_new = KC_benders_Subproblem(sol, approx_coeff, use_graph_export, ub_cost);	// Proposes a new worst solution according to the master solution
 		}
 
 		if(ub_cost <= sol.obj_val + eps){
@@ -1106,9 +1106,9 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, 
 	
 	while(!stopCriterion){	// While the solution is not satisfactory we do the merge loop		
 		if(use_HOG){
-			arcsol_new = KC_benders_Subproblem_HOG(sol, approx_coeff, number_orthogonal_axes, use_export, limit_number_paths);	// Proposes a new worst solution according to the master solution
+			arcsol_new = KC_benders_Subproblem_HOG(sol, approx_coeff, number_orthogonal_axes, use_graph_export, limit_number_paths);	// Proposes a new worst solution according to the master solution
 		} else{
-			arcsol_new = KC_benders_Subproblem(sol, approx_coeff, use_export);	// Proposes a new worst solution according to the master solution
+			arcsol_new = KC_benders_Subproblem(sol, approx_coeff, use_graph_export);	// Proposes a new worst solution according to the master solution
 		}
 
 		arcsol = merge_budget_graph(arcsol, arcsol_new);		// Merge the worst solution with the current solution
@@ -1617,12 +1617,12 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 	pi_value[sol.inst.T+1][0] = tmp;	// VALEUR DE COUT A RECUPERER ?
 	
 
-	cout << "\npi_value :" << tmp;
+	cout << "\npi_value:" << tmp;
 
 
 	sol_adv.cost = pi_value[sol.inst.T+1][0];
 
-	cout << "\nsol_adv :" << sol_adv.cost;
+	//cout << "\nsol_adv:" << sol_adv.cost;
 
 
 
@@ -1838,33 +1838,36 @@ int main(int argc, const char* argv[]){
 	float time, timeKC, timeKCHOG;
 	int iter, iterKC, iterKCHOG;
 	// Simulation parameters
-	int limit_number_paths;		// Used for the DFS algo
-	limit_number_paths = 2000;	// 2000
-	int number_orthogonal_axes;	// Number of orthogonal axes we want for the heuristics
-	number_orthogonal_axes = 5;	// 5
-	bool use_export = false;	// To be corrected before use
+	int limit_number_paths;			// Used for the DFS algo
+	limit_number_paths = 2000;		// 2000
+	int number_orthogonal_axes;		// Number of orthogonal axes we want for the heuristics
+	number_orthogonal_axes = 5;		// 5
+	bool use_graph_export = false;		// To be corrected before use
+	bool use_result_export = false;	// True if you want to export the results
 
 	//====================================================================== IN PROGRESS ======================================================================
 
-
-	/*
 	// Création of the folder architecture
 	auto t = std::time(nullptr);
 	auto tm = *std::localtime(&t);
 
 	ostringstream oss_exp;
-    oss_exp << "/result_benders_" << put_time(&tm, "%Y-%m-%d_%H%M") << "_n=" << number_orthogonal_axes << "_l=" << limit_number_paths;
-    std::string experience_name = oss_exp.str();
+	oss_exp << "/result_benders_" << put_time(&tm, "%Y-%m-%d_%H%M") << "_n=" << number_orthogonal_axes << "_l=" << limit_number_paths;
+	std::string experience_name = oss_exp.str();
 
-    ostringstream oss_folder;
-    oss_folder << "results" << experience_name;
-    std::string folder_path = oss_folder.str();
+	ostringstream oss_folder;
+	oss_folder << "results" << experience_name;
+	std::string folder_path = oss_folder.str();
 
-    if(fs::create_directories(folder_path)){
-        std::cout << "Le dossier '" << folder_path << "' a été créé avec succès." << std::endl;
-    } else{
-        std::cout << "Le dossier '" << folder_path << "' existe déjà." << std::endl;
-    }
+	if(use_result_export){
+		if(fs::create_directories(folder_path)){
+			std::cout << "Le dossier '" << folder_path << "' a été créé avec succès." << std::endl;
+		} else{
+			std::cout << "Le dossier '" << folder_path << "' existe déjà." << std::endl;
+		}
+
+		cout << "Enregistrement des résultats dans : " << folder_path << endl;
+	}
 
 	ostringstream oss_classic; 
 	ostringstream oss_augmented; 
@@ -1877,11 +1880,8 @@ int main(int argc, const char* argv[]){
 	ofstream output_augmented(oss_augmented.str());
 	ofstream output_augmented_HOG(oss_augmented_HOG.str());
 
-	cout << "Enregistrement des résultats dans : " << folder_path << endl;
-
-	*/
-
 	//================================================================= TEMPORAIRE ========================================================================================
+	
 	vector<string> file_list;
 	int choice_instances;
 	choice_instances = 3;
@@ -1992,16 +1992,14 @@ int main(int argc, const char* argv[]){
 
 
 
-
-
 				// KC
-				benders_sol_augmented = KC_benders_Main(inst, approx_coeff, false, use_export, limit_number_paths, number_orthogonal_axes);	// First bool is to use KC with HOG
+				benders_sol_augmented = KC_benders_Main(inst, approx_coeff, false, use_graph_export, limit_number_paths, number_orthogonal_axes);	// First bool is to use KC with HOG
 				iterKC += benders_sol_augmented.iter;
 				timeKC += benders_sol_augmented.time;
 				cout << "\nKC-------done (Obj :" << benders_sol_augmented.obj_value << ")" <<endl;
 
 				// KC with HOG
-				benders_sol_augmented_HOG = KC_benders_Main(inst, approx_coeff, true, use_export, limit_number_paths, number_orthogonal_axes);
+				benders_sol_augmented_HOG = KC_benders_Main(inst, approx_coeff, true, use_graph_export, limit_number_paths, number_orthogonal_axes);
 				iterKCHOG += benders_sol_augmented_HOG.iter;
 				timeKCHOG += benders_sol_augmented_HOG.time;
 				cout << "\nKC_HOG---done (Obj :" << benders_sol_augmented_HOG.obj_value << ")"<< endl;
@@ -2021,40 +2019,33 @@ int main(int argc, const char* argv[]){
 			int tau = 1;
 
 
-			/*
+			if(use_result_export){
+				// Standard with KC standard 
+				output_classic << "STANDARD," << Gamma << "," << tau << ","
+							<< float(iter)/nbInst << "," << float(time)/nbInst << endl;
+				output_classic << "KC," << Gamma << "," << tau << ","
+							<< float(iterKC)/nbInst << "," << float(timeKC)/nbInst << endl;
 
+				// Standard with KC augmented (HOG)
+				output_augmented << "STANDARD," << Gamma << "," << tau << ","
+								<< float(iter)/nbInst << "," << float(time)/nbInst << endl;
+				output_augmented << "KC_HOG," << Gamma << "," << tau << ","
+								<< float(iterKCHOG)/nbInst << "," << float(timeKCHOG)/nbInst << endl;
 
-			// Standard with KC standard 
-			output_classic << "STANDARD," << Gamma << "," << tau << ","
-                           << float(iter)/nbInst << "," << float(time)/nbInst << endl;
-            output_classic << "KC," << Gamma << "," << tau << ","
-                           << float(iterKC)/nbInst << "," << float(timeKC)/nbInst << endl;
-
-			// Standard with KC augmented (HOG)
-            output_augmented << "STANDARD," << Gamma << "," << tau << ","
-                             << float(iter)/nbInst << "," << float(time)/nbInst << endl;
-            output_augmented << "KC_HOG," << Gamma << "," << tau << ","
-                             << float(iterKCHOG)/nbInst << "," << float(timeKCHOG)/nbInst << endl;
-
-			// KC standard with KC augmented
-			output_augmented_HOG << "KC," << Gamma << "," << tau << ","
-                             << float(iterKC)/nbInst << "," << float(timeKC)/nbInst << endl;
-            output_augmented_HOG << "KC_HOG," << Gamma << "," << tau << ","
-                             << float(iterKCHOG)/nbInst << "," << float(timeKCHOG)/nbInst << endl;
-
-
-
-			*/
+				// KC standard with KC augmented
+				output_augmented_HOG << "KC," << Gamma << "," << tau << ","
+								<< float(iterKC)/nbInst << "," << float(timeKC)/nbInst << endl;
+				output_augmented_HOG << "KC_HOG," << Gamma << "," << tau << ","
+								<< float(iterKCHOG)/nbInst << "," << float(timeKCHOG)/nbInst << endl;
+			}
 		//}
 	//}
 
-//	output_classic.close();
-//	output_augmented.close();
-//	output_augmented_HOG.close();
+	if(use_result_export){
+		output_classic.close();
+		output_augmented.close();
+		output_augmented_HOG.close();
+	}
 
-
-
-
-
-cout<<"========== END OF THE PROGRAM =========="<<endl;
+	cout<<"========== END OF THE PROGRAM =========="<<endl;
 }
