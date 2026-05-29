@@ -139,8 +139,8 @@ void extract_paths_dfs(
 			const Solution& sol,
 			Path& current_path,
 			vector<Path>& all_paths,
-			int limit_number_paths
-			){
+			int limit_number_paths,
+			float eps){
 	
 	if(all_paths.size() >= limit_number_paths){	// This solution can be a problem if we come in a choke point, maybe we can add a seed
 		return;
@@ -158,18 +158,18 @@ void extract_paths_dfs(
 	for(int i = 0; i <= j; i++){
 		if(j <= i + sol.inst.deltat[t-1] && (t != 1 || i == 0)){
 			// Check for arc of type 0
-			if(abs(pi_value[t][j] - (pi_value[t-1][i] + costs[t][i][j][0])) < 1e-4){
+			if(abs(pi_value[t][j] - (pi_value[t-1][i] + costs[t][i][j][0])) < eps){
 				Arc_Decision arc = {t, i, j, 0};
 				current_path.push_back(arc);
-				extract_paths_dfs(t-1, i, pi_value, costs, sol, current_path, all_paths, limit_number_paths);
+				extract_paths_dfs(t-1, i, pi_value, costs, sol, current_path, all_paths, limit_number_paths, eps);
 				current_path.pop_back();
 			}
 
 			// Check for arc of type 1
-			if(abs(pi_value[t][j] - (pi_value[t-1][i] + costs[t][i][j][1])) < 1e-4){
+			if(abs(pi_value[t][j] - (pi_value[t-1][i] + costs[t][i][j][1])) < eps){
 				Arc_Decision arc = {t, i, j, 1};
 				current_path.push_back(arc);
-				extract_paths_dfs(t-1, i, pi_value, costs, sol, current_path, all_paths, limit_number_paths);
+				extract_paths_dfs(t-1, i, pi_value, costs, sol, current_path, all_paths, limit_number_paths, eps);
 				current_path.pop_back();
 			}
 		}
@@ -853,7 +853,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 //		- forward pass : it calculates the worst-case scenario by traversing the graph
 //		- backpropagation : it retrieves the most interesting sub-graph (containing the worst-case scenario)
 // In this alternative, we had initialized the orthogonality heuristic with greedy & Brays-Curtis
-vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, float approx_coeff, int nb_path_to_select, bool use_graph_export, int limit_number_paths, float& ub_cost){
+vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, float approx_coeff, int nb_path_to_select, bool use_graph_export, int limit_number_paths, float& ub_cost, float eps){
 	vector<vector<vector<vector<int> > > > arcbool; // Bool flag to arcs within the worsts scenarios (if a specific decision by the opponent is part of the subgraph)
 	vector<vector<float> > pi_value; 				// Value of the longest path to pi[t][j] (It stores the "maximum cumulative cost" to reach period t having consumed j budget units)
 	vector<vector<bool> > pi_subopt_bool;
@@ -959,7 +959,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 	// After the recursion, candidates_path contains all the worst-case paths that exceed the sub_OPT budget
 	for(int i = 0; i < sol.inst.Gamma+1; i++){
 		if(pi_value[sol.inst.T][i] >= sub_OPT){
-			extract_paths_dfs(sol.inst.T, i, pi_value, costs, sol, current_path_buffer, candidates_path, limit_number_paths);
+			extract_paths_dfs(sol.inst.T, i, pi_value, costs, sol, current_path_buffer, candidates_path, limit_number_paths, eps);
 		}
 	}
 
@@ -1101,7 +1101,7 @@ vector<vector<vector<vector<int> > > > merge_budget_graph(vector<vector<vector<v
 }
 
 
-Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, bool use_graph_export, int limit_number_paths, int number_orthogonal_axes){
+Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, bool use_graph_export, int limit_number_paths, int number_orthogonal_axes, float eps){
 	Solution sol;
 	Solution new_sol;
 	Solution_ADV sol_adv;
@@ -1109,7 +1109,6 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, 
 	int iter = 0;
 	bool stopCriterion = false;
 	float proc_time;
-	float eps = 1e-4;
 	vector<vector<vector<vector<int> > > > arcsol = init_graph(inst);
 	vector<vector<vector<vector<int> > > > arcsol_new;
 
@@ -1122,7 +1121,7 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, 
 	
 	while(!stopCriterion){	// While the solution is not satisfactory we do the merge loop		
 		if(use_HOG){
-			arcsol_new = KC_benders_Subproblem_HOG(sol, approx_coeff, number_orthogonal_axes, use_graph_export, limit_number_paths, ub_cost);	// Proposes a new worst solution according to the master solution
+			arcsol_new = KC_benders_Subproblem_HOG(sol, approx_coeff, number_orthogonal_axes, use_graph_export, limit_number_paths, ub_cost, eps);	// Proposes a new worst solution according to the master solution
 		} else{
 			arcsol_new = KC_benders_Subproblem(sol, approx_coeff, use_graph_export, ub_cost);	// Proposes a new worst solution according to the master solution
 		}
@@ -1599,7 +1598,7 @@ Solution_ADV benders_Subproblem(Solution sol){
 }
 
 // Solve subproblem (of benders_Main) with dynamic prog
-Solution_ADV benders_Subproblem_DP(Solution sol){
+Solution_ADV benders_Subproblem_DP(Solution sol, float eps){
 	Solution_ADV sol_adv;
 	vector<vector<vector<vector<int> > > > arcbool; // Bool flag to arcs within the worsts scenarios
 	vector<vector<float> > pi_value; 				// Value of the longest path to pi[t][j]
@@ -1699,7 +1698,7 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 	for(int i = 0; i < sol.inst.Gamma+1; i++){
 
 		//epsilon
-		if(abs(pi_value[sol.inst.T][i] - pi_value[sol.inst.T+1][0]) < 1e-4){
+		if(abs(pi_value[sol.inst.T][i] - pi_value[sol.inst.T+1][0]) < eps){
 		
 		
 			arcbool[sol.inst.T+1][i][0][0] = 1;
@@ -1712,7 +1711,7 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 		for(int j = 0; j<sol.inst.Gamma+1; j++){
 			for(int i = 0; i<=j; i++){
 				if(pi_subopt_bool[t][j] and j<=i+sol.inst.deltat[t-1] and (t!=1 or i==0)){ // Last and is specific for first layer of the graph
-					if(abs(pi_value[t][j] - (pi_value[t-1][i] + costs[t][i][j][0])) < 1e-4){
+					if(abs(pi_value[t][j] - (pi_value[t-1][i] + costs[t][i][j][0])) < eps){
 						arcbool[t][i][j][0] = 1;
 						pi_subopt_bool[t-1][i] = true;
 						
@@ -1734,7 +1733,7 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 						break;
 					}
 
-					if(abs(pi_value[t][j] - (pi_value[t-1][i] + costs[t][i][j][1])) < 1e-4){
+					if(abs(pi_value[t][j] - (pi_value[t-1][i] + costs[t][i][j][1])) < eps){
 						arcbool[t][i][j][1] = 1;
 						pi_subopt_bool[t-1][i] = true;
 
@@ -1797,7 +1796,7 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 	return sol_adv;
 }
 
-Benders_Result benders_Main(Instance inst){
+Benders_Result benders_Main(Instance inst, float eps){
 	auto start = high_resolution_clock::now();
 
 	Solution sol;
@@ -1805,7 +1804,6 @@ Benders_Result benders_Main(Instance inst){
 	Solution_ADV sol_adv;
 	bool stopCriterion = false;
 	float proc_time;
-	float eps = 1e-4;
 	int i = 2;	// Number of itérations
 	
 	vector<vector<float> > scenarios;
@@ -1819,7 +1817,7 @@ Benders_Result benders_Main(Instance inst){
 	
 	while(!stopCriterion){
 		// The opponent is looking for the worst attack D' against X (its the upper bound)
-		sol_adv = benders_Subproblem_DP(sol);
+		sol_adv = benders_Subproblem_DP(sol, eps);
 
 		if(sol_adv.cost <= sol.obj_val + eps){
 			stopCriterion = true;
@@ -1905,12 +1903,11 @@ int main(int argc, const char* argv[]){
 	float time, timeKC, timeKCHOG;
 	int iter, iterKC, iterKCHOG;
 	// Simulation parameters
-	int limit_number_paths;			// Used for the DFS algo
-	limit_number_paths = 2000;		// 2000
-	int number_orthogonal_axes;		// Number of orthogonal axes we want for the heuristics
-	number_orthogonal_axes = 5;		// 5
-	bool use_graph_export = false;		// To be corrected before use
-	bool use_result_export = true;	// True if you want to export the results
+	int limit_number_paths = 2000;	// Used for the DFS algo
+	int number_orthogonal_axes= 5;	// Number of orthogonal axes we want for the heuristics
+	float eps = 1e-4;
+	bool use_graph_export = false;	// To be corrected before use
+	bool use_result_export = false;	// True if you want to export the results
 
 	//====================================================================== IN PROGRESS ======================================================================
 
@@ -2043,7 +2040,7 @@ int main(int argc, const char* argv[]){
 
 
 				// Classique
-				benders_sol = benders_Main(inst);
+				benders_sol = benders_Main(inst, eps);
 				iter += benders_sol.iter;
 				time += benders_sol.time;
 				cout << "\nSTANDARD-done (Obj :" << benders_sol.obj_value << ")" << endl;
@@ -2060,28 +2057,24 @@ int main(int argc, const char* argv[]){
 
 
 				// KC
-				benders_sol_augmented = KC_benders_Main(inst, approx_coeff, false, use_graph_export, limit_number_paths, number_orthogonal_axes);	// First bool is to use KC with HOG
+				benders_sol_augmented = KC_benders_Main(inst, approx_coeff, false, use_graph_export, limit_number_paths, number_orthogonal_axes, eps);	// First bool is to use KC with HOG
 				iterKC += benders_sol_augmented.iter;
 				timeKC += benders_sol_augmented.time;
 				cout << "\nKC-------done (Obj :" << benders_sol_augmented.obj_value << ")" <<endl;
 
 				// KC with HOG
-				benders_sol_augmented_HOG = KC_benders_Main(inst, approx_coeff, true, use_graph_export, limit_number_paths, number_orthogonal_axes);
+				benders_sol_augmented_HOG = KC_benders_Main(inst, approx_coeff, true, use_graph_export, limit_number_paths, number_orthogonal_axes, eps);
 				iterKCHOG += benders_sol_augmented_HOG.iter;
 				timeKCHOG += benders_sol_augmented_HOG.time;
 				cout << "\nKC_HOG---done (Obj :" << benders_sol_augmented_HOG.obj_value << ")"<< endl;
 
 				// Quality control of the solution
-				float eps = 1e-4;
 				if(abs(benders_sol.obj_value - benders_sol_augmented.obj_value) > eps || abs(benders_sol.obj_value - benders_sol_augmented_HOG.obj_value) > eps){
 					cout << "\nALERTE DEGRADATION" << endl;
 				} else{
 					cout << "\nQualité valide" << endl;
 				}
 			}
-
-
-
 
 			int tau = 1;
 
