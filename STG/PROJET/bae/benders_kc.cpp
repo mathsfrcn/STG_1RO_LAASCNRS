@@ -1198,7 +1198,7 @@ Solution benders_Master(Instance inst, vector<vector<float> > scenarios){
 			for(int i = 0; i <= t; i++){
 				expr += s[o][i];
 			}
-			model.add(expr == scenarios[o][t]-B[o][t]);				// (3)
+			model.add(expr == scenarios[o][t]-B[o][t]);				// (3): Ventes cumulées == Demande - Ruptures
 		}
 	}
 
@@ -1850,7 +1850,7 @@ int main(int argc, const char* argv[]){
 	auto tm = *std::localtime(&t);
 
 	ostringstream oss_exp;
-	oss_exp << "/result_benders_" << put_time(&tm, "%Y-%m-%d_%H%M") << "_n=" << number_orthogonal_axes << "_l=" << limit_number_paths;
+	oss_exp << "./result_benders_" << put_time(&tm, "%Y-%m-%d_%H%M") << "_n=" << number_orthogonal_axes << "_l=" << limit_number_paths;
 	std::string experience_name = oss_exp.str();
 
 	ostringstream oss_folder;
@@ -1885,33 +1885,34 @@ int main(int argc, const char* argv[]){
 	choice_instances = 3;
 	
 	if(choice_instances == 1){
-		file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/parsed_large_instances/");
+		file_list = list_dir("./parsed_large_instances/");
 	} else if(choice_instances == 2){
-		file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/other_instances/");
+		file_list = list_dir("./other_instances/");
 	} else{
-		file_list = list_dir("/home/mfrancineh/Documents/REPO/STG_1RO_LAASCNRS/STG/PROJET/bae/hand_benders_instances/parsed_instances/");
+		file_list = list_dir("./hand_benders_instances/parsed_instances/");
 	}
   	
 	//=========================================================================================================================================================
 
   	int total_files = file_list.size();
 
-	/*if (total_files <= 2) {
-    	cerr << "ERREUR : Aucun fichier d'instance trouvé. Vérifiez le chemin du dossier." << endl;
+
+	int nbInst = 0;
+	for(int i = 0; i < total_files; i++){
+		if(file_list[i] != "." && file_list[i] != ".."){
+			nbInst++;
+		}
+	}
+
+
+	// Security
+	if(nbInst == 0){
+    	cerr << "ERREUR : Aucun fichier d'instance valide trouvé. Vérifiez le chemin." << endl;
     	return -1;
-	}*/
+	} else{
+		cout << "Succès : " << nbInst << " fichiers trouvés dans le dossier d'instances." << endl;
+	}
 
-
-
-
-	//int nbInst = total_files-2;
-
-
-
-	int nbInst = total_files;
-
-
-	cout << "Succès : " << nbInst << " fichiers trouvés dans le dossier." << endl;
 
 	//=========================================================================================================================================================
 
@@ -1941,7 +1942,9 @@ int main(int argc, const char* argv[]){
 
 
 			//for(int i = 2; i<total_files; i++ ){
-			for(int i = 0; i<total_files; i++ ){	
+			for(int i = 0; i<total_files; i++ ){
+				if(file_list[i] == "." || file_list[i] == "..") continue;
+
 				//=========================================================================================================================================================
 					
 				if(choice_instances == 1){

@@ -5,8 +5,8 @@ import os
 # indir = "validation_instances"
 # outdir = "parsed_large_instances"
 #
-indir = "STG/PROJET/bae/hand_benders_instances/instances"
-outdir = "STG/PROJET/bae/hand_benders_instances/parsed_instances"
+indir = "./hand_benders_instances/instances"
+outdir = "./hand_benders_instances/parsed_instances"
 #
 ##############################
 
