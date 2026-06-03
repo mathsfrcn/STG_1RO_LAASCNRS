@@ -34,9 +34,9 @@ def generate_random_instance(filename, nb_periods, nb_items, demand_prob=0.3):
 # ==========================================
 
 outdir = "toy_instances"
-nb_instances = 5
-nb_periods = 3
-nb_items = 10
+nb_instances = 20
+nb_periods = 20
+nb_items = 20
 demand_prob = 0.5
 
 file_list = [f for f in listdir(outdir) if isfile(join(outdir, f))]
@@ -47,7 +47,7 @@ for file in file_list:
 if not os.path.exists(outdir):
     os.makedirs(outdir)
 
-for i in range(1, nb_instances):
+for i in range(1, nb_instances+1):
     file_path = f"{outdir}/toy_instance_{i}.txt"
     generate_random_instance(file_path, nb_periods, nb_items, demand_prob)
 

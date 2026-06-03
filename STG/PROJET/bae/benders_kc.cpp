@@ -2017,7 +2017,7 @@ Benders_Result benders_Main(Instance inst, float eps, float max_iter, float max_
 		}
 
 
-		cout << sol.obj_val << endl;
+		//cout << sol.obj_val << endl;
 
 		i++;
 	}
@@ -2061,11 +2061,9 @@ vector<string> list_dir(const char *path) {
 		return allfile;
 	}
 
-
-
-
-
-	// ============================IN PROGRESS==========================================
+	// =======================================================================================================================================================
+	// ======================================================================IN PROGRESS======================================================================
+	
 	while((entry = readdir(dir)) != NULL){
 		string filename = entry -> d_name;
 		if(filename == "." || filename == ".."){
@@ -2075,8 +2073,8 @@ vector<string> list_dir(const char *path) {
 		allfile.push_back(filename);
 	}
 
-
-	// ================================================================================
+	// ======================================================================IN PROGRESS======================================================================
+	// =======================================================================================================================================================
 
 
 	closedir(dir);
@@ -2092,17 +2090,21 @@ int main(int argc, const char* argv[]){
 	int iter, iterKC, iterKCHOG;
 	// Simulation parameters
 	int limit_number_paths = 2000;		// Used for the DFS algo
-	int number_orthogonal_axes = 5;		// Number of orthogonal axes we want for the heuristics
-	float eps = 1;
+	int number_orthogonal_axes = 13;	// Number of orthogonal axes we want for the heuristics
+	float eps = 0.1;
 	bool use_graph_export = false;		// To be corrected before use
 	bool use_result_export = true;		// True if you want to export the results
-	float max_iter = 5000;				// Security
+	float max_iter = 8000;				// Security
 	float max_time_s = 3600;
 	// Read instances randomized parameters
 	float read_instance_rd_lb = 0.4;
 	float read_instance_rd_ub = 0.8;	// The production plan will be between lb% and ub% of the cumulative demand
 
-	//====================================================================== IN PROGRESS ======================================================================
+	string validation_status;
+
+
+	// =======================================================================================================================================================
+	//====================================================================== IN PROGRESS =====================================================================
 
 	// Création of the folder architecture
 	auto t = std::time(nullptr);
@@ -2113,7 +2115,7 @@ int main(int argc, const char* argv[]){
 	std::string experience_name = oss_exp.str();
 
 	ostringstream oss_folder;
-	oss_folder << "results" << experience_name;
+	oss_folder << "./results" << experience_name;
 	std::string folder_path = oss_folder.str();
 
 	if(use_result_export){
@@ -2129,16 +2131,34 @@ int main(int argc, const char* argv[]){
 	ostringstream oss_classic; 
 	ostringstream oss_augmented; 
 	ostringstream oss_augmented_HOG;
+	ostringstream oss_validation;
 	oss_classic 	  << folder_path << experience_name << "_classic.csv";
 	oss_augmented 	  << folder_path << experience_name << "_HOG.csv";
 	oss_augmented_HOG << folder_path << experience_name << "_augmented_HOG.csv";
-
+	oss_validation    << folder_path << experience_name << "_validation.txt";
 	ofstream output_classic(oss_classic.str());
 	ofstream output_augmented(oss_augmented.str());
 	ofstream output_augmented_HOG(oss_augmented_HOG.str());
+	ofstream output_validation;
 
-	//================================================================= TEMPORAIRE ========================================================================================
+	if(use_result_export){
+		output_validation.open(oss_validation.str());
+		output_validation << "Fichier | Gamma | tau | Validation\n";
+		output_validation << "------------------------------------------------------------\n";
+	}
+
+
+
+
+
+
+	//================================================================= TEMPORAIRE ===========================================================================
 	
+
+
+
+
+
 	vector<string> file_list;
 	int choice_instances;
 	choice_instances = 3;
@@ -2153,7 +2173,7 @@ int main(int argc, const char* argv[]){
 		file_list = list_dir("./hand_benders_instances/parsed_instances/");
 	}
   	
-	//=========================================================================================================================================================
+	//========================================================================================================================================================
 
   	int total_files = file_list.size();
 
@@ -2175,7 +2195,7 @@ int main(int argc, const char* argv[]){
 	}
 
 
-	//=========================================================================================================================================================
+	//========================================================================================================================================================
 
   	Instance inst;
   	vector<int> debug;
@@ -2185,7 +2205,7 @@ int main(int argc, const char* argv[]){
   	int seed = 31415;
   	srand (seed);
 
-	for(int Gamma=1; Gamma<100; Gamma+=20){
+	//for(int Gamma=1; Gamma<100; Gamma+=20){
 		//for(int tau=0; tau<11; tau+=2){		
 			iter      = 0;
 			iterKC    = 0;
@@ -2198,7 +2218,7 @@ int main(int argc, const char* argv[]){
 
 
 
-			//int Gamma=5;
+			int Gamma = 10;
 
 
 
@@ -2206,7 +2226,7 @@ int main(int argc, const char* argv[]){
 			for(int i = 0; i<total_files; i++ ){
 				if(file_list[i] == "." || file_list[i] == "..") continue;
 
-				//=========================================================================================================================================================
+				//============================================================================================================================================
 					
 				if(choice_instances == 1){
 					filename = "parsed_large_instances/" + file_list[i];
@@ -2233,7 +2253,7 @@ int main(int argc, const char* argv[]){
 				}
 
 				
-				//=========================================================================================================================================================
+				//============================================================================================================================================
 
 
 
@@ -2268,16 +2288,24 @@ int main(int argc, const char* argv[]){
 				timeKCHOG += benders_sol_augmented_HOG.time;
 				cout << "\nKC_HOG---done (Obj :" << benders_sol_augmented_HOG.obj_value << ")"<< endl;
 
+
+				
 				// Quality control of the solution
 				if(abs(benders_sol.obj_value - benders_sol_augmented.obj_value) > eps || abs(benders_sol.obj_value - benders_sol_augmented_HOG.obj_value) > eps){
 					cout << "\nALERTE DEGRADATION" << endl;
+					validation_status = "ALERTE DEGRADATION";
 				} else{
 					cout << "\nQualité valide" << endl;
+					validation_status = "Qualite valide";
 				}
 //*/
 
-
-
+				if(use_result_export){
+					output_validation   << filename << " | "
+										<< Gamma << " | "
+										<< tau << " | "
+										<< validation_status << endl;
+				}
 			}
 
 			int tau = 1;
@@ -2303,12 +2331,13 @@ int main(int argc, const char* argv[]){
 								<< float(iterKCHOG)/nbInst << "," << float(timeKCHOG)/nbInst << endl;
 			}
 		//}
-	}
+	//}
 
 	if(use_result_export){
 		output_classic.close();
 		output_augmented.close();
 		output_augmented_HOG.close();
+		output_validation.close();
 	}
 
 	cout<<"========== END OF THE PROGRAM =========="<<endl;
