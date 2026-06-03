@@ -287,7 +287,7 @@ vector<float> cumulToStandard(vector<float> data){
 	return stand;
 }
 
-// Read an instance from psplib problem 58 pspInstance. Products are agregated.
+// Utilisé pour lire les instances faites pour le déroulement à la main de l'algo
 Instance read_instance(string filename, int budget){
 	Instance inst;
 	int nbProd;
@@ -317,7 +317,7 @@ Instance read_instance(string filename, int budget){
 	// =================================================================== IN PROGRESS ====================================================================================================
 	
 
-	/*
+	/*//Générale
 	inst.cI = 3; 	// Stock cost
 	inst.cB = 6; 	// Backorder cost
 	inst.bP = 10; 	// Selling price
@@ -329,8 +329,8 @@ Instance read_instance(string filename, int budget){
 	}
 	*/
 
-
-	// Ajustement des parametres temporaires
+	//Spécifique
+	// Ajustement des parametres temporaires pour l'instance à la main
 	inst.cI = 1; 	// Stock cost
 	inst.cB = 2; 	// Backorder cost
 	inst.bP = 0; 	// Selling price
@@ -383,11 +383,14 @@ Instance read_instance_randomized(string filename, int budget, float lower_bound
 	inst.Dt = standardToCumul(inst.dt);
 	inst.cB = rand() % 10 + 10;			// Backorder cost
 	inst.cI = rand() % 10 + 10; 		// Stock cost
-	inst.bP = rand() % 10 + 10; 		// Selling price
+	//inst.bP = rand() % 10 + 10; 		// Selling price
+	inst.bP = 0;
 	inst.Gamma = budget;
 	inst.Dt = standardToCumul(inst.dt);
 	inst.deltat.resize(inst.T);
 
+
+	/*
 	for(int t = 0; t < inst.T; t++){
 		// Recours temporaire (pas propre)
 		if(inst.Dt[t] == 0){
@@ -409,6 +412,22 @@ Instance read_instance_randomized(string filename, int budget, float lower_bound
 			}
 		}
 	}
+	*/
+
+
+	for(int t=0; t < inst.T; t++){
+		inst.deltat[t] = int(0.20 * inst.Dt[t]);	// On peut modifier la demande d'environ +/-20%
+
+		if(inst.Dt[t] > 0  && inst.deltat[t] == 0){	// Si la demande est positive on doit avoir une possiblité d'augmenter
+			inst.deltat[t] = 1;
+		}
+	}
+
+
+
+
+
+
 
 	inst.X.resize(inst.T);
 	
@@ -2051,7 +2070,7 @@ int main(int argc, const char* argv[]){
 				
 
 
-				if(choice_instances == 3){
+				if(choice_instances == 4){
 					inst = read_instance(filename, Gamma);
 				} else{
 					inst = read_instance_randomized(filename, Gamma, read_instance_rd_lb, read_instance_rd_ub);

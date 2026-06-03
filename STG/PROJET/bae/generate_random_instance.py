@@ -37,7 +37,7 @@ outdir = "toy_instances"
 nb_instances = 5
 nb_periods = 3
 nb_items = 3
-demand_prob = 1
+demand_prob = 0.5
 
 file_list = [f for f in listdir(outdir) if isfile(join(outdir, f))]
 
