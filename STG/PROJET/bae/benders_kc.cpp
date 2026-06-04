@@ -113,7 +113,7 @@ float calculate_BC_distance(const Path& pathA, const Path& pathB){
 		int delta_B = pathB[k].j - pathA[k].i;
 
 		sum_diff += abs(delta_A - delta_B);	// Manhattan local distance
-		sum_total += (delta_A + delta_B);		// Total budget consumed by both routes
+		sum_total += (delta_A + delta_B);	   	// Total budget consumed by both routes
 	}
 
 	if(sum_total == 0){
@@ -2090,8 +2090,8 @@ int main(int argc, const char* argv[]){
 	int iter, iterKC, iterKCHOG;
 	// Simulation parameters
 	int limit_number_paths = 2000;		// Used for the DFS algo
-	int number_orthogonal_axes = 13;	// Number of orthogonal axes we want for the heuristics
-	float eps = 0.1;
+	int number_orthogonal_axes = 15;	// Number of orthogonal axes we want for the heuristics
+	float eps = 1;
 	bool use_graph_export = false;		// To be corrected before use
 	bool use_result_export = true;		// True if you want to export the results
 	float max_iter = 8000;				// Security
