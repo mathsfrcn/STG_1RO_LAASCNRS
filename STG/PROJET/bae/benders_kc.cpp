@@ -346,7 +346,7 @@ Instance read_instance(string filename, int budget){
 	// Ajustement des parametres temporaires pour l'instance à la main
 	inst.cI = 1; 	// Stock cost
 	inst.cB = 2; 	// Backorder cost
-	inst.bP = 0; 	// Selling price
+	inst.bP = 10; 	// Selling price
 	inst.Gamma = 2;
 	inst.deltat.resize(inst.T);
 	inst.X.resize(inst.T);	//rajout
@@ -2093,7 +2093,7 @@ int main(int argc, const char* argv[]){
 	int number_orthogonal_axes = 15;	// Number of orthogonal axes we want for the heuristics
 	float eps = 1;
 	bool use_graph_export = false;		// To be corrected before use
-	bool use_result_export = true;		// True if you want to export the results
+	bool use_result_export = false;		// True if you want to export the results
 	float max_iter = 8000;				// Security
 	float max_time_s = 3600;
 	// Read instances randomized parameters
@@ -2161,7 +2161,7 @@ int main(int argc, const char* argv[]){
 
 	vector<string> file_list;
 	int choice_instances;
-	choice_instances = 3;
+	choice_instances = 4;
 	
 	if(choice_instances == 1){
 		file_list = list_dir("./parsed_large_instances/");
@@ -2218,7 +2218,7 @@ int main(int argc, const char* argv[]){
 
 
 
-			int Gamma = 10;
+			int Gamma = 2;
 
 
 
