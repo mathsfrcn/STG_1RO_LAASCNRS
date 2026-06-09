@@ -1222,7 +1222,7 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, 
 
 
 
-	float ub_cost = 0.0;
+	float ub_cost ;
 
 
 	sol = KC_benders_Master(inst, arcsol);	// Proposes a first (unsatisfactory) solution compared to the nominal scenario
