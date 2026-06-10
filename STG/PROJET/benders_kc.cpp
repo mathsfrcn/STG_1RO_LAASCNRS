@@ -371,7 +371,7 @@ Instance read_instance(string filename, int budget){
 	return inst;
 }
 
-Instance read_instance_randomized(string filename, int budget, float lower_bound, float upper_bound){
+Instance read_instance_randomized(string filename, int budget, float read_instance_rd_lb, float read_instance_rd_ub){
 	Instance inst;
 	int nbProd;
 	int tmp;
@@ -450,7 +450,7 @@ Instance read_instance_randomized(string filename, int budget, float lower_bound
 		if(inst.Dt[t] == 0){
 			inst.X[t] = 0;
 		} else{
-			inst.X[t] = int(rand() % (int(lower_bound*inst.Dt[t])+1) + upper_bound*inst.Dt[t]);	// forall t, X[t] in [80%, 120%] *Dt[t]
+			inst.X[t] = int(rand() % (int(read_instance_rd_lb*inst.Dt[t])+1) + read_instance_rd_ub*inst.Dt[t]);	// forall t, X[t] in [80%, 120%] *Dt[t]
 		}
 	}
 
