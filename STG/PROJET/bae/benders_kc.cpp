@@ -555,7 +555,7 @@ Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > >
 	return sol;
 }
 
-vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float approx_coeff, float& ub_cost){
+vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float approx_coeff, float& ub_cost, float eps){
 	vector<vector<vector<vector<int> > > > arcbool; //bool flag to arcs within the worsts scenarios
 	vector<vector<float> > pi_value; //value of the longest path to pi[t][j]
 	vector<vector<bool> > pi_subopt_bool;
@@ -665,12 +665,12 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 				// cout<<" "<<BoolToString(pi_subopt_bool[t][j])<<" "<<pi_value[t][j]<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][0]<<endl;
 				// cout<<" "<<BoolToString(pi_subopt_bool[t][j])<<" "<<pi_value[t][j]<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][1]<<endl;
 				if(pi_subopt_bool[t][j] and j<=i+sol.inst.deltat[t-1] and (t!=1 or i==0)){ //last and is specific for first layer of the graph
-					if(pi_value[t][j] == pi_value[t-1][i]+costs[t][i][j][0]){
+					if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][0])) < eps){
 						arcbool[t][i][j][0] = 1;
 						pi_subopt_bool[t-1][i] = true;
 						// cout<<"test passed : "<<t<<" "<<j<<" -> "<<t-1<<" "<<i<<" "<<"0"<<endl;
 					}
-					if(pi_value[t][j] == pi_value[t-1][i]+costs[t][i][j][1]){
+					if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][1])) < eps){
 						arcbool[t][i][j][1] = 1;
 						pi_subopt_bool[t-1][i] = true;
 						// cout<<"test passed : "<<t<<" "<<j<<" -> "<<t-1<<" "<<i<<" "<<"1"<<endl;
@@ -810,7 +810,7 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, float eps, int
 	float ub_cost;
 
 	while(!stopCriterion){
-		arcsol_new = KC_benders_Subproblem(sol, approx_coeff, ub_cost);
+		arcsol_new = KC_benders_Subproblem(sol, approx_coeff, ub_cost, eps);
 
 		if(ub_cost <= sol.obj_val + eps){
 			stopCriterion = true;
@@ -1375,7 +1375,7 @@ Solution_ADV benders_Subproblem(Solution sol){
 }
 
 //solve subproblem with dynamic prog
-Solution_ADV benders_Subproblem_DP(Solution sol){
+Solution_ADV benders_Subproblem_DP(Solution sol, float eps){
 	Solution_ADV sol_adv;
 	vector<vector<vector<vector<int> > > > arcbool; //bool flag to arcs within the worsts scenarios
 	vector<vector<float> > pi_value; //value of the longest path to pi[t][j]
@@ -1450,7 +1450,7 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 	//cout<<"poeut"<<endl;
 	for(int i = 0; i<sol.inst.Gamma+1;i++){
 		// cout<<i<<" "<<pi_value[sol.inst.T][i]<<" "<<sub_OPT<<endl;
-		if(pi_value[sol.inst.T][i]==pi_value[sol.inst.T+1][0]){
+		if(abs(pi_value[sol.inst.T][i] - pi_value[sol.inst.T+1][0]) < eps){
 			arcbool[sol.inst.T+1][i][0][0] = 1;
 			arcbool[sol.inst.T+1][i][0][1] = 1;
 			pi_subopt_bool[sol.inst.T][i] = true;
@@ -1464,7 +1464,7 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 				// cout<<" "<<BoolToString(pi_subopt_bool[t][j])<<" "<<pi_value[t][j]<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][0]<<endl;
 				// cout<<" "<<BoolToString(pi_subopt_bool[t][j])<<" "<<pi_value[t][j]<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][1]<<endl;
 				if(pi_subopt_bool[t][j] and j<=i+sol.inst.deltat[t-1] and (t!=1 or i==0)){ //last and is specific for first layer of the graph
-					if(pi_value[t][j] == pi_value[t-1][i]+costs[t][i][j][0]){
+					if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][0])) < eps){
 						arcbool[t][i][j][0] = 1;
 						pi_subopt_bool[t-1][i] = true;
 						scenario[t-1] = sol.inst.Dt[t-1] - (j-i);
@@ -1473,7 +1473,7 @@ Solution_ADV benders_Subproblem_DP(Solution sol){
 						break;
 						// cout<<"test passed : "<<t<<" "<<j<<" -> "<<t-1<<" "<<i<<" "<<"0"<<endl;
 					}
-					if(pi_value[t][j] == pi_value[t-1][i]+costs[t][i][j][1]){
+					if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][1])) < eps){
 						arcbool[t][i][j][1] = 1;
 						pi_subopt_bool[t-1][i] = true;
 						scenario[t-1] = sol.inst.Dt[t-1] + (j-i);
@@ -1555,7 +1555,7 @@ Benders_Result benders_Main(Instance inst, float eps, int max_iter, int max_time
 
 
 	while(!stopCriterion){
-		sol_adv = benders_Subproblem_DP(sol);	// Le sous-probleme cherche le pire scénario D' contre le plan X (sol)
+		sol_adv = benders_Subproblem_DP(sol, eps);	// Le sous-probleme cherche le pire scénario D' contre le plan X (sol)
 	
 		
 
