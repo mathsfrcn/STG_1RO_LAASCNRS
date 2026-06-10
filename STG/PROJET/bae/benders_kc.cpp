@@ -554,7 +554,7 @@ Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > >
 	return sol;
 }
 
-vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float approx_coeff){
+vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float approx_coeff, float& ub_cost){
 	vector<vector<vector<vector<int> > > > arcbool; //bool flag to arcs within the worsts scenarios
 	vector<vector<float> > pi_value; //value of the longest path to pi[t][j]
 	vector<vector<bool> > pi_subopt_bool;
@@ -612,37 +612,30 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 		} 
 		// cout<<i<<", "<<pi_value[sol.inst.T][i]<<endl;
 	}
+
 	pi_value[sol.inst.T+1][0] = tmp;
 	// cout<<"longest path : "<<pi_value[sol.inst.T+1][0]<<endl;
 	
 
-
-
-
-
+	//récupérer la valeur du cout pour le critere d'arret de la boucle
+	ub_cost = pi_value[sol.inst.T+1][0];	//représente la longueur du plus long chemin aka la valeur objective du probleme adverse
 
 	//==========================now the backtrack
-	//float sub_OPT = -114;
-	float sub_OPT=-114;
 	
+	//===================== METHODE SELECT * / SELECT FEW
+	// =1 - Si on veut extraire que les pires chemins
+	// =0 - Si on veut extraire un sous graphe plus large
+	//===================================================
 
+	float sub_OPT=1;
 
-
-
-
-	//if(pi_value[sol.inst.T+1][0]>=0){
-	//	sub_OPT = approx_coeff*pi_value[sol.inst.T+1][0];
-	//}
-	//else{
-	//	sub_OPT = (1-approx_coeff)*pi_value[sol.inst.T+1][0]+pi_value[sol.inst.T+1][0];
-	//}
+	if(ub_cost>=0){
+		sub_OPT = approx_coeff*ub_cost;
+	}
+	else{
+		sub_OPT = (1-approx_coeff)*ub_cost+ub_cost;
+	}
 	
-
-
-
-
-
-
 	//t = T+1
 	pi_subopt_bool[sol.inst.T+1][0] = true;
 	//cout<<"poeut"<<endl;
@@ -779,7 +772,7 @@ vector<vector<vector<vector<int> > > > merge_budget_graph(vector<vector<vector<v
 }
 
 
-pair<int, float> KC_benders_Main(Instance inst, float approx_coeff){
+Benders_Result KC_benders_Main(Instance inst, float approx_coeff){
 
 	auto start = high_resolution_clock::now();
 
@@ -803,6 +796,56 @@ pair<int, float> KC_benders_Main(Instance inst, float approx_coeff){
 
 	// vector<vector<vector<vector<int> > > > tmp =  KC_benders_Subproblem(sol,approx_coeff);
 
+
+	float ub_cost;
+	float eps = 10e-4;
+
+	while(!stopCriterion){
+		arcsol_new = KC_benders_Subproblem(sol, approx_coeff, ub_cost);
+
+		if(ub_cost <= sol.obj_val + eps){
+			stopCriterion = true;
+			break;
+		}
+
+
+		// cout<<"subproblem solved"<<endl;
+		arcsol = merge_budget_graph(arcsol, arcsol_new);
+		// cout<<"budget graphs merged"<<endl;
+		new_sol = KC_benders_Master(inst, arcsol);
+
+
+		auto current_time = high_resolution_clock::now();
+		long long elapsed_s = duration_cast<seconds>(current_time - start).count();
+
+		if(elapsed_s >= 3600){
+			cout << "TIMEOUT : benders stop." << endl;
+			break;
+		}
+
+		if(iter >= 5000){
+			cout << "MAXITER : benders stop." << endl;
+			break;
+		}
+
+		iter++;
+		
+		// display_vector_float(new_sol.Xt);
+
+		cout<<"new sol value KC_benders_main : " << new_sol.obj_val << endl;
+
+		cout<<"============ "<< new_sol.obj_val << " " << sol.obj_val<<endl;
+		
+		cout << sol.obj_val << endl;
+		
+		// cout<<"worst case : ";
+		//display_vector_float(sol_adv.Dt);
+		sol = new_sol;
+	}
+
+
+
+	/*
 	while(!stopCriterion){
 		arcsol_new = KC_benders_Subproblem(sol, approx_coeff);
 		// cout<<"subproblem solved"<<endl;
@@ -834,13 +877,24 @@ pair<int, float> KC_benders_Main(Instance inst, float approx_coeff){
 		// display_vector_float(sol_adv.Dt);
 		sol = new_sol;
 	}
+	*/
+
+
+
+
+
+
+
+
 
 	auto stop = high_resolution_clock::now();
 	auto duration = duration_cast<microseconds>(stop - start);
 	float accuracy = (1./100000);
 	proc_time = accuracy*float(duration.count());
 
-	return make_pair(iter, proc_time);
+	//return make_pair(iter, proc_time);
+
+	return {iter, proc_time, sol.obj_val};
 }
 
 
@@ -1555,7 +1609,10 @@ vector<string> allfile;
 
 
 int main(int argc, const char* argv[]){
-	
+	Benders_Result benders_sol_augmented;
+
+
+
 	float approx_coeff;
 	float time, timeKC, timeKCHOG;
 	int iter, iterKC, iterKCHOG;
@@ -1709,11 +1766,12 @@ int main(int argc, const char* argv[]){
 
 ///*
 
+
 				// KC
-				benders_sol = KC_benders_Main(inst, approx_coeff); //KC_benders_Main(inst, approx_coeff, false, use_graph_export, limit_number_paths, number_orthogonal_axes, eps, max_iter, max_time_s);	// First bool is to use KC with HOG
-				iterKC += benders_sol.first;
-				timeKC += benders_sol.second;
-				cout << "\nKC-------done (Obj : << benders_sol_augmented.obj_value << )" <<endl;
+				benders_sol_augmented = KC_benders_Main(inst, approx_coeff); //KC_benders_Main(inst, approx_coeff, false, use_graph_export, limit_number_paths, number_orthogonal_axes, eps, max_iter, max_time_s);	// First bool is to use KC with HOG
+				iterKC += benders_sol_augmented.iter;
+				timeKC += benders_sol_augmented.time;
+				cout << "\nKC-------done (Obj :" << benders_sol_augmented.obj_value << ")" <<endl;
 
 //*/
 
