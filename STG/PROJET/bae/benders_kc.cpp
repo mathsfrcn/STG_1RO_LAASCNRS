@@ -50,6 +50,54 @@ struct Solution_ADV{
 
 };
 
+// ====================================================================================================================================================================================
+// ====================================================================== IN PROGRESS =================================================================================================
+
+
+
+
+// ====================================================================== IN PROGRESS =================================================================================================
+// ====================================================================================================================================================================================
+
+
+// ====================================================================================================================================================================================
+// ====================================================================== IN PROGRESS =================================================================================================
+
+
+// Nouvelle structure pour récupérer les parametres finaux & la valeur objective
+// Pour contrer l'erreur de la boucle de benders, il a fallu creer une nouvelle instance permettant de récupérer et de comparer les bonnes valeurs
+struct Benders_Result{
+	int iter;
+	float time;
+	float obj_value;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ====================================================================== IN PROGRESS =================================================================================================
+// ====================================================================================================================================================================================
+
+
+
+
+
+
+
+
 //===========================================misc.
 
 //displan an float vector, for debugging
@@ -305,15 +353,23 @@ vector<vector<vector<vector<float> > > > budget_graph_cost(Solution sol){
 				costs[t][i][j].resize(2);
 				if(j<=i+sol.inst.deltat[t-1] and j>=i){
 					if(t<sol.inst.T){
-						costs[t][i][j][0] = sol.inst.cI*(sol.Xt[t-1]- (sol.inst.Dt[t-1] - (j-i)));
-						costs[t][i][j][1] = sol.inst.cB*(sol.inst.Dt[t-1] + (j-i) - sol.Xt[t-1]);
+						costs[t][i][j][0] = sol.inst.cI*(sol.Xt[t-1]- (sol.inst.Dt[t-1] - (j-i)));	// Cost of Inventory
+						//cout << "t<sol.inst.T------costs[t][i][j][0] = " << sol.inst.cI*(sol.Xt[t-1]- (sol.inst.Dt[t-1] - (j-i))) << "\n";
+
+						costs[t][i][j][1] = sol.inst.cB*(sol.inst.Dt[t-1] + (j-i) - sol.Xt[t-1]);	// Cost of Backorders
+						//cout << "t<sol.inst.T------costs[t][i][j][1] =" << sol.inst.cB*(sol.inst.Dt[t-1] + (j-i) - sol.Xt[t-1]) << "\n";
 					}
-					else if(t==sol.inst.T){
+
+					else if(t==sol.inst.T){						
 						costs[t][i][j][0] = sol.inst.cI*(sol.Xt[t-1]- (sol.inst.Dt[t-1] - (j-i))) - sol.inst.bP*(sol.inst.Dt[t-1] - (j-i));
+						cout << "t==sol.inst.T----------costs[t][i][j][0] =" << sol.inst.cI*(sol.Xt[t-1]- (sol.inst.Dt[t-1] - (j-i)))- sol.inst.bP*(sol.inst.Dt[t-1] - (j-i)) << "\n";
+
 						costs[t][i][j][1] = sol.inst.cB*(sol.inst.Dt[t-1] + (j-i) - sol.Xt[t-1]) - sol.inst.bP*sol.Xt[t-1];
+						cout << "t==sol.inst.T----------costs[t][i][j][1] =" << sol.inst.cB*(sol.inst.Dt[t-1] + (j-i) - sol.Xt[t-1]) - sol.inst.bP*sol.Xt[t-1] << "\n";
 					}
 				}
 			}
+
 			if(t==sol.inst.T+1){
 				costs[t][i][0][0] = 0;
 				costs[t][i][0][1] = 0;
@@ -567,7 +623,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 
 	//==========================now the backtrack
 	//float sub_OPT = -114;
-	float sub_OPT=1;
+	float sub_OPT=-114;
 	
 
 
@@ -762,9 +818,12 @@ pair<int, float> KC_benders_Main(Instance inst, float approx_coeff){
 		
 		
 		// display_vector_float(new_sol.Xt);
-		cout<<"new sol value : "<<new_sol.obj_val<<endl;
+		cout<<"new sol value KC_benders_main : " << new_sol.obj_val << endl;
 
-		// cout<<"============ "<< new_sol.obj_val << " " << sol.obj_val<<endl;
+		cout<<"============ "<< new_sol.obj_val << " " << sol.obj_val<<endl;
+		
+		
+		
 		if(new_sol.obj_val == sol.obj_val){
 			stopCriterion = true;
 			break;
@@ -1436,7 +1495,8 @@ pair<int, float> benders_Main(Instance inst){
 	while(!stopCriterion){
 		// cout<<"=============ITERATION "<<i<<endl;
 		sol_adv = benders_Subproblem_DP(sol);
-		// sol_adv = benders_Subproblem(sol);
+		
+
 		scenarios.push_back(sol_adv.Dt);
 		// cout<<"NEW SCENARIO :"<<endl;
 		// display_vector_float(sol_adv.Dt);
@@ -1445,14 +1505,19 @@ pair<int, float> benders_Main(Instance inst){
 
 		// display_vector_float(new_sol.Xt);
 		i++;
+		
+
+
+		
+		
 		// cout<<"Obj Values of new sol and prec sol on new scenario :  "<< objective_value(new_sol, sol_adv.Dt) << " <= " << objective_value(sol, sol_adv.Dt)<<endl;
 		if(objective_value(new_sol, sol_adv.Dt) == objective_value(sol, sol_adv.Dt)){
 			stopCriterion = true;
 			break;
 		}
 
-		
-		cout<<"new sol value : "<<new_sol.obj_val<<endl;
+		cout << "print test";
+		cout << "new sol value benders_Main : " << new_sol.obj_val<<endl;
 		// cout<<"worst case : ";
 		// display_vector_float(sol_adv.Dt);
 		sol = new_sol;

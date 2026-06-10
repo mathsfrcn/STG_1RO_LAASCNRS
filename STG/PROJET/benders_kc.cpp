@@ -482,24 +482,14 @@ vector<vector<vector<vector<float> > > > budget_graph_cost(Solution sol){
 			for(int j = 0; j < sol.inst.Gamma+1; j++){
 				costs[t][i][j].resize(2);
 				if(j <= i+sol.inst.deltat[t-1] and j >= i){
-					/*
 					if(t<sol.inst.T){
 																	// (sol.inst.Dt[t-1] - (j-i)): reduced demand
 																	// (sol.inst.Dt[t-1] + (j-i)): increased demand
 						costs[t][i][j][0] = sol.inst.cI*(sol.Xt[t-1]- (sol.inst.Dt[t-1] - (j-i)));	// Cost of Inventory
-						costs[t][i][j][1] = sol.inst.cB*(sol.inst.Dt[t-1] + (j-i) - sol.Xt[t-1]);	// Cost of backorders
+						costs[t][i][j][1] = sol.inst.cB*(sol.inst.Dt[t-1] + (j-i) - sol.Xt[t-1]);	// Cost of Backorders
 					} else if(t==sol.inst.T){
 						costs[t][i][j][0] = sol.inst.cI*(sol.Xt[t-1]- (sol.inst.Dt[t-1] - (j-i))) - sol.inst.bP*(sol.inst.Dt[t-1] - (j-i));
 						costs[t][i][j][1] = sol.inst.cB*(sol.inst.Dt[t-1] + (j-i) - sol.Xt[t-1]) - sol.inst.bP*sol.Xt[t-1];
-					}
-					*/
-
-					if(t < sol.inst.T){
-						costs[t][i][j][0] = max(0.0f, sol.inst.cI*(sol.Xt[t-1]- (sol.inst.Dt[t-1] - j)));
-						costs[t][i][j][1] = max(0.0f, sol.inst.cB*(sol.inst.Dt[t-1] + j - sol.Xt[t-1]));
-					} else if(t == sol.inst.T){
-						costs[t][i][j][0] = max(0.0f, sol.inst.cI*(sol.Xt[t-1]- (sol.inst.Dt[t-1] - j))) - sol.inst.bP*(sol.inst.Dt[t-1] - j);
-						costs[t][i][j][1] = max(0.0f, sol.inst.cB*(sol.inst.Dt[t-1] + j - sol.Xt[t-1])) - sol.inst.bP*sol.Xt[t-1];
 					}
 				}
 			}
