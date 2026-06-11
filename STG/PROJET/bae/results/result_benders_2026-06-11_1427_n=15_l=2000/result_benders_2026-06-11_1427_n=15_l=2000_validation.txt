@@ -1,0 +1,3 @@
+Fichier | Gamma | tau | Validation
+------------------------------------------------------------
+test/pigment20a.psp | 2 | 1 | ALERTE DEGRADATION

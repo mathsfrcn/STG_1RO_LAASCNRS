@@ -789,7 +789,7 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, float eps, int
 	Solution sol;
 	Solution new_sol;
 	Solution_ADV sol_adv;
-	int iter = 0;
+	int i = 0;
 	bool stopCriterion = false;
 	float proc_time;
 	vector<vector<vector<vector<int> > > > arcsol = init_graph(inst);
@@ -832,12 +832,12 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, float eps, int
 			break;
 		}
 
-		if(iter >= max_iter){
+		if(i >= max_iter){
 			cout << "MAXITER : benders stop." << endl;
 			break;
 		}
 
-		iter++;
+		i++;
 		
 		// display_vector_float(new_sol.Xt);
 
@@ -848,7 +848,10 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, float eps, int
 		//cout << sol.obj_val << endl;
 		
 		// cout<<"worst case : ";
-		//display_vector_float(sol_adv.Dt);
+		display_vector_float(sol_adv.Dt);
+		
+		cout << "Iteration " << i << " - Master Obj (LB): " << sol.obj_val << " | Subproblem Cost (UB): " << ub_cost << endl;
+
 		sol = new_sol;
 	}
 
@@ -883,7 +886,7 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, float eps, int
 
 		
 		// cout<<"worst case : ";
-		// display_vector_float(sol_adv.Dt);
+		display_vector_float(sol_adv.Dt);
 		sol = new_sol;
 	}
 	*/
@@ -903,7 +906,7 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, float eps, int
 
 	//return make_pair(iter, proc_time);
 
-	return {iter, proc_time, sol.obj_val};
+	return {i, proc_time, sol.obj_val};
 }
 
 
@@ -1553,11 +1556,8 @@ Benders_Result benders_Main(Instance inst, float eps, int max_iter, int max_time
 
 	int i = 1;
 
-
 	while(!stopCriterion){
 		sol_adv = benders_Subproblem_DP(sol, eps);	// Le sous-probleme cherche le pire scénario D' contre le plan X (sol)
-	
-		
 
 		float upper_bound_cost = objective_value(sol, sol_adv.Dt);
 
@@ -1566,11 +1566,9 @@ Benders_Result benders_Main(Instance inst, float eps, int max_iter, int max_time
 			break;
 		}
 
-
-
 		scenarios.push_back(sol_adv.Dt);
 		// cout<<"NEW SCENARIO :"<<endl;
-		// display_vector_float(sol_adv.Dt);
+		display_vector_float(sol_adv.Dt);
 
 		sol = benders_Master(inst, scenarios);
 		
@@ -1593,23 +1591,17 @@ Benders_Result benders_Main(Instance inst, float eps, int max_iter, int max_time
         }
 
 
-
 		i++;
 			
-		
 		cout << "Iteration " << i << " - Master Obj (LB): " << sol.obj_val << " | Subproblem Cost (UB): " << upper_bound_cost << endl;
 		// cout<<"worst case : ";
 		// display_vector_float(sol_adv.Dt);
 		//sol = new_sol;
 	}
 
-
-
-
-
-	/*
+	/*	
 	while(!stopCriterion){
-		sol_adv = benders_Subproblem_DP(sol);	// Le sous-probleme cherche le pire scénario D' contre le plan X (sol)
+		sol_adv = benders_Subproblem_DP(sol, eps);	// Le sous-probleme cherche le pire scénario D' contre le plan X (sol)
 		
 
 
@@ -1641,6 +1633,7 @@ Benders_Result benders_Main(Instance inst, float eps, int max_iter, int max_time
 		sol = new_sol;
 	}
 	*/
+	
 
 	auto stop = high_resolution_clock::now();
 	auto duration = duration_cast<microseconds>(stop - start);
@@ -1677,8 +1670,6 @@ int main(int argc, const char* argv[]){
 	Benders_Result benders_sol;
 	Benders_Result benders_sol_augmented;
 
-
-
 	float approx_coeff;
 	float time, timeKC, timeKCHOG;
 	int iter, iterKC, iterKCHOG;
@@ -1687,7 +1678,7 @@ int main(int argc, const char* argv[]){
 	int number_orthogonal_axes = 15;	// Number of orthogonal axes we want for the heuristics
 	float eps = 10e-4;
 	bool use_graph_export = false;		// To be corrected before use
-	bool use_result_export = false;		// True if you want to export the results
+	bool use_result_export = true;		// True if you want to export the results
 	float max_iter = 5000;				// Security
 	float max_time_s = 3600;
 	// Read instances randomized parameters
@@ -1742,23 +1733,16 @@ int main(int argc, const char* argv[]){
 		output_validation << "------------------------------------------------------------\n";
 	}
 
-
-
 	//================================================================= TEMPORAIRE ===========================================================================
-	
-
-
-
-
 
 	vector<string> file_list;
 	int choice_instances;
-	choice_instances = 4;
+	choice_instances = 3;
 	
 	if(choice_instances == 1){
 		file_list = list_dir("./parsed_large_instances/");
 	} else if(choice_instances == 2){
-		file_list = list_dir("./other_instances/");
+		file_list = list_dir("./test/");
 	} else if(choice_instances == 3){
 		file_list = list_dir("./toy_instances/");
 	} else{
@@ -1797,7 +1781,7 @@ int main(int argc, const char* argv[]){
   	int seed = 31415;
   	srand (seed);
 
-	//for(int Gamma=1; Gamma<100; Gamma+=20){
+	for(int Gamma=1; Gamma<100; Gamma+=20){
 		//for(int tau=0; tau<11; tau+=2){		
 			iter      = 0;
 			iterKC    = 0;
@@ -1810,7 +1794,7 @@ int main(int argc, const char* argv[]){
 
 
 
-			int Gamma = 2;
+			//int Gamma = 10;
 
 
 int tau = 1;
@@ -1826,7 +1810,7 @@ int tau = 1;
 				if(choice_instances == 1){
 					filename = "parsed_large_instances/" + file_list[i];
 				} else if(choice_instances == 2){
-					filename = "other_instances/" + file_list[i];
+					filename = "test/" + file_list[i];
 				} else if(choice_instances == 3){
 					filename = "toy_instances/" + file_list[i];
 				}else{
@@ -1841,7 +1825,7 @@ int tau = 1;
 				
 
 
-				if(choice_instances == 4){
+				if(choice_instances == 5){
 					inst = read_instance(filename, Gamma);
 				} else{
 					inst = read_instance_randomized(filename, Gamma, read_instance_rd_lb, read_instance_rd_ub);
@@ -1926,7 +1910,7 @@ int tau = 1;
 
 
 		//}
-	//}
+	}
 
 	if(use_result_export){
 		output_classic.close();
@@ -1938,86 +1922,3 @@ int tau = 1;
 	
 	cout<<"========== END OF THE PROGRAM =========="<<endl;
 }
-
-
-
-/*
-int main(int argc, const char* argv[]){
-	//cout<<"test"<<endl;
-	// pair<Solution, Solution_ADV> benders_sol;
-	pair<int, float> benders_sol;
-	float approx_coeff;
-	float time, timeKC;
-	int iter, iterKC;
-	ofstream result;
-  	result.open ("result_test.txt");
-  	string filename;
-  	vector<string> filelist = list_dir("./hand_benders_instances/parsed_instances/");
-  	int nbInst = filelist.size() - 2;
-  	Instance inst;
-  	vector<int> debug;
-  	vector<int> debug2;
-
-  	int seed = 31415;
-  	srand (seed);
-
-	//for(int Gamma = 1; Gamma<100; Gamma+=20){
-		//for(int tau=0; tau <11; tau +=2){
-			
-		
-			int tau = 1;
-
-			int Gamma=2;
-
-
-
-			iter = 0;
-			iterKC = 0;
-			time = 0;
-			timeKC=0;
-			debug.resize(0);
-			debug2.resize(0);
-			for(int i = 2; i<nbInst; i++ ){
-
-				filename = "Parsed_Large_Instances/" + filelist[i];
-				cout<<filename<<" "<<Gamma<<" "<<tau<<" "<<endl;
-				//cout<<"pouet1"<<endl;
-				inst = read_instance_randomized(filename, Gamma);
-				//cout<<"pouet2"<<endl;
-				//display_vector_float(inst.Dt);
-				//display_vector_float(inst.deltat);
-				benders_sol = benders_Main(inst);
-				cout<<"STANDARD done"<<endl;
-				// debug2.push_back(benders_sol.first);
-				// iter += benders_sol.first;
-				iter += benders_sol.first;
-				time += benders_sol.second;
-
-				approx_coeff = float(tau)/10;
-				benders_sol = KC_benders_Main(inst, approx_coeff);
-				cout<<"KC done"<<endl;
-				// debug.push_back(benders_sol.first);
-				// iterKC += benders_sol.first;
-				iterKC+= benders_sol.first;
-				timeKC+= benders_sol.second;
-
-				// timeKC += benders_sol.second;
-
-				// std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-			}
-			result<<"STANDARD "<<Gamma<<" "<<tau<<" ";
-			result<<float(iter)/nbInst<<" "<<float(time)/nbInst<<endl;
-			// display_vector_int(debug2);
-			result<<"KC "<<Gamma<<" "<<tau<<" ";
-			result<<float(iterKC)/nbInst<<" "<<float(timeKC)/nbInst<<endl;
-			// display_vector_int(debug);
-			
-		//}	
-	//}
-
-	result.close();
-	//cout<<"test"<<endl;
-}
-
-
-*/
