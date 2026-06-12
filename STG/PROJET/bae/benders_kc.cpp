@@ -232,7 +232,8 @@ Instance read_instance(string filename, int budget){
 	inst.cI = 1; 	// Stock cost
 	inst.cB = 2; 	// Backorder cost
 	inst.bP = 10; 	// Selling price
-	inst.Gamma = 2;
+	inst.Gamma = budget;
+	cout << "gamma :" << inst.Gamma << endl;
 	inst.deltat.resize(inst.T);
 	inst.X.resize(inst.T);	//rajout
 
@@ -326,7 +327,18 @@ Instance read_instance_randomized(string filename, int budget, float read_instan
 			inst.X[t] = 0;
 		}
 		else{
+
+
+
+
+
+
 			inst.X[t] = int(rand() % (int(read_instance_rd_lb*inst.Dt[t])+1) + read_instance_rd_ub*inst.Dt[t]);	// forall t, X[t] in [80%, 120%] *Dt[t]
+			//cout << inst.X[t] <<endl;
+		
+		
+		
+		
 		}
 	}
 
@@ -960,9 +972,24 @@ Solution benders_Master(Instance inst, vector<vector<float> > scenarios){
 
 	//consts
 
+
+
+
+
 	for(int t = 1; t<inst.T+1;t++){
 		model.add(X[t-1]<=inst.X[t-1]);
+		model.add(X[t] >= X[t-1]);
 	}
+
+
+
+
+
+
+
+
+
+
 
 	for(int t = 0; t<inst.T; t++){
 		for(int o = 0; o<scenarios.size();o++){
@@ -1797,7 +1824,7 @@ int main(int argc, const char* argv[]){
 			//int Gamma = 10;
 
 
-int tau = 1;
+			int tau = 1;
 
 
 
@@ -1825,7 +1852,7 @@ int tau = 1;
 				
 
 
-				if(choice_instances == 5){
+				if(choice_instances == 4){
 					inst = read_instance(filename, Gamma);
 				} else{
 					inst = read_instance_randomized(filename, Gamma, read_instance_rd_lb, read_instance_rd_ub);
@@ -1881,7 +1908,6 @@ int tau = 1;
 										<< tau << " | "
 										<< validation_status << endl;
 				}
-
 			}
 
 			if(use_result_export){
