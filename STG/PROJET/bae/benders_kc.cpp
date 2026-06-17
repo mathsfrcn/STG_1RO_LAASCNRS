@@ -1767,7 +1767,7 @@ int main(int argc, const char* argv[]){
 
 	vector<string> file_list;
 	int choice_instances;
-	choice_instances = 4;
+	choice_instances = 1;
 	
 	if(choice_instances == 1){
 		file_list = list_dir("./parsed_large_instances/");
