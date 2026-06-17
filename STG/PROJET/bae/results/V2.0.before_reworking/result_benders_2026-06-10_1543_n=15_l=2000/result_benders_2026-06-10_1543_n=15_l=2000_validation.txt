@@ -1,0 +1,3 @@
+Fichier | Gamma | tau | Validation
+------------------------------------------------------------
+hand_benders_instances/parsed_instances/hand_instance.dzn_parsed | 2 | 1 | Qualite valide

@@ -1,4 +1,0 @@
-Fichier | Gamma | tau | Validation
-------------------------------------------------------------
-toy_instances/toy_instance_2.txt | 2 | 1 | Qualite valide
-toy_instances/toy_instance_1.txt | 2 | 1 | Qualite valide

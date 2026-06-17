@@ -451,11 +451,16 @@ Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > >
 		sprintf(name,"X_%d",t);
 		X[t].setName(name);
 	}
-	//csts
 
-	//bounbds for X variables
+
+	// Upper bound of cumulative production
 	for(int t = 1; t<inst.T+1;t++){
 		model.add(X[t-1]<=inst.X[t-1]);
+	}
+
+	// Lower bound of cumulative production
+	for(int t = 1; t < inst.T; t++){
+    	model.add(X[t] >= X[t-1]);
 	}
 
 	//for t in 1...T-1
@@ -975,19 +980,17 @@ Solution benders_Master(Instance inst, vector<vector<float> > scenarios){
 
 
 
-
+	// inst.X[t] is the maximum possible production of the factory at time t
 	for(int t = 1; t<inst.T+1;t++){
 		model.add(X[t-1]<=inst.X[t-1]);
-		model.add(X[t] >= X[t-1]);
 	}
 
 
 
-
-
-
-
-
+	// Contrainte temporaire pour interdire à la production cumulée de pouvoir être décroissante
+	for(int t = 1; t < inst.T; t++){	
+    	model.add(X[t] >= X[t-1]);
+	}
 
 
 
@@ -998,7 +1001,7 @@ Solution benders_Master(Instance inst, vector<vector<float> > scenarios){
 			for(int i = 0; i<=t; i++){
 				expr += s[o][i];
 			}
-			model.add(expr == scenarios[o][t]-B[o][t]);			//(3)
+			model.add(expr == scenarios[o][t]-B[o][t]);				//(3)
 		}
 	}
 
@@ -1764,7 +1767,7 @@ int main(int argc, const char* argv[]){
 
 	vector<string> file_list;
 	int choice_instances;
-	choice_instances = 3;
+	choice_instances = 4;
 	
 	if(choice_instances == 1){
 		file_list = list_dir("./parsed_large_instances/");
@@ -1853,7 +1856,7 @@ int main(int argc, const char* argv[]){
 
 
 				if(choice_instances == 4){
-					inst = read_instance(filename, Gamma);
+					inst = read_instance(filename, 2);
 				} else{
 					inst = read_instance_randomized(filename, Gamma, read_instance_rd_lb, read_instance_rd_ub);
 				}
