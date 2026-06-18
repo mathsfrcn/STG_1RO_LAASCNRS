@@ -1690,12 +1690,6 @@ vector<string> allfile;
    return allfile;
 }
 
-
-
-
-
-
-
 int main(int argc, const char* argv[]){
 	Benders_Result benders_sol;
 	Benders_Result benders_sol_augmented;
@@ -1767,7 +1761,7 @@ int main(int argc, const char* argv[]){
 
 	vector<string> file_list;
 	int choice_instances;
-	choice_instances = 1;
+	choice_instances = 3;
 	
 	if(choice_instances == 1){
 		file_list = list_dir("./parsed_large_instances/");
@@ -1812,7 +1806,7 @@ int main(int argc, const char* argv[]){
   	srand (seed);
 
 	for(int Gamma=1; Gamma<100; Gamma+=20){
-		//for(int tau=0; tau<11; tau+=2){		
+		for(int tau=0; tau<11; tau+=2){		
 			iter      = 0;
 			iterKC    = 0;
 			iterKCHOG = 0;
@@ -1827,7 +1821,7 @@ int main(int argc, const char* argv[]){
 			//int Gamma = 10;
 
 
-			int tau = 1;
+			//int tau = 1;
 
 
 
@@ -1878,9 +1872,9 @@ int main(int argc, const char* argv[]){
 
 
 
-				//approx_coeff = float(tau)/10;
+				approx_coeff = float(tau)/10;
 
-				approx_coeff = 1;
+				//approx_coeff = 1;
 				
 
 ///*
@@ -1938,7 +1932,7 @@ int main(int argc, const char* argv[]){
 			}
 
 
-		//}
+		}
 	}
 
 	if(use_result_export){
