@@ -34,10 +34,10 @@ def generate_random_instance(filename, nb_periods, nb_items, demand_prob=0.3):
 # ==========================================
 
 outdir = "toy_instances"
-nb_instances = 10
-nb_periods = 20
+nb_instances = 1
+nb_periods = 200
 nb_items = 10
-demand_prob = 0.3
+demand_prob = 0.5
 
 file_list = [f for f in listdir(outdir) if isfile(join(outdir, f))]
 

@@ -1613,7 +1613,7 @@ int main(int argc, const char* argv[]){
 	// Simulation parameters
 	int limit_number_paths = 2000;		// Used for the DFS algo
 	int number_orthogonal_axes = 15;	// Number of orthogonal axes we want for the heuristics
-	float eps = 10e-4;
+	float eps = 10e-1;
 	bool use_graph_export = false;		// To be corrected before use
 	bool use_result_export = true;		// True if you want to export the results
 	float max_iter = 5000;				// Security
