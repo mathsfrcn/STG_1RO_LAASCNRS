@@ -1,0 +1,32 @@
+Fichier | Gamma | tau | Validation
+------------------------------------------------------------
+toy_instances/toy_instance_1.txt | 1 | 0 | Qualite valide
+toy_instances/toy_instance_1.txt | 1 | 2 | Qualite valide
+toy_instances/toy_instance_1.txt | 1 | 4 | Qualite valide
+toy_instances/toy_instance_1.txt | 1 | 6 | Qualite valide
+toy_instances/toy_instance_1.txt | 1 | 8 | Qualite valide
+toy_instances/toy_instance_1.txt | 1 | 10 | Qualite valide
+toy_instances/toy_instance_1.txt | 21 | 0 | Qualite valide
+toy_instances/toy_instance_1.txt | 21 | 2 | Qualite valide
+toy_instances/toy_instance_1.txt | 21 | 4 | Qualite valide
+toy_instances/toy_instance_1.txt | 21 | 6 | Qualite valide
+toy_instances/toy_instance_1.txt | 21 | 8 | Qualite valide
+toy_instances/toy_instance_1.txt | 21 | 10 | Qualite valide
+toy_instances/toy_instance_1.txt | 41 | 0 | Qualite valide
+toy_instances/toy_instance_1.txt | 41 | 2 | Qualite valide
+toy_instances/toy_instance_1.txt | 41 | 4 | Qualite valide
+toy_instances/toy_instance_1.txt | 41 | 6 | Qualite valide
+toy_instances/toy_instance_1.txt | 41 | 8 | Qualite valide
+toy_instances/toy_instance_1.txt | 41 | 10 | Qualite valide
+toy_instances/toy_instance_1.txt | 61 | 0 | Qualite valide
+toy_instances/toy_instance_1.txt | 61 | 2 | Qualite valide
+toy_instances/toy_instance_1.txt | 61 | 4 | Qualite valide
+toy_instances/toy_instance_1.txt | 61 | 6 | Qualite valide
+toy_instances/toy_instance_1.txt | 61 | 8 | Qualite valide
+toy_instances/toy_instance_1.txt | 61 | 10 | Qualite valide
+toy_instances/toy_instance_1.txt | 81 | 0 | Qualite valide
+toy_instances/toy_instance_1.txt | 81 | 2 | Qualite valide
+toy_instances/toy_instance_1.txt | 81 | 4 | Qualite valide
+toy_instances/toy_instance_1.txt | 81 | 6 | Qualite valide
+toy_instances/toy_instance_1.txt | 81 | 8 | Qualite valide
+toy_instances/toy_instance_1.txt | 81 | 10 | Qualite valide

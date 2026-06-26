@@ -1,0 +1,30 @@
+Fichier | Gamma | tau | Validation
+------------------------------------------------------------
+parsed_large_instances/ps-300-10-90.dzn_parsed | 1 | 1 | Qualite valide
+parsed_large_instances/ps-200-30-90.dzn_parsed | 1 | 1 | Qualite valide
+parsed_large_instances/ps-200-10-90.dzn_parsed | 1 | 1 | Qualite valide
+parsed_large_instances/ps-300-10-80.dzn_parsed | 1 | 1 | Qualite valide
+parsed_large_instances/ps-200-20-80.dzn_parsed | 1 | 1 | Qualite valide
+parsed_large_instances/ps-200-20-100.dzn_parsed | 1 | 1 | Qualite valide
+parsed_large_instances/ps-200-20-90.dzn_parsed | 1 | 1 | Qualite valide
+parsed_large_instances/ps-200-30-100.dzn_parsed | 1 | 1 | Qualite valide
+parsed_large_instances/ps-200-10-100.dzn_parsed | 1 | 1 | Qualite valide
+parsed_large_instances/ps-300-10-100.dzn_parsed | 1 | 1 | Qualite valide
+parsed_large_instances/ps-200-30-80.dzn_parsed | 1 | 1 | Qualite valide
+parsed_large_instances/ps-300-10-90.dzn_parsed | 21 | 1 | Qualite valide
+parsed_large_instances/ps-200-30-90.dzn_parsed | 21 | 1 | Qualite valide
+parsed_large_instances/ps-200-10-90.dzn_parsed | 21 | 1 | Qualite valide
+parsed_large_instances/ps-300-10-80.dzn_parsed | 21 | 1 | Qualite valide
+parsed_large_instances/ps-200-20-80.dzn_parsed | 21 | 1 | Qualite valide
+parsed_large_instances/ps-200-20-100.dzn_parsed | 21 | 1 | Qualite valide
+parsed_large_instances/ps-200-20-90.dzn_parsed | 21 | 1 | Qualite valide
+parsed_large_instances/ps-200-30-100.dzn_parsed | 21 | 1 | Qualite valide
+parsed_large_instances/ps-200-10-100.dzn_parsed | 21 | 1 | Qualite valide
+parsed_large_instances/ps-300-10-100.dzn_parsed | 21 | 1 | Qualite valide
+parsed_large_instances/ps-200-30-80.dzn_parsed | 21 | 1 | Qualite valide
+parsed_large_instances/ps-300-10-90.dzn_parsed | 41 | 1 | Qualite valide
+parsed_large_instances/ps-200-30-90.dzn_parsed | 41 | 1 | Qualite valide
+parsed_large_instances/ps-200-10-90.dzn_parsed | 41 | 1 | Qualite valide
+parsed_large_instances/ps-300-10-80.dzn_parsed | 41 | 1 | Qualite valide
+parsed_large_instances/ps-200-20-80.dzn_parsed | 41 | 1 | Qualite valide
+parsed_large_instances/ps-200-20-100.dzn_parsed | 41 | 1 | Qualite valide
