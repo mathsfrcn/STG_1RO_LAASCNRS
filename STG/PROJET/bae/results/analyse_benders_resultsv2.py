@@ -1,12 +1,9 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import tkinter as tk
 import os
-from tkinter import filedialog
 
 def analyze_benders_results(file_path):
-    # Configuration
     try:
         df = pd.read_csv(file_path, sep=r'[,\s]+', engine='python', 
                          names=['Method', 'Gamma', 'Tau', 'Iterations', 'Time'])
@@ -87,21 +84,53 @@ def analyze_benders_results(file_path):
     output_image_path = os.path.join(target_directory, output_image_name)
 
     plt.savefig(output_image_path, dpi=300, bbox_inches='tight')
-    plt.show()
+    # plt.show()
 
-def main():
-    root = tk.Tk()
-    root.withdraw()
-    
-    file_path = filedialog.askopenfilename(
-        title="Select the results file",
-        filetypes=[("Données", "*.csv *.txt"), ("Tous", "*.*")]
-    )
-    
-    if file_path:
-        analyze_benders_results(file_path)
-    else:
-        print("No file selected.")
+method = False  # True, False
 
-if __name__ == "__main__":
-    main()
+if method:  # Window with Tkinter
+    import tkinter as tk
+    from tkinter import filedialog
+
+    def main():
+        root = tk.Tk()
+        root.withdraw()
+    
+        file_path = filedialog.askopenfilename(
+            title="Select the results file",
+            filetypes=[("Données", "*.csv *.txt"), ("Tous", "*.*")]
+        )
+        
+        if file_path:
+            analyze_benders_results(file_path)
+        else:
+            print("No file selected.")
+
+    if __name__ == "__main__":
+        main()
+        print("===== Generation complete =====")
+else:
+    import argparse
+    import os
+    import matplotlib
+    matplotlib.use('Agg')
+
+    def main():
+        
+        parser = argparse.ArgumentParser(description="Analyse des résultats d'optimisation.")
+        parser.add_argument("file_path", help="Chemin du fichier CSV/TXT à analyser", nargs="?")
+        
+        args = parser.parse_args()
+        file_path = args.file_path
+
+        if not file_path:
+            file_path = input("Entrez le chemin du fichier de résultats : ").strip()
+
+        if file_path and os.path.exists(file_path):
+            analyze_benders_results(file_path)
+        else:
+            print(f"Erreur : Le fichier '{file_path}' n'existe pas ou est invalide.")
+
+    if __name__ == "__main__":
+        main()
+        print("===== Generation complete =====")
