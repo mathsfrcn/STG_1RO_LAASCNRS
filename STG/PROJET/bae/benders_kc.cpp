@@ -1,7 +1,7 @@
 #include <cstddef>
 #include <ilcplex/ilocplex.h>
-#include<vector>
-#include<string>
+#include <vector>
+#include <string>
 #include <bits/stdc++.h> 
 #include <ctime>
 #include <algorithm>
@@ -12,6 +12,11 @@
 #include <cmath>
 #include <sys/types.h>
 #include <thread>
+
+#include <fstream>
+#include <sstream>
+#include <iostream>
+#include <filesystem>
 
 using namespace std;
 using namespace std::chrono;
