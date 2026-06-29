@@ -52,13 +52,13 @@ def analyze_benders_results(file_path):
     ax.axhline(1.0, color='red', linestyle='--', label='Equality')
     
     ax.set_title(f"Speedup of {alt_method} relative to {ref_method}")
-    ax.set_xlabel("Uncertainty budget (\u0393)")
-    ax.set_ylabel(f"Ratio of Times (T_{ref_method} / T_{alt_method})")
+    ax.set_xlabel("Gamma")
+    ax.set_ylabel(f"Ratio of Times ({ref_method} / {alt_method})")
     
     ax.fill_between(pivot_df['Gamma'].unique(), 1.0, pivot_df['Speedup'].max() * 1.1, 
                     color='green', alpha=0.05, label=f'Victory zone {alt_method}')
     
-    ax.legend(title='Tolerance (\u03C4)')
+    ax.legend(title='Tau')
 
     # Fig02
     ax = axes[0, 1]

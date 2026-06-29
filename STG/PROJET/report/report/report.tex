@@ -229,8 +229,8 @@
     \end{center}
 \end{titlepage}
 
-% ======================================== REMERCIEMENTS ========================================
 
+% ======================================== REMERCIEMENTS ========================================
 \clearpage
 \newgeometry{top=4cm, bottom=4cm, left=3.5cm, right=3.5cm} 
 \thispagestyle{empty}
@@ -250,16 +250,17 @@ Je souhaite également remercier l'ensemble de mes professeurs pour la qualité 
 qui m'ont permis d'acquérir les connaissances nécessaires à la réussite de ma formation et de ce stage.
 \end{spacing}
 
-\vspace{1.5cm}
-\begin{flushright}
-    \textit{Mathis FRANCINE-HABAS}
-\end{flushright}
+%\vspace{1.5cm}
+%\begin{flushright}
+%    \textit{Mathis FRANCINE-HABAS}
+%\end{flushright}
 
 \vspace*{\fill}
 
 \clearpage
 \restoregeometry
 % ========================================
+
 
 % ======================================== SOMMAIRES ========================================
 
@@ -279,10 +280,12 @@ qui m'ont permis d'acquérir les connaissances nécessaires à la réussite de m
 \section*{List of Acronyms}
 %\addcontentsline{toc}{section}{List of Acronyms}
 
+
 % ======================================== CONTENU DU RAPPORT ========================================
 
 \clearpage
 \pagenumbering{arabic}
+
 
 % ============================== INTRODUCTION ============================== 
 \section*{Introduction}
@@ -292,44 +295,30 @@ Son efficacité actuelle repose sur un tryptique fondamental. Le premier axe con
 Le deuxieme réside dans le développement de méthodes de résolution capables de passer à l'échelle industrielle. Enfin, le dernier levier de performance, devenu central aujourd'hui, est le traitement intégré et intelligent des données.
 
 C'est précisément sur ce dernier point que la Recherche Opérationnelle converge vers l'Intelligence Artificielle. Cependant, l'exploitation de ces données issus d'environnements réels confronte systèmatiquement les modèles à un défi majeur: l'omniprésence de l'incertitude.
+En effet, l'instabilité de la demande, des prix et du climat complexifie la planification au quotidien. La production, la logistique et les approvisionnements subissent des risques accrus amplifiés par l'interdépendance des chaînes mondiales.
+Les modèles classiques supposent souvent un monde ``parfait''. Optimiser ce scénario crée une stratégie fragile qui ne fonctionnera plus au premier aléa. L'enjeu n'est donc plus seulement d'optimiser un plan idéal, mais également d'anticiper les écarts malgré ces intertitudes, c'est la naissance de l'Optimisation Robuste (OR).
 
-En effet, l'instabilité de la demande, la volatilité des prix ou encore les aléas climatiques complexifient la planification au quotidien. La production, la logistique et les approvisionnements subissent des risques accrus, largement amplifiés par l'interdépendance des chaînes mondiales.
-Les modèles d'optimisation classiques supposent souvent un monde déterministe où les paramètres sont connus à l'avance. Or, une stratégie optimisée pour ce scénario ``parfait'' s'avère très fragile et peut devenir irréalisable au moindre aléa.
-L'enjeu n'est donc plus seulement d'optimiser un plan idéal, mais de concevoir des solutions capables d'absorber ces écarts: c'est la naissance de l'optimisation robuste.
+Ce nouveau concept permet de poser un cadre pour décider dans l'incertain. Nous pourrions le définir de la façon suivante: l'Optimisation Robuste cherche la meilleure décision qui reste faisable et performante quelques soient les scénarios à venir.
+Nous avons deux types d'incertitude, elles peuvent être continues ou discrètes. L'incertitude s'appuie sur différentes métriques ainsi que sur des scénarios critiques identifiés.
+Les applications couvrent notamment la supply chain, la maintenance et la production où les aléas locaux peuvent déclencher des effets systèmatiques sur les performances globales.
 
-L'optimisation robuste pose un cadre formel pour décider dans l'incertain. Elle cherche à identifier la meilleure décision qui reste réalisable et performante face à toutes les incertitudes futures, quels que soient les scénarios qui se concrétisent.
-Ces incertitudes, qu'elles soient continues (ex. variations de température) ou discrètes (ex. scénarios de pannes), s'appuient sur des historiques, des retours métiers ou des scénarios critiques générés par l'IA.
-Les applications sont cruciales, notamment dans la supply chain ou la production, où les aléas locaux peuvent déclencher des effets sur la performance globale.
+Pour résoudre ces problèmes d'Optimisation Robuste, il existe de nombreuses approches. L'une d'entre elles, appelée la méthode de Benders adverse (ou parfois méthode des plans coupants) a été introduite dans SOURCE. C'est cette approche que nous avons utilisé et que nous détaillerons par la suite.
 
-Cependant, cette garantie de robustes a un coût computationnel considèrable. La prise en compte exhaustive des incertitudes entraîne une explosion de la taille des modèles mathématiques (notamment en Programmation Linéaire en Nombre Entiers).
-Les solveurs traditionnels se retrouvent alors rapidement limités par la complexité temporelle et spatiale de ces problèmes.
+Comment les méthodes de Benders peuvent optimiser la planficiation robuste sous incertitude?
+Nous présenterons tout d'abord le contexte de la recherche, ferons un point sur les avancées scientifiques dans ce domaine, puis nous présenterons les objectifs, les solutions ainsi que les résultats obtenus. Les apports techniques et professionnels de cette expérience feront l'object de la dernière partie.
 
-Dès lors, comment résoudre efficacement ces modèles robustes à grande échelle? C'est pour franchir ce mur calculatoire que les méthodes de décomposition s'avèrent indispensables. Parmis elles, la décomposition de Benders se distingue en séparant les décisions stratégiques (le problème Maîre) des évaluations de scénarios (les sous-problèmes).
-La problématique centrale de ce stage a donc été d'étudier et d'améliorer les méthodes de Benders afin d'accélérer la résolution de problèmes de planification robuste sous incertitude. 
-
-Pour répondre à cette problématique, ce rapport s'articule autour de quatre chapitres. Le premier posera le contexte institutionnel et scientifique de la recherche. Le deuxieme dressera l'état de l'art des approches d'optimisation robuste et détaillera le fonctionnement classique de la décomposition de Benders.
-Ensuite, nous nous consacrerons aux contributions méthodologies et aux améliorations algorithmiques proposées durant cette recherche.
-Enfin, nous détaillerons l'implémentation informatique et analiserons les résultats expérimentaux obtenus, avant de conclure sur les apports techniques et professionnels de cette expérience.\\
-
-
-
-
-Comment les méthodes de benders peuvent optimiser la planficiation robuste sous incertitude?
-Nous ferons tout d'abord un point sur les avancées scientifiques dans ce domaine, puis nous présenterons le contexte de la recherche, la recherche en elle-même, ses résultats ainsi que les apports techniques et professionnels de cette expérience.
 
 % ============================== CONTEXTE DE LA RECHERCHE ==============================
 \clearpage
 \section{Contexte de la recherche}
 
-Ce stage s'inscrit au cœur d'un écosystème scientifique toulousain riche, structuré autour d'une collaboration entre trois acteurs majeurs de la recherche en intelligence artificielle et en informatique : l'institut ANITI, l'IRIT et le LAAS-CNRS.
+Ce stage s'inscrit au cœur d'un écosystème scientifique toulousain riche, structuré autour d'une collaboration entre trois acteurs majeurs de la recherche en intelligence artificielle et en informatique : l'institut ANITI, l'IRIT-CNRS ainsi que le LAAS-CNRS.
 
 L'impulsion de cette dynamique est notamment portée par ANITI (Artificial and Natural Intelligence Toulouse Institute), un cluster labellisé par la Communauté d'universités et d'établissements de Toulouse. Son ambition est de concevoir des systèmes d'Intelligence Artificielle dont les prises de décision sont explicables, équitables, fiables et robustes, une condition indispensable pour permettre leur déploiement dans des secteurs critiques à haut risque.
 
 Cette volonté de développer des systèmes décisionnels de confiance s'appuie sur l'expertise de deux laboratoires. D'une part, l'Institut de Recherche en Informatique de Toulouse (IRIT), une unité de recherche publique placée sous la tutelle conjointe du Centre National de la Recherche Scientifique (CNRS) et des universités toulousaines. D'autre part, le Laboratoire d'Analyse et d'Architecture des Systèmes (LAAS) est une unité propre du CNRS. Si le LAAS aborde des thématiques très variées, allant de la robotique aux micro-nano-bio-technologies, il se distingue particulièrement par sa recherche théorique et méthodologique sur la conception de lois mathématiques appliquées à la commande et à la décision.
 
 C'est à l'intersection de ces institutions, et plus spécifiquement au sein de l'équipe ROC (Recherche sur des problèmes d'Optimisation Combinatoire) du LAAS, que s'est déroulé mon stage. Positionnée à la frontière entre la Recherche Opérationnelle et l'Intelligence Artificielle, cette équipe offre un cadre scientifique idéal pour aborder les problématiques d'optimisation robuste qui font l'objet de ce rapport.
-
-
 
 IMPORTANT : parler de l'utilisation à terme du modèle par AIRBUS.
 
@@ -338,7 +327,20 @@ IMPORTANT : parler de l'utilisation à terme du modèle par AIRBUS.
 \clearpage
 \section{Litterature}
 
-TODO : STATE OF THE ART
+La méthode de Benders adverse $(BAE)$ se base notamment sur la résolution itérée d'un problème dit adverse, c'est-à-dire un problème dont on cherche à calculer un pire scénario pour une solution réalisable donnée.
+Dans SOURCE, les auteurs présentent une variante de la méthode de Benders adverse $(BAE)$ selon laquelle des pires scénarios sont calculés de manière approximative, et prouvent la convergence de leur méthode. Les auteurs de SOURCE, papier sur lequel se base l'essentiel mes recherches, proposent une autre variante dans laquelle on ne cherche plus à calculer un seul pire cas mais un ensemble de pire scénarios. L'idée est qu'il est possible de gagner en temps de calcul en réduisant le nombre d'itérations.
+
+ 
+\subsection{Description du problème}
+
+
+
+\subsection{Modélisation du Benders Adverse}
+
+
+
+\subsection{Modélisation du Benders Adverse Etendu}
+
 
 
 % ============================== TRAVAIL EFFECTUE ==============================
