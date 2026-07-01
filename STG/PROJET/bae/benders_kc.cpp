@@ -1006,10 +1006,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 	vector<Path> candidates_path;	// Store the worst-case scenarios
 	Path current_path_buffer; 		// Use for recursion
 
-	// ====================================================================
-	// PHASE 1 : SÉCURISER LE PIRE SCÉNARIO ABSOLU (LA COUPE DE BENDERS)
-	// ====================================================================
-
+	// Coupe de Benders
 	vector<Path> optimal_paths;
 	
 	for(int i = 0; i < sol.inst.Gamma+1; i++){
@@ -1025,20 +1022,14 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 		selected_paths.push_back(optimal_paths[0]); 
 	}
 
-	// ====================================================================
-	// PHASE 2 : EXPLORATION HEURISTIQUE (HOG) POUR LA DIVERSITÉ
-	// ====================================================================
-	
-	// On relance le DFS pour les chemins sous-optimaux, avec ton eps d'origine si tu le souhaites
+	// Chemins sous op
 	for(int i = 0; i < sol.inst.Gamma+1; i++){
 		if(pi_value[sol.inst.T][i] >= sub_OPT){
 			extract_paths_dfs(sol.inst.T, i, pi_value, costs, sol, current_path_buffer, candidates_path, limit_number_paths, eps);
 		}
 	}
 
-	// ====================================================================
-	// PHASE 3 : FILTRE MAX-MIN BRAY-CURTIS
-	// ====================================================================
+	// MaxMin Brays-Curtis distance
 	if(!candidates_path.empty()){
 		while(selected_paths.size() < nb_path_to_select && !candidates_path.empty()){
 			float best_max_min_distance = -1.0;
