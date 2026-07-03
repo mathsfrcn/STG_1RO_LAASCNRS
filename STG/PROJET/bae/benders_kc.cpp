@@ -2185,7 +2185,7 @@ int main(int argc, const char* argv[]){
   	srand (seed);
 
 	for(int Gamma = 1; Gamma < 100; Gamma += 20){
-		for(int tau = 0; tau < 11; tau += 2){		
+		for(int tau = 0; tau < 110; tau += 20){		
 			iter      = 0;
 			iterKC    = 0;
 			iterKCHOG = 0;
@@ -2227,7 +2227,7 @@ int main(int argc, const char* argv[]){
 				cout << "\nSTANDARD-done (Obj :" << benders_sol.obj_value << ")" << endl;
 				
 				// KC
-				approx_coeff = float(tau)/10;
+				approx_coeff = float(tau)/100;
 
 				benders_sol_augmented = KC_benders_Main(inst, approx_coeff, false, use_graph_export, limit_number_paths, number_orthogonal_axes, eps, max_iter, max_time_s); 
 				iterKC += benders_sol_augmented.iter;
