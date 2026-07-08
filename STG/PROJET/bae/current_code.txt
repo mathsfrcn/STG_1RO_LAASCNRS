@@ -959,11 +959,6 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 	ub_cost = pi_value[sol.inst.T+1][0];	// Représente la longueur du plus long chemin aka la valeur objective du probleme adverse
 
 	// ========================== Now the backtrack
-	
-	//===================== METHODE SELECT * / SELECT FEW
-	// =1 - Si on veut extraire que les pires chemins
-	// =0 - Si on veut extraire un sous graphe plus large
-	//===================================================
 
 	float sub_OPT;
 
@@ -2185,7 +2180,7 @@ int main(int argc, const char* argv[]){
   	srand (seed);
 
 	for(int Gamma = 1; Gamma < 100; Gamma += 20){
-		for(int tau = 0; tau < 11; tau += 2){		
+		for(int tau = 0; tau < 110; tau += 20){		
 			iter      = 0;
 			iterKC    = 0;
 			iterKCHOG = 0;
@@ -2227,7 +2222,7 @@ int main(int argc, const char* argv[]){
 				cout << "\nSTANDARD-done (Obj :" << benders_sol.obj_value << ")" << endl;
 				
 				// KC
-				approx_coeff = float(tau)/10;
+				approx_coeff = float(tau)/100;
 
 				benders_sol_augmented = KC_benders_Main(inst, approx_coeff, false, use_graph_export, limit_number_paths, number_orthogonal_axes, eps, max_iter, max_time_s); 
 				iterKC += benders_sol_augmented.iter;
@@ -2239,9 +2234,6 @@ int main(int argc, const char* argv[]){
                 iterKCHOG += benders_sol_augmented_HOG.iter;
                 timeKCHOG += benders_sol_augmented_HOG.time;
                 cout << "\nKC_HOG---done (Obj :" << benders_sol_augmented_HOG.obj_value << ")"<< endl;
-
-
-
 
 				// Quality control of the solution
 				if(abs(benders_sol.obj_value - benders_sol_augmented.obj_value) > eps || abs(benders_sol.obj_value - benders_sol_augmented_HOG.obj_value) > eps){
@@ -2266,7 +2258,7 @@ int main(int argc, const char* argv[]){
 							<< float(iter)/nbInst << "," << float(time)/nbInst << endl;
 				output_classic << "KC," << Gamma << "," << tau << ","
 							<< float(iterKC)/nbInst << "," << float(timeKC)/nbInst << endl;
-
+	
 				//Standard with KC augmented (HOG)
 				output_augmented << "STANDARD," << Gamma << "," << tau << ","
 								<< float(iter)/nbInst << "," << float(time)/nbInst << endl;

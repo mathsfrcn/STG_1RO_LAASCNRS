@@ -794,10 +794,10 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 	// =0 - Si on veut extraire un sous graphe plus large
 	//===================================================
 
-	float sub_OPT=1;
+	float sub_OPT;
 
 	if(ub_cost>=0){
-		sub_OPT = approx_coeff*ub_cost;
+		sub_OPT = approx_coeff*ub_cost;	// On ne sélectionne que les chemins dont le coût est au moins égal au pire coût
 	} else{
 		sub_OPT = (1-approx_coeff)*ub_cost+ub_cost;
 	}
@@ -959,11 +959,6 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 	ub_cost = pi_value[sol.inst.T+1][0];	// Représente la longueur du plus long chemin aka la valeur objective du probleme adverse
 
 	// ========================== Now the backtrack
-	
-	//===================== METHODE SELECT * / SELECT FEW
-	// =1 - Si on veut extraire que les pires chemins
-	// =0 - Si on veut extraire un sous graphe plus large
-	//===================================================
 
 	float sub_OPT;
 
@@ -2072,7 +2067,6 @@ vector<string> allfile;
    return allfile;
 }
 
-
 int main(int argc, const char* argv[]){
 	Benders_Result benders_sol;
 	Benders_Result benders_sol_augmented;
@@ -2083,7 +2077,7 @@ int main(int argc, const char* argv[]){
 	int iter, iterKC, iterKCHOG;
 	// Simulation parameters
 	int limit_number_paths = 1000;		// Used for the DFS algo
-	int number_orthogonal_axes = 5;		// Number of orthogonal axes we want for the heuristics
+	int number_orthogonal_axes = 10;		// Number of orthogonal axes we want for the heuristics
 	float eps = 1e-1;
 	bool use_graph_export = false;		// To be corrected before use
 	bool use_result_export = true;		// True if you want to export the results
@@ -2093,9 +2087,6 @@ int main(int argc, const char* argv[]){
 	// Read instances randomized parameters
 	float read_instance_rd_lb = 0.4;
 	float read_instance_rd_ub = 0.8;	// The production plan will be between lb% and ub% of the cumulative demand
-
-	// =======================================================================================================================================================
-	//====================================================================== IN PROGRESS =====================================================================
 
 	// Création of the folder architecture
 	auto t = std::time(nullptr);
@@ -2165,7 +2156,6 @@ int main(int argc, const char* argv[]){
 		}
 	}
 
-
 	// Security
 	if(nbInst == 0){
     	cerr << "ERREUR : Aucun fichier d'instance valide trouvé. Vérifiez le chemin." << endl;
@@ -2173,8 +2163,6 @@ int main(int argc, const char* argv[]){
 	} else{
 		cout << "Succès : " << nbInst << " fichiers trouvés dans le dossier d'instances." << endl;
 	}
-
-	//========================================================================================================================================================
 
   	Instance inst;
   	vector<int> debug;
@@ -2197,9 +2185,7 @@ int main(int argc, const char* argv[]){
 
 			for(int i = 0; i<total_files; i++ ){
 				if(file_list[i] == "." || file_list[i] == "..") continue;
-
-				//============================================================================================================================================
-					
+	
 				if(choice_instances == 1){
 					filename = "parsed_large_instances/" + file_list[i];
 				} else if(choice_instances == 2){
@@ -2217,8 +2203,6 @@ int main(int argc, const char* argv[]){
 				} else{
 					inst = read_instance_randomized(filename, Gamma, read_instance_rd_lb, read_instance_rd_ub);
 				}
-
-				//============================================================================================================================================
 
 				// Benders original				
 				benders_sol = benders_Main(inst, eps, max_iter, max_time_s);
@@ -2240,9 +2224,6 @@ int main(int argc, const char* argv[]){
                 timeKCHOG += benders_sol_augmented_HOG.time;
                 cout << "\nKC_HOG---done (Obj :" << benders_sol_augmented_HOG.obj_value << ")"<< endl;
 
-
-
-
 				// Quality control of the solution
 				if(abs(benders_sol.obj_value - benders_sol_augmented.obj_value) > eps || abs(benders_sol.obj_value - benders_sol_augmented_HOG.obj_value) > eps){
 					cout << "\nALERTE DEGRADATION" << endl;
@@ -2258,15 +2239,33 @@ int main(int argc, const char* argv[]){
 										<< tau << " | "
 										<< validation_status << endl;
 				}
+
+				// We export the exact time for each instance and each parameters
+                if(use_result_export){
+                    output_validation << filename << " | " << Gamma << " | " << tau << " | " << validation_status << endl;
+                
+                    // Standard with KC standard 
+                    output_classic << "STANDARD," << Gamma << "," << tau << "," << benders_sol.iter << "," << benders_sol.time << endl;
+                    output_classic << "KC," << Gamma << "," << tau << "," << benders_sol_augmented.iter << "," << benders_sol_augmented.time << endl;
+        
+                    // Standard with KC augmented (HOG)
+                    output_augmented << "STANDARD," << Gamma << "," << tau << "," << benders_sol.iter << "," << benders_sol.time << endl;
+                    output_augmented << "KC_HOG," << Gamma << "," << tau << "," << benders_sol_augmented_HOG.iter << "," << benders_sol_augmented_HOG.time << endl;
+
+                    // KC standard with KC augmented
+                    output_augmented_HOG << "KC," << Gamma << "," << tau << "," << benders_sol_augmented.iter << "," << benders_sol_augmented.time << endl;
+                    output_augmented_HOG << "KC_HOG," << Gamma << "," << tau << "," << benders_sol_augmented_HOG.iter << "," << benders_sol_augmented_HOG.time << endl;
+                }
 			}
 
+			/*
 			if(use_result_export){
 				// Standard with KC standard 
 				output_classic << "STANDARD," << Gamma << "," << tau << ","
 							<< float(iter)/nbInst << "," << float(time)/nbInst << endl;
 				output_classic << "KC," << Gamma << "," << tau << ","
 							<< float(iterKC)/nbInst << "," << float(timeKC)/nbInst << endl;
-
+	
 				//Standard with KC augmented (HOG)
 				output_augmented << "STANDARD," << Gamma << "," << tau << ","
 								<< float(iter)/nbInst << "," << float(time)/nbInst << endl;
@@ -2278,7 +2277,9 @@ int main(int argc, const char* argv[]){
 								<< float(iterKC)/nbInst << "," << float(timeKC)/nbInst << endl;
 				output_augmented_HOG << "KC_HOG," << Gamma << "," << tau << ","
 								<< float(iterKCHOG)/nbInst << "," << float(timeKCHOG)/nbInst << endl;
+				
 			}
+			*/
 		}
 	}
 

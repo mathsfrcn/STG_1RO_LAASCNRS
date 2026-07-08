@@ -47,14 +47,10 @@ def analyze_benders_results(file_path):
                  marker='o', palette='tab10', linewidth=2, ax=ax)
     
     ax.axhline(1.0, color='red', linestyle='--', label='Equality')
-    
     ax.set_title(f"Speedup of {alt_method} relative to {ref_method}")
     ax.set_xlabel("Gamma")
     ax.set_ylabel(f"Ratio of Times ({ref_method} / {alt_method})")
-    
-    #ax.fill_between(pivot_df['Gamma'].unique(), 1.0, pivot_df['Speedup'].max() * 1.1, color='green', alpha=0.05, label=f'Victory zone {alt_method}')
-    ax.fill_between(pivot_df['Gamma'].unique(), 1.0, pivot_df['Speedup'].mean(), color='green', alpha=0.05, label=f'Victory zone {alt_method}')
-    
+    ax.fill_between(pivot_df['Gamma'].unique(), 1.0, pivot_df['Speedup'].max() * 1.1, color='green', alpha=0.05, label=f'Victory zone {alt_method}')
     ax.legend(title='Tau')
 
     # Fig02
