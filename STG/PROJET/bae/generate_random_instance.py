@@ -34,8 +34,8 @@ def generate_random_instance(filename, nb_periods, nb_items, demand_prob=0.3):
 # ==========================================
 
 outdir = "toy_instances"
-nb_instances = 5
-nb_periods = 56
+nb_instances = 50
+nb_periods = 112
 nb_items = 20
 demand_prob = 0.5
 
