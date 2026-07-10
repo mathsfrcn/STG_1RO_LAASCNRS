@@ -246,24 +246,6 @@ void export_budget_graph_json(
     output.close();
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // ====================================================================== IN PROGRESS =================================================================================================
 // ====================================================================================================================================================================================
 
@@ -388,32 +370,15 @@ Instance read_instance(string filename, int budget){
 	
 	inst.Dt = standardToCumul(inst.dt);
 
-	// ====================================================================================================================================================================================
-	// =================================================================== IN PROGRESS ====================================================================================================
-	
-
-	/*//Générale
-	inst.cI = 3; 	// Stock cost
-	inst.cB = 6; 	// Backorder cost
-	inst.bP = 10; 	// Selling price
-	inst.Gamma = budget;
-	inst.deltat.resize(inst.T);
-	
-	for(int t = 0; t < inst.T; t++){
-		inst.deltat[t] = int(inst.Dt[t]/float(2));
-	}
-	*/
-
 	//Spécifique
 	// Ajustement des parametres temporaires pour l'instance à la main
 	inst.cI = 1; 	// Stock cost
 	inst.cB = 2; 	// Backorder cost
 	inst.bP = 10; 	// Selling price
 	inst.Gamma = budget;
-	cout << "gamma :" << inst.Gamma << endl;
+	// cout << "gamma :" << inst.Gamma << endl;
 	inst.deltat.resize(inst.T);
 	inst.X.resize(inst.T);	//rajout
-
 
 	// \Delta_i=2 \forall i
 	for(int t = 0; t < inst.T; t++){
@@ -426,16 +391,13 @@ Instance read_instance(string filename, int budget){
 		}
 	}
 
-	// =================================================================== IN PROGRESS ====================================================================================================
-	// ====================================================================================================================================================================================
-
 	file.close();
 
 	return inst;
 }
 
 
-Instance read_instance_randomized(string filename, int budget, float read_instance_rd_lb, float read_instance_rd_ub){
+Instance read_instance_randomized(string filename, int budget, float read_instance_rd_lb, float read_instance_rd_ub, float adv_margin){
 	Instance inst;
 	int nbProd;
 	int tmp;
@@ -449,20 +411,17 @@ Instance read_instance_randomized(string filename, int budget, float read_instan
 	file >> inst.T;
 	file >> nbProd;
 	inst.dt.resize(inst.T);
-	for(int i = 0; i < nbProd; i++){
-		for(int j = 0; j < inst.T; j++){
+	for(int i = 0; i < nbProd; i++){				// For each references
+		for(int j = 0; j < inst.T; j++){			// During the period
 			file >> tmp;
-			//arbitrary to have nice instances
-			inst.dt[j] += tmp + int(rand() % 2);
+			inst.dt[j] += tmp + int(rand() % 2);	// According to the production plan, demand is added up to time t
 		}
 	}
 	
 	inst.Dt = standardToCumul(inst.dt);
-
-
-	inst.cB = rand() % 10 + 10; //backorder cost
-	inst.cI = rand() % 10 + 10; //stock cost
-	inst.bP = rand() % 10 + 10; //selling price
+	inst.cB = rand() % 10 + 10; // Backorder cost
+	inst.cI = rand() % 10 + 10; // Stock cost
+	inst.bP = rand() % 10 + 10; // Selling price
 	//inst.Gamma = int(inst.Dt[inst.Dt.size()-1]);
 	inst.Gamma = budget;
 	inst.Dt = standardToCumul(inst.dt);
@@ -470,13 +429,21 @@ Instance read_instance_randomized(string filename, int budget, float read_instan
 
 	// Display_vector_float(inst.Dt);
 	for(int t = 0; t<inst.T;t++){
-		// Recours temporaire(pas propre)
-		if(inst.Dt[t] == 0){
+		if(inst.Dt[t] == 0){		// Ofc, if there is no demand we can't set up uncertainty
 			inst.deltat[t] = 0;
-		} else if(t == 0){
+		} else{
+			float proportion = inst.dt[t] / inst.Dt[inst.T-1];		// We calculate the share of demande in périod t relative to total demand
+			inst.deltat[t] = ceil((inst.Gamma * adv_margin) * proportion);	// This portion of the total budget is associated with period t
+
+			if(inst.deltat[t] > inst.Dt[t]){	// Security : we cannot cancel more requests than there are
+				inst.deltat[t] = inst.Dt[t];
+			}
+		}
+		
+		/*else if(t == 0){
 			inst.deltat[t] = rand() % (int(inst.Dt[t]));
-			while(inst.deltat[t] > inst.dt[t+1]){
-				inst.deltat[t] = rand() % (int(inst.Dt[t]));
+			while(inst.deltat[t] > inst.dt[t+1]){				// On retire delta_t tant qu'il est supérieur à la demande t+1
+				inst.deltat[t] = rand() % (int(inst.Dt[t]));	// 
 			}
 		} else if(t<inst.T-1){
 			inst.deltat[t] = rand() % (int(inst.Dt[t]));
@@ -488,7 +455,7 @@ Instance read_instance_randomized(string filename, int budget, float read_instan
 			while(inst.Dt[t-1] + inst.deltat[t-1] > inst.Dt[t] - inst.deltat[t]){
 				inst.deltat[t] = rand() % (int(inst.Dt[t]));
 			}
-		}
+		}*/
 	}
 
 	inst.X.resize(inst.T);
@@ -497,8 +464,8 @@ Instance read_instance_randomized(string filename, int budget, float read_instan
 	for(int t = 0; t < inst.T; t++){
 		if(inst.Dt[t] == 0){
 			inst.X[t] = 0;
-		} else{
-			inst.X[t] = int(rand() % (int(read_instance_rd_lb*inst.Dt[t])+1) + read_instance_rd_ub*inst.Dt[t]);	// forall t, X[t] in [80%, 120%] *Dt[t]
+		} else{		// Cumulative production may vary between 80% and 120% of cumulative demand.
+			inst.X[t] = int(rand() % (int(read_instance_rd_lb*inst.Dt[t])+1) + read_instance_rd_ub*inst.Dt[t]);
 		}
 	}
 
@@ -2077,7 +2044,7 @@ int main(int argc, const char* argv[]){
 	int iter, iterKC, iterKCHOG;
 	// Simulation parameters
 	int limit_number_paths = 1000;		// Used for the DFS algo
-	int number_orthogonal_axes = 10;		// Number of orthogonal axes we want for the heuristics
+	int number_orthogonal_axes = 10;	// Number of orthogonal axes we want for the heuristics (it's the upperbound, not necessarily the exact number of orthogonal axes)
 	float eps = 1e-1;
 	bool use_graph_export = false;		// To be corrected before use
 	bool use_result_export = true;		// True if you want to export the results
@@ -2087,7 +2054,7 @@ int main(int argc, const char* argv[]){
 	// Read instances randomized parameters
 	float read_instance_rd_lb = 0.4;
 	float read_instance_rd_ub = 0.8;	// The production plan will be between lb% and ub% of the cumulative demand
-
+	float adv_margin = 2.0;				// Margin allowed to the opponent in the calculation of deltats : adv_margin*Gamma (=1 : no marge, =2 : a lot of)
 	// Création of the folder architecture
 	auto t = std::time(nullptr);
 	auto tm = *std::localtime(&t);
@@ -2201,7 +2168,7 @@ int main(int argc, const char* argv[]){
 				if(choice_instances == 4){
 					inst = read_instance(filename, 2);
 				} else{
-					inst = read_instance_randomized(filename, Gamma, read_instance_rd_lb, read_instance_rd_ub);
+					inst = read_instance_randomized(filename, Gamma, read_instance_rd_lb, read_instance_rd_ub, adv_margin);
 				}
 
 				// Benders original				
