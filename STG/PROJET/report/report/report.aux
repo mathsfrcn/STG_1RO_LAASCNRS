@@ -5,33 +5,161 @@
 \catcode `;\active 
 \catcode `!\active 
 \catcode `?\active 
+\bibstyle{biblatex}
+\bibdata{report-blx,biblio}
+\citation{biblatex-control}
+\abx@aux@refcontext{nty/global//global/global/global}
 \AC@reset@newl@bel
-\providecommand \oddpage@label [2]{}
 \babel@aux{french}{}
+\newacro{ANITI}[\AC@hyperlink{ANITI}{ANITI}]{Artificial and Natural Intelligence Toulouse Institute}
+\newacro{LAAS}[\AC@hyperlink{LAAS}{LAAS}]{Laboratoire d'Analyse et d'Architecture des Systèmes}
+\newacro{PLNE}[\AC@hyperlink{PLNE}{PLNE}]{Programmation Linéaire en Nombres Entiers}
+\newacro{BA}[\AC@hyperlink{BA}{BA}]{Benders Adverse}
+\newacro{BAE}[\AC@hyperlink{BAE}{BAE}]{Benders Adverse Étendu}
+\newacro{OR}[\AC@hyperlink{OR}{OR}]{Optimisation Robuste}
+\citation{Mutapcic01062009}
+\abx@aux@cite{0}{Mutapcic01062009}
+\abx@aux@segm{0}{0}{Mutapcic01062009}
+\AC@undonewlabel{acro:OR}
+\newlabel{acro:OR}{{}{1}{}{}{}}
+\acronymused{OR}
+\AC@undonewlabel{acro:BA}
+\newlabel{acro:BA}{{}{1}{}{}{}}
+\acronymused{BA}
 \@writefile{toc}{\contentsline {section}{\numberline {I}Contexte de la recherche}{2}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {II}Litterature}{3}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {II.I}Description du problème}{3}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {II.II}Modélisation du Benders Adverse}{3}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {II.III}Modélisation du Benders Adverse Etendu}{3}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {III}Présentation du travail effectué}{4}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {III.I}Objectifs}{4}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {III.II}Propositions}{4}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {III.III}Résultats}{4}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {IV}Conclusion}{5}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {IV.I}Synthèse sur le travail effectué}{5}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {IV.II}Apports professionnels}{5}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {IV.III}Apports techniques}{5}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {V}Annexes}{6}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {chapter}{\numberline {A}Méthodologie et Implémentation}{7}{}\protected@file@percent }
-\@writefile{lof}{\addvspace {10\p@ }}
-\@writefile{lot}{\addvspace {10\p@ }}
-\@writefile{loa}{\addvspace {10\p@ }}
-\@writefile{toc}{\contentsline {section}{\numberline {I}Modélisation Mathématique}{7}{}\protected@file@percent }
-\newlabel{def:def_rmp}{{A.1}{7}{Problème Maître Restreint (RMP)}{tcb@cnt@definition.1.1}{}}
-\newlabel{thm:thm_conv}{{A.1}{7}{Convergence de la décomposition}{tcb@cnt@theoreme.1.1}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {II}Pseudo-code de l'Algorithme}{7}{}\protected@file@percent }
-\@writefile{loa}{\contentsline {algocf}{\numberline {1}{\ignorespaces Décomposition de Benders classique}}{8}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {III}Implémentation en C++}{8}{}\protected@file@percent }
-\newlabel{lst:cut_benders}{{A.1}{8}{Implémentation en C++}{lstlisting.1.1}{}}
-\@writefile{lol}{\contentsline {lstlisting}{\numberline {A.1}Ajout d'une coupe d'optimalité au solveur}{8}{}\protected@file@percent }
-\gdef \@abspage@last{15}
+\citation{PATZOLD202020}
+\abx@aux@cite{0}{PATZOLD202020}
+\abx@aux@segm{0}{0}{PATZOLD202020}
+\citation{portoleau:hal-03595446}
+\abx@aux@cite{0}{portoleau:hal-03595446}
+\abx@aux@segm{0}{0}{portoleau:hal-03595446}
+\citation{computational_complexity_gabriel}
+\abx@aux@cite{0}{computational_complexity_gabriel}
+\abx@aux@segm{0}{0}{computational_complexity_gabriel}
+\@writefile{toc}{\contentsline {section}{\numberline {II}Littérature}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {II.I}Définition et Modélisation du Problème}{3}{}\protected@file@percent }
+\citation{portoleau:hal-03595446}
+\abx@aux@cite{0}{portoleau:hal-03595446}
+\abx@aux@segm{0}{0}{portoleau:hal-03595446}
+\@writefile{toc}{\contentsline {subsection}{\numberline {II.II}Méthode de Benders Adverse (BA)}{4}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Schéma de la méthode de Benders Adverse. \blx@tocontentsinit {0}\cite {portoleau:hal-03595446}}}{4}{}\protected@file@percent }
+\newlabel{fig:sch_ba}{{1}{4}{Méthode de Benders Adverse (BA)}{figure.0.1}{}}
+\citation{portoleau:hal-03595446}
+\abx@aux@cite{0}{portoleau:hal-03595446}
+\abx@aux@segm{0}{0}{portoleau:hal-03595446}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Schéma de la méthode de Benders Adverse. \blx@tocontentsinit {0}\cite {portoleau:hal-03595446}}}{5}{}\protected@file@percent }
+\newlabel{fig:sch_ba}{{2}{5}{Méthode de Benders Adverse (BA)}{figure.0.2}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {II.II.I}Le problème \textbf  {MinMax} }{5}{}\protected@file@percent }
+\citation{portoleau:tel-04631599}
+\abx@aux@cite{0}{portoleau:tel-04631599}
+\abx@aux@segm{0}{0}{portoleau:tel-04631599}
+\newlabel{formulation_probleme_maitre}{{II.II.I}{6}{Le problème \textbf  {MinMax} }{equation.0.2.22}{}}
+\citation{guillaume2020robustproductionplanningbudgeted}
+\abx@aux@cite{0}{guillaume2020robustproductionplanningbudgeted}
+\abx@aux@segm{0}{0}{guillaume2020robustproductionplanningbudgeted}
+\citation{guillaume2020robustproductionplanningbudgeted}
+\abx@aux@cite{0}{guillaume2020robustproductionplanningbudgeted}
+\abx@aux@segm{0}{0}{guillaume2020robustproductionplanningbudgeted}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {II.II.II}Le sous-problème \textbf  {Adv} }{7}{}\protected@file@percent }
+\newlabel{def:graphe_budget}{{II.1}{7}{Graphe de budget}{tcb@cnt@definition.0.2.1}{}}
+\citation{portoleau:tel-04631599}
+\abx@aux@cite{0}{portoleau:tel-04631599}
+\abx@aux@segm{0}{0}{portoleau:tel-04631599}
+\citation{portoleau:tel-04631599}
+\abx@aux@cite{0}{portoleau:tel-04631599}
+\abx@aux@segm{0}{0}{portoleau:tel-04631599}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Schéma générique du graphe de budget. \blx@tocontentsinit {0}\cite {guillaume2020robustproductionplanningbudgeted}}}{8}{}\protected@file@percent }
+\newlabel{fig:sch_graphe_budget}{{3}{8}{Le sous-problème \textbf  {Adv} }{figure.0.3}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {II.II.III}L'algorithme de Benders Adverse pour le lot-sizing sous incertitude}{8}{}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Adversarial Benders Method}}{8}{}\protected@file@percent }
+\newlabel{alg:benders_algo}{{1}{8}{L'algorithme de Benders Adverse pour le lot-sizing sous incertitude}{algorithm.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {II.III}Méthode de Benders Adverse Étendu (BAE)}{8}{}\protected@file@percent }
+\citation{portoleau:tel-04631599}
+\abx@aux@cite{0}{portoleau:tel-04631599}
+\abx@aux@segm{0}{0}{portoleau:tel-04631599}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {II.III.I}Le problème \textbf  {MinMax} }{9}{}\protected@file@percent }
+\newlabel{def:graphe_partiel_budget}{{II.2}{9}{Graphe partiel de budget}{tcb@cnt@definition.0.2.2}{}}
+\citation{portoleau:tel-04631599}
+\abx@aux@cite{0}{portoleau:tel-04631599}
+\abx@aux@segm{0}{0}{portoleau:tel-04631599}
+\newlabel{reformulation_pbr_maitre}{{II.III.I}{10}{Le problème \textbf  {MinMax} }{equation.0.2.33}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {II.III.II}Le sous-problème \textbf  {Adv} }{10}{}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {2}{\ignorespaces Adv\_subGraph}}{11}{}\protected@file@percent }
+\newlabel{alg:adv_subgraph}{{2}{11}{Le sous-problème \textbf  {Adv} }{algorithm.2}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {II.III.III}L'opération de fusion}{11}{}\protected@file@percent }
+\citation{portoleau:tel-04631599}
+\abx@aux@cite{0}{portoleau:tel-04631599}
+\abx@aux@segm{0}{0}{portoleau:tel-04631599}
+\citation{portoleau:tel-04631599}
+\abx@aux@cite{0}{portoleau:tel-04631599}
+\abx@aux@segm{0}{0}{portoleau:tel-04631599}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {II.III.IV}Stratégies de sélection des pires scénarios}{12}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {II.III.V}L’algorithme de Benders Adverse Etendue pour le lot-sizing sous incertitude }{13}{}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {3}{\ignorespaces Extended Adversarial Benders Method}}{13}{}\protected@file@percent }
+\newlabel{alg:benders_algo_etendue}{{3}{13}{L’algorithme de Benders Adverse Etendue pour le lot-sizing sous incertitude }{algorithm.3}{}}
+\citation{portoleau:hal-03595446}
+\abx@aux@cite{0}{portoleau:hal-03595446}
+\abx@aux@segm{0}{0}{portoleau:hal-03595446}
+\citation{portoleau:hal-03595446}
+\abx@aux@cite{0}{portoleau:hal-03595446}
+\abx@aux@segm{0}{0}{portoleau:hal-03595446}
+\@writefile{toc}{\contentsline {section}{\numberline {III}Présentation du travail effectué}{14}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {III.I}Objectifs}{14}{}\protected@file@percent }
+\newlabel{tb:res_initiaux}{{III.I}{14}{Objectifs}{subsection.0.3.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Nombre d'itérations et temps d'exécution (en secondes) moyen pour chacune des trois méthodes. (Table extraite de \blx@tocontentsinit {0}\cite {portoleau:hal-03595446})}}{14}{}\protected@file@percent }
+\citation{hamming_dist_scheduling_prbl}
+\abx@aux@cite{0}{hamming_dist_scheduling_prbl}
+\abx@aux@segm{0}{0}{hamming_dist_scheduling_prbl}
+\citation{brays_curtis_fondement}
+\abx@aux@cite{0}{brays_curtis_fondement}
+\abx@aux@segm{0}{0}{brays_curtis_fondement}
+\@writefile{toc}{\contentsline {subsection}{\numberline {III.II}Propositions}{15}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {III.II.I}L'heuristique d'orthogonalité}{15}{}\protected@file@percent }
+\citation{RICOTTA2022109880}
+\abx@aux@cite{0}{RICOTTA2022109880}
+\abx@aux@segm{0}{0}{RICOTTA2022109880}
+\citation{RICOTTA2017201}
+\abx@aux@cite{0}{RICOTTA2017201}
+\abx@aux@segm{0}{0}{RICOTTA2017201}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {4}{\ignorespaces Calculation of the Bray-Curtis distance}}{16}{}\protected@file@percent }
+\newlabel{alg:bray_curtis}{{4}{16}{L'heuristique d'orthogonalité}{algorithm.4}{}}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {5}{\ignorespaces Recursive extraction of worst-case scenarios (DFS)}}{18}{}\protected@file@percent }
+\newlabel{alg:dfs_extraction}{{5}{18}{L'heuristique d'orthogonalité}{algorithm.5}{}}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {6}{\ignorespaces Orthogonality Heuristic (HOG) - Max-Min Selection}}{19}{}\protected@file@percent }
+\newlabel{alg:hog_selection}{{6}{19}{L'heuristique d'orthogonalité}{algorithm.6}{}}
+\citation{portoleau:tel-04631599}
+\abx@aux@cite{0}{portoleau:tel-04631599}
+\abx@aux@segm{0}{0}{portoleau:tel-04631599}
+\@writefile{toc}{\contentsline {subsection}{\numberline {III.III}Résultats}{20}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Conclusion}{21}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {IV.I}Synthèse sur le travail effectué}{21}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {IV.II}Apports professionnels}{21}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {IV.III}Apports techniques}{21}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Utilisation de l'intelligence artificielle}{21}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {V}Annexes}{24}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {I}Pseudo-code de l'Algorithme}{25}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {II}Implémentation en C++}{25}{}\protected@file@percent }
+\newlabel{lst:cut_benders}{{1}{25}{Implémentation en C++}{lstlisting.0.1}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {1}Ajout d'une coupe d'optimalité au solveur}{25}{}\protected@file@percent }
+\abx@aux@read@bbl@mdfivesum{FBBB085EB4F59922D550D9A1DACCE636}
+\abx@aux@defaultrefcontext{0}{computational_complexity_gabriel}{nty/global//global/global/global}
+\abx@aux@defaultrefcontext{0}{brays_curtis_fondement}{nty/global//global/global/global}
+\abx@aux@defaultrefcontext{0}{guillaume2020robustproductionplanningbudgeted}{nty/global//global/global/global}
+\abx@aux@defaultrefcontext{0}{hamming_dist_scheduling_prbl}{nty/global//global/global/global}
+\abx@aux@defaultrefcontext{0}{Mutapcic01062009}{nty/global//global/global/global}
+\abx@aux@defaultrefcontext{0}{portoleau:tel-04631599}{nty/global//global/global/global}
+\abx@aux@defaultrefcontext{0}{portoleau:hal-03595446}{nty/global//global/global/global}
+\abx@aux@defaultrefcontext{0}{PATZOLD202020}{nty/global//global/global/global}
+\abx@aux@defaultrefcontext{0}{RICOTTA2017201}{nty/global//global/global/global}
+\abx@aux@defaultrefcontext{0}{RICOTTA2022109880}{nty/global//global/global/global}
+\abx@aux@defaultlabelprefix{0}{computational_complexity_gabriel}{}
+\abx@aux@defaultlabelprefix{0}{brays_curtis_fondement}{}
+\abx@aux@defaultlabelprefix{0}{guillaume2020robustproductionplanningbudgeted}{}
+\abx@aux@defaultlabelprefix{0}{hamming_dist_scheduling_prbl}{}
+\abx@aux@defaultlabelprefix{0}{Mutapcic01062009}{}
+\abx@aux@defaultlabelprefix{0}{portoleau:tel-04631599}{}
+\abx@aux@defaultlabelprefix{0}{portoleau:hal-03595446}{}
+\abx@aux@defaultlabelprefix{0}{PATZOLD202020}{}
+\abx@aux@defaultlabelprefix{0}{RICOTTA2017201}{}
+\abx@aux@defaultlabelprefix{0}{RICOTTA2022109880}{}
+\gdef \@abspage@last{32}

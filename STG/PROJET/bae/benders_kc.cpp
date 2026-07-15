@@ -429,10 +429,10 @@ Instance read_instance_randomized(string filename, int budget, float read_instan
 
 	// Display_vector_float(inst.Dt);
 	for(int t = 0; t<inst.T;t++){
-		if(inst.Dt[t] == 0){		// Ofc, if there is no demand we can't set up uncertainty
+		if(inst.Dt[t] == 0){					// Ofc, if there is no demand we can't set up uncertainty
 			inst.deltat[t] = 0;
 		} else{
-			float proportion = inst.dt[t] / inst.Dt[inst.T-1];		// We calculate the share of demande in périod t relative to total demand
+			float proportion = inst.dt[t] / inst.Dt[inst.T-1];				// We calculate the share of demande in périod t relative to total demand
 			inst.deltat[t] = ceil((inst.Gamma * adv_margin) * proportion);	// This portion of the total budget is associated with period t
 
 			if(inst.deltat[t] > inst.Dt[t]){	// Security : we cannot cancel more requests than there are
@@ -443,7 +443,7 @@ Instance read_instance_randomized(string filename, int budget, float read_instan
 		/*else if(t == 0){
 			inst.deltat[t] = rand() % (int(inst.Dt[t]));
 			while(inst.deltat[t] > inst.dt[t+1]){				// On retire delta_t tant qu'il est supérieur à la demande t+1
-				inst.deltat[t] = rand() % (int(inst.Dt[t]));	// 
+				inst.deltat[t] = rand() % (int(inst.Dt[t]));
 			}
 		} else if(t<inst.T-1){
 			inst.deltat[t] = rand() % (int(inst.Dt[t]));
