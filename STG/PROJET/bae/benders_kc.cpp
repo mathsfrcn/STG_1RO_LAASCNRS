@@ -689,7 +689,7 @@ Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > >
 }
 
 
-vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float approx_coeff, float& ub_cost, float eps){
+vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float approx_coeff, float& ub_cost, float eps, float p_few){
 	vector<vector<vector<vector<int> > > > arcbool; // Bool flag to arcs within the worsts scenarios
 	vector<vector<float> > pi_value; 				// Value of the longest path to pi[t][j]
 	vector<vector<bool> > pi_subopt_bool;
@@ -756,9 +756,9 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 
 	// ========================== Now the backtrack
 	
-	//===================== METHODE SELECT * / SELECT FEW
-	// =1 - Si on veut extraire que les pires chemins
-	// =0 - Si on veut extraire un sous graphe plus large
+	//===================== DEFINITON CHEMIN CRITIQUE
+	// =1 - Si on veut extraire que les chemins de longueur égale au pire coût
+	// =0 - Tous les chemins deviennent critiques
 	//===================================================
 
 	float sub_OPT;
@@ -781,21 +781,74 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 
 	for(int t = sol.inst.T; t > 0; t--){
 		for(int j = 0; j < sol.inst.Gamma+1; j++){
+			if(pi_subopt_bool[t][j]){
+				bool has_incoming_arc = false;
+				int last_valid_i = -1;
+				int last_valid_type = -1;
+
+				for(int i = 0; i <= j; i++){
+					if(j <= i+sol.inst.deltat[t-1] and (t != 1 or i == 0)){
+						if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][0])) < eps){
+							last_valid_i = i;
+							last_valid_type = 0;
+
+							if((float)rand() / RAND_MAX < p_few){
+								arcbool[t][i][j][0] = 1;
+								pi_subopt_bool[t-1][i] = true;
+								has_incoming_arc = true;
+							}
+						}
+
+						if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][1])) < eps){
+							last_valid_i = i;
+							last_valid_type = 1;
+		
+							if((float)rand() / RAND_MAX < p_few){
+								arcbool[t][i][j][1] = 1;
+								pi_subopt_bool[t-1][i] = true;
+								has_incoming_arc = true;
+							}
+						}
+					}
+				}
+
+				if(!has_incoming_arc && last_valid_i != -1){
+					arcbool[t][last_valid_i][j][last_valid_type] = 1;
+					pi_subopt_bool[t-1][last_valid_i] = true;
+				}
+			}
+		}
+	}
+
+	/*
+	for(int t = sol.inst.T; t > 0; t--){
+		for(int j = 0; j < sol.inst.Gamma+1; j++){
 			for(int i = 0; i <= j; i++){
 				if(pi_subopt_bool[t][j] and j <= i+sol.inst.deltat[t-1] and (t != 1 or i == 0)){ // Last and is specific for first layer of the graph
 					if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][0])) < eps){
-						arcbool[t][i][j][0] = 1;
-						pi_subopt_bool[t-1][i] = true;
+						// Rajout pour mise en place selectFew
+						if(rand() < p_few){
+							arcbool[t][i][j][0] = 1;
+							pi_subopt_bool[t-1][i] = true;
+						}
+						// arcbool[t][i][j][0] = 1;
+						// pi_subopt_bool[t-1][i] = true;
 					}
 
 					if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][1])) < eps){
-						arcbool[t][i][j][1] = 1;
-						pi_subopt_bool[t-1][i] = true;
+						// Rajout pour mise en place selectFew
+						if(rand() < p_few){
+							arcbool[t][i][j][1] = 1;
+							pi_subopt_bool[t-1][i] = true;	
+						}
+						// arcbool[t][i][j][1] = 1;
+						// pi_subopt_bool[t-1][i] = true;
 					}
 				}
 			}
 		}
 	}
+	*/
 
 	// Display the subgraph
 	// cout<<"subgraph:"<<endl;
@@ -1226,7 +1279,7 @@ vector<vector<vector<vector<int> > > > merge_budget_graph(vector<vector<vector<v
 }
 
 
-Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, bool use_graph_export, int limit_number_paths, int number_orthogonal_axes, float eps, int max_iter, int max_time_s){
+Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, bool use_graph_export, int limit_number_paths, int number_orthogonal_axes, float eps, int max_iter, int max_time_s, float p_few){
 	auto start = high_resolution_clock::now();
 	Solution sol;
 	Solution new_sol;
@@ -1245,7 +1298,7 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, 
 		if(use_HOG){
 			arcsol_new = KC_benders_Subproblem_HOG(sol, approx_coeff, number_orthogonal_axes, use_graph_export, limit_number_paths, ub_cost, eps);
 		} else {
-			arcsol_new = KC_benders_Subproblem(sol, approx_coeff, ub_cost, eps);
+			arcsol_new = KC_benders_Subproblem(sol, approx_coeff, ub_cost, eps, p_few);
 		}
 
 		// If the cost increased, the opponent has found a computer breach and we continue in the loop
@@ -1288,46 +1341,11 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, 
 		sol = new_sol;
 	}
 
-	/*
-	while(!stopCriterion){
-		arcsol_new = KC_benders_Subproblem(sol, approx_coeff);
-		// cout<<"subproblem solved"<<endl;
-		arcsol = merge_budget_graph(arcsol, arcsol_new);
-		// cout<<"budget graphs merged"<<endl;
-		new_sol = KC_benders_Master(inst, arcsol);
-		iter++;
-		// cout<<"master problem solved"<<endl;
-
-
-
-		
-		
-		
-		// display_vector_float(new_sol.Xt);
-		cout<<"new sol value KC_benders_main : " << new_sol.obj_val << endl;
-
-		cout<<"============ "<< new_sol.obj_val << " " << sol.obj_val<<endl;
-		
-		
-		
-		if(new_sol.obj_val == sol.obj_val){
-			stopCriterion = true;
-			break;
-		}
-
-		
-		// cout<<"worst case : ";
-		display_vector_float(sol_adv.Dt);
-		sol = new_sol;
-	}
-	*/
-
 	auto stop = high_resolution_clock::now();
 	auto duration = duration_cast<microseconds>(stop - start);
 	float accuracy = (1./100000);
 	proc_time = accuracy*float(duration.count());
 
-	//return make_pair(iter, proc_time);
 	return {i, proc_time, sol.obj_val};
 }
 
@@ -2050,10 +2068,11 @@ int main(int argc, const char* argv[]){
 	bool use_result_export = true;		// True if you want to export the results
 	float max_iter = 100;				// Security
 	float max_time_s = 3600;
+	float p_few = 0.5;					// Probabilitie for SelectFew heuristique
 	string validation_status;
 	// Read instances randomized parameters
-	float read_instance_rd_lb = 0.4;
-	float read_instance_rd_ub = 0.8;	// The production plan will be between lb% and ub% of the cumulative demand
+	float read_instance_rd_lb = 0.4;	// The production plan will be between lb% and ub% of the cumulative demand
+	float read_instance_rd_ub = 0.8;
 	float adv_margin = 2.0;				// Margin allowed to the opponent in the calculation of deltats : adv_margin*Gamma (=1 : no marge, =2 : a lot of)
 	// Création of the folder architecture
 	auto t = std::time(nullptr);
@@ -2180,13 +2199,13 @@ int main(int argc, const char* argv[]){
 				// KC
 				approx_coeff = float(tau)/100;
 
-				benders_sol_augmented = KC_benders_Main(inst, approx_coeff, false, use_graph_export, limit_number_paths, number_orthogonal_axes, eps, max_iter, max_time_s); 
+				benders_sol_augmented = KC_benders_Main(inst, approx_coeff, false, use_graph_export, limit_number_paths, number_orthogonal_axes, eps, max_iter, max_time_s, p_few); 
 				iterKC += benders_sol_augmented.iter;
 				timeKC += benders_sol_augmented.time;
 				cout << "\nKC-------done (Obj :" << benders_sol_augmented.obj_value << ")" <<endl;
 
 				// KC with HOG
-                benders_sol_augmented_HOG = KC_benders_Main(inst, approx_coeff, true, use_graph_export, limit_number_paths, number_orthogonal_axes, eps, max_iter, max_time_s);	// First bool is to use KC with HOG
+                benders_sol_augmented_HOG = KC_benders_Main(inst, approx_coeff, true, use_graph_export, limit_number_paths, number_orthogonal_axes, eps, max_iter, max_time_s, p_few);	// First bool is to use KC with HOG
                 iterKCHOG += benders_sol_augmented_HOG.iter;
                 timeKCHOG += benders_sol_augmented_HOG.time;
                 cout << "\nKC_HOG---done (Obj :" << benders_sol_augmented_HOG.obj_value << ")"<< endl;
