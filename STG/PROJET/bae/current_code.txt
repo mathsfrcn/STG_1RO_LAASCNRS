@@ -117,7 +117,7 @@ float calculate_BC_distance(const Path& pathA, const Path& pathB){
         int delta_A = pathA[k].j - pathA[k].i;
         int delta_B = pathB[k].j - pathB[k].i;
 
-        sum_diff += abs(delta_A - delta_B); // Manhattan local distance
+        sum_diff += abs(delta_A - delta_B); 	// Manhattan local distance
         sum_total += (delta_A + delta_B);       // Total budget consumed by both routes
     }
 
@@ -148,7 +148,7 @@ void extract_paths_dfs(
 
     // If we went back to the beginning we stop
     if(t == 0){
-        Path reversed_path = current_path;  // Because we start at the end, we have to reverse the path of this branch
+        Path reversed_path = current_path;  	// Because we start at the end, we have to reverse the path of this branch
         reverse(reversed_path.begin(), reversed_path.end());
         all_paths.push_back(reversed_path);
         return;
@@ -245,24 +245,6 @@ void export_budget_graph_json(
     output << "\n  ]\n}\n";
     output.close();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // ====================================================================== IN PROGRESS =================================================================================================
 // ====================================================================================================================================================================================
@@ -388,32 +370,15 @@ Instance read_instance(string filename, int budget){
 	
 	inst.Dt = standardToCumul(inst.dt);
 
-	// ====================================================================================================================================================================================
-	// =================================================================== IN PROGRESS ====================================================================================================
-	
-
-	/*//Générale
-	inst.cI = 3; 	// Stock cost
-	inst.cB = 6; 	// Backorder cost
-	inst.bP = 10; 	// Selling price
-	inst.Gamma = budget;
-	inst.deltat.resize(inst.T);
-	
-	for(int t = 0; t < inst.T; t++){
-		inst.deltat[t] = int(inst.Dt[t]/float(2));
-	}
-	*/
-
 	//Spécifique
 	// Ajustement des parametres temporaires pour l'instance à la main
 	inst.cI = 1; 	// Stock cost
 	inst.cB = 2; 	// Backorder cost
 	inst.bP = 10; 	// Selling price
 	inst.Gamma = budget;
-	cout << "gamma :" << inst.Gamma << endl;
+	// cout << "gamma :" << inst.Gamma << endl;
 	inst.deltat.resize(inst.T);
 	inst.X.resize(inst.T);	//rajout
-
 
 	// \Delta_i=2 \forall i
 	for(int t = 0; t < inst.T; t++){
@@ -426,16 +391,13 @@ Instance read_instance(string filename, int budget){
 		}
 	}
 
-	// =================================================================== IN PROGRESS ====================================================================================================
-	// ====================================================================================================================================================================================
-
 	file.close();
 
 	return inst;
 }
 
 
-Instance read_instance_randomized(string filename, int budget, float read_instance_rd_lb, float read_instance_rd_ub){
+Instance read_instance_randomized(string filename, int budget, float read_instance_rd_lb, float read_instance_rd_ub, float adv_margin){
 	Instance inst;
 	int nbProd;
 	int tmp;
@@ -449,33 +411,40 @@ Instance read_instance_randomized(string filename, int budget, float read_instan
 	file >> inst.T;
 	file >> nbProd;
 	inst.dt.resize(inst.T);
-	for(int i = 0; i < nbProd; i++){
-		for(int j = 0; j < inst.T; j++){
+	for(int i = 0; i < nbProd; i++){				// For each references
+		for(int j = 0; j < inst.T; j++){			// During the period
 			file >> tmp;
-			//arbitrary to have nice instances
-			inst.dt[j] += tmp + int(rand() % 2);
+			inst.dt[j] += tmp + int(rand() % 2);	// According to the production plan, demand is added up to time t
 		}
 	}
 	
 	inst.Dt = standardToCumul(inst.dt);
-
-
-	inst.cB = rand() % 10 + 10; //backorder cost
-	inst.cI = rand() % 10 + 10; //stock cost
-	inst.bP = rand() % 10 + 10; //selling price
+	inst.cB = rand() % 10 + 10; // Backorder cost
+	inst.cI = rand() % 10 + 10; // Stock cost
+	inst.bP = rand() % 10 + 10; // Selling price
 	//inst.Gamma = int(inst.Dt[inst.Dt.size()-1]);
 	inst.Gamma = budget;
 	inst.Dt = standardToCumul(inst.dt);
 	inst.deltat.resize(inst.T);
 
-	// Display_vector_float(inst.Dt);
+	cout << "Display Dt :\n";
+	display_vector_float(inst.Dt);
 	for(int t = 0; t<inst.T;t++){
-		// Recours temporaire(pas propre)
-		if(inst.Dt[t] == 0){
+		if(inst.Dt[t] == 0){					// Ofc, if there is no demand we can't set up uncertainty
 			inst.deltat[t] = 0;
-		} else if(t == 0){
+		} else{
+			float proportion = inst.dt[t] / inst.Dt[inst.T-1];				// We calculate the share of demande in périod t relative to total demand
+			inst.deltat[t] = ceil((inst.Gamma * adv_margin) * proportion);	// This portion of the total budget is associated with period t
+
+			if(inst.deltat[t] > inst.Dt[t]){	// Security : we cannot cancel more requests than there are
+				inst.deltat[t] = inst.Dt[t];
+			}
+		}
+		
+		//Méthode précédente incorrecte car le gamma max pouvait ne pas rentrer en jeu dans les contraintes du modele
+		/*else if(t == 0){
 			inst.deltat[t] = rand() % (int(inst.Dt[t]));
-			while(inst.deltat[t] > inst.dt[t+1]){
+			while(inst.deltat[t] > inst.dt[t+1]){				// On retire delta_t tant qu'il est supérieur à la demande t+1
 				inst.deltat[t] = rand() % (int(inst.Dt[t]));
 			}
 		} else if(t<inst.T-1){
@@ -488,7 +457,7 @@ Instance read_instance_randomized(string filename, int budget, float read_instan
 			while(inst.Dt[t-1] + inst.deltat[t-1] > inst.Dt[t] - inst.deltat[t]){
 				inst.deltat[t] = rand() % (int(inst.Dt[t]));
 			}
-		}
+		}*/
 	}
 
 	inst.X.resize(inst.T);
@@ -497,8 +466,8 @@ Instance read_instance_randomized(string filename, int budget, float read_instan
 	for(int t = 0; t < inst.T; t++){
 		if(inst.Dt[t] == 0){
 			inst.X[t] = 0;
-		} else{
-			inst.X[t] = int(rand() % (int(read_instance_rd_lb*inst.Dt[t])+1) + read_instance_rd_ub*inst.Dt[t]);	// forall t, X[t] in [80%, 120%] *Dt[t]
+		} else{		// Cumulative production may vary between 80% and 120% of cumulative demand.
+			inst.X[t] = int(rand() % (int(read_instance_rd_lb*inst.Dt[t])+1) + read_instance_rd_ub*inst.Dt[t]);
 		}
 	}
 
@@ -722,7 +691,7 @@ Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > >
 }
 
 
-vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float approx_coeff, float& ub_cost, float eps){
+vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float approx_coeff, float& ub_cost, float eps, float p_few){
 	vector<vector<vector<vector<int> > > > arcbool; // Bool flag to arcs within the worsts scenarios
 	vector<vector<float> > pi_value; 				// Value of the longest path to pi[t][j]
 	vector<vector<bool> > pi_subopt_bool;
@@ -766,7 +735,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][1]<<endl;
 						// }
 						tmp = pi_value[t-1][i]+costs[t][i][j][1];
-					} 
+					}
 				}
 			}
 
@@ -789,15 +758,15 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 
 	// ========================== Now the backtrack
 	
-	//===================== METHODE SELECT * / SELECT FEW
-	// =1 - Si on veut extraire que les pires chemins
-	// =0 - Si on veut extraire un sous graphe plus large
+	//===================== DEFINITON CHEMIN CRITIQUE
+	// =1 - Si on veut extraire que les chemins de longueur égale au pire coût
+	// =0 - Tous les chemins deviennent critiques
 	//===================================================
 
 	float sub_OPT;
 
 	if(ub_cost>=0){
-		sub_OPT = approx_coeff*ub_cost;	// On ne sélectionne que les chemins dont le coût est au moins égal au pire coût
+		sub_OPT = approx_coeff*ub_cost;	// On sélectionne les chemins >= au pire coût pondéré
 	} else{
 		sub_OPT = (1-approx_coeff)*ub_cost+ub_cost;
 	}
@@ -812,23 +781,130 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 		}
 	}
 
+	// Déterministe
+	// Matrice booléenne pour suivre uniquement le "tronc" du pire scénario
+    vector<vector<bool>> is_elite_node(sol.inst.T + 2, vector<bool>(sol.inst.Gamma + 1, false));
+    
+    // Initialisation des noeuds élites à l'instant T (ceux qui valent exactement ub_cost)
+    for(int i = 0; i < sol.inst.Gamma+1; i++){
+        if(abs(pi_value[sol.inst.T][i] - ub_cost) < eps){
+            is_elite_node[sol.inst.T][i] = true;
+        }
+    }
+
+    // Remontée déterministe
+    for(int t = sol.inst.T; t > 0; t--){
+        for(int j = 0; j < sol.inst.Gamma+1; j++){
+            if(is_elite_node[t][j]){
+                for(int i = 0; i <= j; i++){
+                    if(j <= i+sol.inst.deltat[t-1] and (t != 1 or i == 0)){
+                        // Type 0
+                        if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][0])) < eps){
+                            arcbool[t][i][j][0] = 1;               // On verrouille l'arc
+                            is_elite_node[t-1][i] = true;          // Le noeud parent devient une élite
+                            pi_subopt_bool[t-1][i] = true;         // Sécurité : on l'active aussi pour le SelectFew
+                        }
+                        // Type 1
+                        if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][1])) < eps){
+                            arcbool[t][i][j][1] = 1;
+                            is_elite_node[t-1][i] = true;
+                            pi_subopt_bool[t-1][i] = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+	// Probabiliste
+	for(int t = sol.inst.T; t > 0; t--){
+		for(int j = 0; j < sol.inst.Gamma+1; j++){
+			if(pi_subopt_bool[t][j]){				// If the node is used
+				bool has_incoming_arc = false;
+				int last_valid_i = -1;
+				int last_valid_type = -1;
+
+				for(int i = 0; i <= j; i++){
+					if(j <= i+sol.inst.deltat[t-1] and (t != 1 or i == 0)){
+
+						// SÉCURITÉ : Si l'arc a DEJA été activé par la phase déterministe, on le note pour éviter le cul-de-sac
+                        if(arcbool[t][i][j][0] == 1 || arcbool[t][i][j][1] == 1){
+                            has_incoming_arc = true;
+                        }
+
+
+
+
+						if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][0])) < eps){
+							last_valid_i = i;
+							last_valid_type = 0;
+
+							if((float)rand() / RAND_MAX < p_few){
+								arcbool[t][i][j][0] = 1;
+								pi_subopt_bool[t-1][i] = true;
+								has_incoming_arc = true;
+							}
+						}
+
+						if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][1])) < eps){
+							last_valid_i = i;
+							last_valid_type = 1;
+		
+							if((float)rand() / RAND_MAX < p_few){
+								arcbool[t][i][j][1] = 1;
+								pi_subopt_bool[t-1][i] = true;
+								has_incoming_arc = true;
+							}
+						}
+					}
+				}
+
+				// If no node was selected, we activate the last one visited
+				if(!has_incoming_arc && last_valid_i != -1){
+					arcbool[t][last_valid_i][j][last_valid_type] = 1;
+					pi_subopt_bool[t-1][last_valid_i] = true;
+				}
+			}
+		}
+	}
+
+	/*
 	for(int t = sol.inst.T; t > 0; t--){
 		for(int j = 0; j < sol.inst.Gamma+1; j++){
 			for(int i = 0; i <= j; i++){
 				if(pi_subopt_bool[t][j] and j <= i+sol.inst.deltat[t-1] and (t != 1 or i == 0)){ // Last and is specific for first layer of the graph
 					if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][0])) < eps){
-						arcbool[t][i][j][0] = 1;
-						pi_subopt_bool[t-1][i] = true;
+						// Rajout pour mise en place selectFew
+						if(rand() < p_few){
+							arcbool[t][i][j][0] = 1;
+							pi_subopt_bool[t-1][i] = true;
+						}
+						// arcbool[t][i][j][0] = 1;
+						// pi_subopt_bool[t-1][i] = true;
 					}
 
 					if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][1])) < eps){
-						arcbool[t][i][j][1] = 1;
-						pi_subopt_bool[t-1][i] = true;
+						// Rajout pour mise en place selectFew
+						if(rand() < p_few){
+							arcbool[t][i][j][1] = 1;
+							pi_subopt_bool[t-1][i] = true;	
+						}
+						// arcbool[t][i][j][1] = 1;
+						// pi_subopt_bool[t-1][i] = true;
 					}
 				}
 			}
 		}
 	}
+	*/
 
 	// Display the subgraph
 	// cout<<"subgraph:"<<endl;
@@ -1058,59 +1134,6 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 			extract_paths_dfs(sol.inst.T, i, pi_value, costs, sol, current_path_buffer, candidates_path, limit_number_paths, eps);
 		}
 	}
-
-	vector<Path> selected_paths;
-
-	if(!candidates_path.empty()){
-		// 1. Identifier le PIRE scénario absolu (celui qui vaut ub_cost)
-		int absolute_worst_index = 0;
-		float max_path_cost = -1e9; // Initialisation très basse
-
-		for(size_t c = 0; c < candidates_path.size(); c++){
-			float current_path_cost = 0.0f;
-            
-			// Calcul du coût total du chemin candidat
-			for(size_t a = 0; a < candidates_path[c].size(); a++){
-				Arc_Decision arc = candidates_path[c][a];
-				current_path_cost += costs[arc.t][arc.i][arc.j][arc.type];
-			}
-
-			// Mise à jour si on trouve un chemin plus "lourd"
-			if(current_path_cost > max_path_cost){
-				max_path_cost = current_path_cost;
-				absolute_worst_index = c;
-			}
-		}
-
-		// 2. On verrouille ce pire scénario comme référence pour le Maître
-		selected_paths.push_back(candidates_path[absolute_worst_index]);
-		candidates_path.erase(candidates_path.begin() + absolute_worst_index);
-        
-		// 3. Boucle Max-Min (HOG) pour sélectionner les autres chemins orthogonaux
-		while(selected_paths.size() < nb_path_to_select && !candidates_path.empty()){
-			float best_max_min_distance = -1.0;
-			int best_candidate_index = -1;
-            
-			for(size_t c = 0; c < candidates_path.size(); c++){
-				float min_distance_selected = 2.0; // Brays-Curtis distance is in [0, 1]
-
-				for(size_t s = 0; s < selected_paths.size(); s++){
-					float dist = calculate_BC_distance(candidates_path[c], selected_paths[s]);
-					if(dist < min_distance_selected){
-						min_distance_selected = dist;
-					}
-				}
-
-				if(min_distance_selected > best_max_min_distance){
-					best_max_min_distance = min_distance_selected;
-					best_candidate_index = c;
-				}
-			}
-
-			selected_paths.push_back(candidates_path[best_candidate_index]);
-			candidates_path.erase(candidates_path.begin() + best_candidate_index);
-		}
-	}
 	*/
 
 	/*
@@ -1259,7 +1282,7 @@ vector<vector<vector<vector<int> > > > merge_budget_graph(vector<vector<vector<v
 }
 
 
-Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, bool use_graph_export, int limit_number_paths, int number_orthogonal_axes, float eps, int max_iter, int max_time_s){
+Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, bool use_graph_export, int limit_number_paths, int number_orthogonal_axes, float eps, int max_iter, int max_time_s, float p_few){
 	auto start = high_resolution_clock::now();
 	Solution sol;
 	Solution new_sol;
@@ -1278,7 +1301,7 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, 
 		if(use_HOG){
 			arcsol_new = KC_benders_Subproblem_HOG(sol, approx_coeff, number_orthogonal_axes, use_graph_export, limit_number_paths, ub_cost, eps);
 		} else {
-			arcsol_new = KC_benders_Subproblem(sol, approx_coeff, ub_cost, eps);
+			arcsol_new = KC_benders_Subproblem(sol, approx_coeff, ub_cost, eps, p_few);
 		}
 
 		// If the cost increased, the opponent has found a computer breach and we continue in the loop
@@ -1321,46 +1344,11 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, bool use_HOG, 
 		sol = new_sol;
 	}
 
-	/*
-	while(!stopCriterion){
-		arcsol_new = KC_benders_Subproblem(sol, approx_coeff);
-		// cout<<"subproblem solved"<<endl;
-		arcsol = merge_budget_graph(arcsol, arcsol_new);
-		// cout<<"budget graphs merged"<<endl;
-		new_sol = KC_benders_Master(inst, arcsol);
-		iter++;
-		// cout<<"master problem solved"<<endl;
-
-
-
-		
-		
-		
-		// display_vector_float(new_sol.Xt);
-		cout<<"new sol value KC_benders_main : " << new_sol.obj_val << endl;
-
-		cout<<"============ "<< new_sol.obj_val << " " << sol.obj_val<<endl;
-		
-		
-		
-		if(new_sol.obj_val == sol.obj_val){
-			stopCriterion = true;
-			break;
-		}
-
-		
-		// cout<<"worst case : ";
-		display_vector_float(sol_adv.Dt);
-		sol = new_sol;
-	}
-	*/
-
 	auto stop = high_resolution_clock::now();
 	auto duration = duration_cast<microseconds>(stop - start);
 	float accuracy = (1./100000);
 	proc_time = accuracy*float(duration.count());
 
-	//return make_pair(iter, proc_time);
 	return {i, proc_time, sol.obj_val};
 }
 
@@ -2057,9 +2045,9 @@ vector<string> allfile;
       return allfile;
    }
    
-   while ((entry = readdir(dir)) != NULL) {
+   while((entry = readdir(dir)) != NULL){
 		// cout << entry->d_name << endl;
-		allfile.push_back(entry->d_name);
+		allfile.push_back(entry -> d_name);
    }
 
    closedir(dir);
@@ -2077,17 +2065,18 @@ int main(int argc, const char* argv[]){
 	int iter, iterKC, iterKCHOG;
 	// Simulation parameters
 	int limit_number_paths = 1000;		// Used for the DFS algo
-	int number_orthogonal_axes = 10;		// Number of orthogonal axes we want for the heuristics
+	int number_orthogonal_axes = 10;	// Number of orthogonal axes we want for the heuristics (it's the upperbound, not necessarily the exact number of orthogonal axes)
 	float eps = 1e-1;
 	bool use_graph_export = false;		// To be corrected before use
 	bool use_result_export = true;		// True if you want to export the results
 	float max_iter = 100;				// Security
 	float max_time_s = 3600;
+	float p_few = 0.65;					// Probabilitie for SelectFew heuristique
 	string validation_status;
 	// Read instances randomized parameters
-	float read_instance_rd_lb = 0.4;
-	float read_instance_rd_ub = 0.8;	// The production plan will be between lb% and ub% of the cumulative demand
-
+	float read_instance_rd_lb = 0.4;	// The production plan will be between lb% and ub% of the cumulative demand
+	float read_instance_rd_ub = 0.8;
+	float adv_margin = 2.0;				// Margin allowed to the opponent in the calculation of deltats : adv_margin*Gamma (=1 : no marge, =2 : a lot of)
 	// Création of the folder architecture
 	auto t = std::time(nullptr);
 	auto tm = *std::localtime(&t);
@@ -2172,7 +2161,7 @@ int main(int argc, const char* argv[]){
   	int seed = 31415;
   	srand (seed);
 
-	for(int Gamma = 1; Gamma < 100; Gamma += 20){
+	for(int Gamma = 1; Gamma < 100; Gamma += 10){
 		for(int tau = 0; tau < 110; tau += 20){		
 			iter      = 0;
 			iterKC    = 0;
@@ -2201,7 +2190,7 @@ int main(int argc, const char* argv[]){
 				if(choice_instances == 4){
 					inst = read_instance(filename, 2);
 				} else{
-					inst = read_instance_randomized(filename, Gamma, read_instance_rd_lb, read_instance_rd_ub);
+					inst = read_instance_randomized(filename, Gamma, read_instance_rd_lb, read_instance_rd_ub, adv_margin);
 				}
 
 				// Benders original				
@@ -2213,13 +2202,13 @@ int main(int argc, const char* argv[]){
 				// KC
 				approx_coeff = float(tau)/100;
 
-				benders_sol_augmented = KC_benders_Main(inst, approx_coeff, false, use_graph_export, limit_number_paths, number_orthogonal_axes, eps, max_iter, max_time_s); 
+				benders_sol_augmented = KC_benders_Main(inst, approx_coeff, false, use_graph_export, limit_number_paths, number_orthogonal_axes, eps, max_iter, max_time_s, p_few); 
 				iterKC += benders_sol_augmented.iter;
 				timeKC += benders_sol_augmented.time;
 				cout << "\nKC-------done (Obj :" << benders_sol_augmented.obj_value << ")" <<endl;
 
 				// KC with HOG
-                benders_sol_augmented_HOG = KC_benders_Main(inst, approx_coeff, true, use_graph_export, limit_number_paths, number_orthogonal_axes, eps, max_iter, max_time_s);	// First bool is to use KC with HOG
+                benders_sol_augmented_HOG = KC_benders_Main(inst, approx_coeff, true, use_graph_export, limit_number_paths, number_orthogonal_axes, eps, max_iter, max_time_s, p_few);	// First bool is to use KC with HOG
                 iterKCHOG += benders_sol_augmented_HOG.iter;
                 timeKCHOG += benders_sol_augmented_HOG.time;
                 cout << "\nKC_HOG---done (Obj :" << benders_sol_augmented_HOG.obj_value << ")"<< endl;
