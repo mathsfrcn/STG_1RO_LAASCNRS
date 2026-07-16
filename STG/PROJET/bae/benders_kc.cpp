@@ -117,7 +117,7 @@ float calculate_BC_distance(const Path& pathA, const Path& pathB){
         int delta_A = pathA[k].j - pathA[k].i;
         int delta_B = pathB[k].j - pathB[k].i;
 
-        sum_diff += abs(delta_A - delta_B); // Manhattan local distance
+        sum_diff += abs(delta_A - delta_B); 	// Manhattan local distance
         sum_total += (delta_A + delta_B);       // Total budget consumed by both routes
     }
 
@@ -148,7 +148,7 @@ void extract_paths_dfs(
 
     // If we went back to the beginning we stop
     if(t == 0){
-        Path reversed_path = current_path;  // Because we start at the end, we have to reverse the path of this branch
+        Path reversed_path = current_path;  	// Because we start at the end, we have to reverse the path of this branch
         reverse(reversed_path.begin(), reversed_path.end());
         all_paths.push_back(reversed_path);
         return;
@@ -427,7 +427,8 @@ Instance read_instance_randomized(string filename, int budget, float read_instan
 	inst.Dt = standardToCumul(inst.dt);
 	inst.deltat.resize(inst.T);
 
-	// Display_vector_float(inst.Dt);
+	cout << "Display Dt :\n";
+	display_vector_float(inst.Dt);
 	for(int t = 0; t<inst.T;t++){
 		if(inst.Dt[t] == 0){					// Ofc, if there is no demand we can't set up uncertainty
 			inst.deltat[t] = 0;
@@ -440,6 +441,7 @@ Instance read_instance_randomized(string filename, int budget, float read_instan
 			}
 		}
 		
+		//Méthode précédente incorrecte car le gamma max pouvait ne pas rentrer en jeu dans les contraintes du modele
 		/*else if(t == 0){
 			inst.deltat[t] = rand() % (int(inst.Dt[t]));
 			while(inst.deltat[t] > inst.dt[t+1]){				// On retire delta_t tant qu'il est supérieur à la demande t+1
@@ -733,7 +735,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][1]<<endl;
 						// }
 						tmp = pi_value[t-1][i]+costs[t][i][j][1];
-					} 
+					}
 				}
 			}
 
@@ -781,7 +783,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 
 	for(int t = sol.inst.T; t > 0; t--){
 		for(int j = 0; j < sol.inst.Gamma+1; j++){
-			if(pi_subopt_bool[t][j]){
+			if(pi_subopt_bool[t][j]){				// If the node is used
 				bool has_incoming_arc = false;
 				int last_valid_i = -1;
 				int last_valid_type = -1;
@@ -812,6 +814,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 					}
 				}
 
+				// If no node was selected, we activate the last one visited
 				if(!has_incoming_arc && last_valid_i != -1){
 					arcbool[t][last_valid_i][j][last_valid_type] = 1;
 					pi_subopt_bool[t-1][last_valid_i] = true;
@@ -1076,59 +1079,6 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 	for(int i = 0; i < sol.inst.Gamma+1; i++){
 		if(pi_value[sol.inst.T][i] >= sub_OPT){
 			extract_paths_dfs(sol.inst.T, i, pi_value, costs, sol, current_path_buffer, candidates_path, limit_number_paths, eps);
-		}
-	}
-
-	vector<Path> selected_paths;
-
-	if(!candidates_path.empty()){
-		// 1. Identifier le PIRE scénario absolu (celui qui vaut ub_cost)
-		int absolute_worst_index = 0;
-		float max_path_cost = -1e9; // Initialisation très basse
-
-		for(size_t c = 0; c < candidates_path.size(); c++){
-			float current_path_cost = 0.0f;
-            
-			// Calcul du coût total du chemin candidat
-			for(size_t a = 0; a < candidates_path[c].size(); a++){
-				Arc_Decision arc = candidates_path[c][a];
-				current_path_cost += costs[arc.t][arc.i][arc.j][arc.type];
-			}
-
-			// Mise à jour si on trouve un chemin plus "lourd"
-			if(current_path_cost > max_path_cost){
-				max_path_cost = current_path_cost;
-				absolute_worst_index = c;
-			}
-		}
-
-		// 2. On verrouille ce pire scénario comme référence pour le Maître
-		selected_paths.push_back(candidates_path[absolute_worst_index]);
-		candidates_path.erase(candidates_path.begin() + absolute_worst_index);
-        
-		// 3. Boucle Max-Min (HOG) pour sélectionner les autres chemins orthogonaux
-		while(selected_paths.size() < nb_path_to_select && !candidates_path.empty()){
-			float best_max_min_distance = -1.0;
-			int best_candidate_index = -1;
-            
-			for(size_t c = 0; c < candidates_path.size(); c++){
-				float min_distance_selected = 2.0; // Brays-Curtis distance is in [0, 1]
-
-				for(size_t s = 0; s < selected_paths.size(); s++){
-					float dist = calculate_BC_distance(candidates_path[c], selected_paths[s]);
-					if(dist < min_distance_selected){
-						min_distance_selected = dist;
-					}
-				}
-
-				if(min_distance_selected > best_max_min_distance){
-					best_max_min_distance = min_distance_selected;
-					best_candidate_index = c;
-				}
-			}
-
-			selected_paths.push_back(candidates_path[best_candidate_index]);
-			candidates_path.erase(candidates_path.begin() + best_candidate_index);
 		}
 	}
 	*/
@@ -2042,9 +1992,9 @@ vector<string> allfile;
       return allfile;
    }
    
-   while ((entry = readdir(dir)) != NULL) {
+   while((entry = readdir(dir)) != NULL){
 		// cout << entry->d_name << endl;
-		allfile.push_back(entry->d_name);
+		allfile.push_back(entry -> d_name);
    }
 
    closedir(dir);
