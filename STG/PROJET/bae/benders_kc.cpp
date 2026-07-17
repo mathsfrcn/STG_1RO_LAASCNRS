@@ -760,7 +760,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 
 	// ========================== Now the backtrack
 	
-	//===================== DEFINITON CHEMIN CRITIQUE
+	//========================= DEFINITON CHEMIN CRITIQUE
 	// =1 - Si on veut extraire que les chemins de longueur égale au pire coût
 	// =0 - Tous les chemins deviennent critiques
 	//===================================================
@@ -783,129 +783,67 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 		}
 	}
 
-	// Déterministe
+	// Matrix for storing worst-cost paths
     vector<vector<bool>> is_elite_node(sol.inst.T + 2, vector<bool>(sol.inst.Gamma + 1, false));	// suivre le ou les chemins dui pire cout
     
-    // Initialisation des noeuds élites à l'instant T
+    // Initialization of elite nodes at time T
     for(int i = 0; i < sol.inst.Gamma+1; i++){
         if(abs(pi_value[sol.inst.T][i] - ub_cost) < eps){
             is_elite_node[sol.inst.T][i] = true;
         }
     }
 
-    // Remontée déterministe
-    for(int t = sol.inst.T; t > 0; t--){
+	for(int t = sol.inst.T; t > 0; t--){
         for(int j = 0; j < sol.inst.Gamma+1; j++){
-            if(is_elite_node[t][j]){
+            if(pi_subopt_bool[t][j]){
+                bool has_incoming_arc = false;
+                int last_valid_i = -1;
+                int last_valid_type = -1;
+
                 for(int i = 0; i <= j; i++){
                     if(j <= i+sol.inst.deltat[t-1] and (t != 1 or i == 0)){
-                        // Type 0
-                        if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][0])) < eps){
-                            arcbool[t][i][j][0] = 1;
-                            is_elite_node[t-1][i] = true;          // Le noeud parent devient une élite
-                            pi_subopt_bool[t-1][i] = true;
+                        if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][0])) < eps){	// Arc 0
+                            last_valid_i = i; last_valid_type = 0;
+                            
+                            if(is_elite_node[t][j]){											// If we are on the path to the worst-case scenario, we approve it automatically
+                                arcbool[t][i][j][0] = 1;
+                                pi_subopt_bool[t-1][i] = true;
+                                is_elite_node[t-1][i] = true;
+                                has_incoming_arc = true;
+                            } 
+                            else if((float)rand() / RAND_MAX < p_few){
+                                arcbool[t][i][j][0] = 1;
+                                pi_subopt_bool[t-1][i] = true;
+                                has_incoming_arc = true;
+                            }
                         }
-                        // Type 1
-                        if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][1])) < eps){
-                            arcbool[t][i][j][1] = 1;
-                            is_elite_node[t-1][i] = true;
-                            pi_subopt_bool[t-1][i] = true;
+
+                        if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][1])) < eps){	// Arc 1
+                            last_valid_i = i; last_valid_type = 1;
+                            
+                            if(is_elite_node[t][j]){
+                                arcbool[t][i][j][1] = 1;
+                                pi_subopt_bool[t-1][i] = true;
+                                is_elite_node[t-1][i] = true;
+                                has_incoming_arc = true;
+                            } else if((float)rand() / RAND_MAX < p_few){
+                                arcbool[t][i][j][1] = 1;
+                                pi_subopt_bool[t-1][i] = true;
+                                has_incoming_arc = true;
+                            }
                         }
                     }
+                }
+
+				// We take the last valid arc if no arc has been selected for this node, to ensure connectivity in the subgraph
+                if(!has_incoming_arc && last_valid_i != -1){
+                    arcbool[t][last_valid_i][j][last_valid_type] = 1;
+                    pi_subopt_bool[t-1][last_valid_i] = true;
+                    if(is_elite_node[t][j]) is_elite_node[t-1][last_valid_i] = true;
                 }
             }
         }
     }
-
-
-
-
-
-
-
-
-
-	// Probabiliste
-	for(int t = sol.inst.T; t > 0; t--){
-		for(int j = 0; j < sol.inst.Gamma+1; j++){
-			if(pi_subopt_bool[t][j]){				// If the node is used
-				bool has_incoming_arc = false;
-				int last_valid_i = -1;
-				int last_valid_type = -1;
-
-				for(int i = 0; i <= j; i++){
-					if(j <= i+sol.inst.deltat[t-1] and (t != 1 or i == 0)){
-
-						// sécu si arc de pire cout
-                        if(arcbool[t][i][j][0] == 1 || arcbool[t][i][j][1] == 1){
-                            has_incoming_arc = true;
-                        }
-
-
-
-
-						if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][0])) < eps){
-							last_valid_i = i;
-							last_valid_type = 0;
-
-							if((float)rand() / RAND_MAX < p_few){
-								arcbool[t][i][j][0] = 1;
-								pi_subopt_bool[t-1][i] = true;
-								has_incoming_arc = true;
-							}
-						}
-
-						if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][1])) < eps){
-							last_valid_i = i;
-							last_valid_type = 1;
-		
-							if((float)rand() / RAND_MAX < p_few){
-								arcbool[t][i][j][1] = 1;
-								pi_subopt_bool[t-1][i] = true;
-								has_incoming_arc = true;
-							}
-						}
-					}
-				}
-
-				// If no node was selected, we activate the last one visited
-				if(!has_incoming_arc && last_valid_i != -1){
-					arcbool[t][last_valid_i][j][last_valid_type] = 1;
-					pi_subopt_bool[t-1][last_valid_i] = true;
-				}
-			}
-		}
-	}
-
-	/*
-	for(int t = sol.inst.T; t > 0; t--){
-		for(int j = 0; j < sol.inst.Gamma+1; j++){
-			for(int i = 0; i <= j; i++){
-				if(pi_subopt_bool[t][j] and j <= i+sol.inst.deltat[t-1] and (t != 1 or i == 0)){ // Last and is specific for first layer of the graph
-					if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][0])) < eps){
-						// Rajout pour mise en place selectFew
-						if(rand() < p_few){
-							arcbool[t][i][j][0] = 1;
-							pi_subopt_bool[t-1][i] = true;
-						}
-						// arcbool[t][i][j][0] = 1;
-						// pi_subopt_bool[t-1][i] = true;
-					}
-
-					if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][1])) < eps){
-						// Rajout pour mise en place selectFew
-						if(rand() < p_few){
-							arcbool[t][i][j][1] = 1;
-							pi_subopt_bool[t-1][i] = true;	
-						}
-						// arcbool[t][i][j][1] = 1;
-						// pi_subopt_bool[t-1][i] = true;
-					}
-				}
-			}
-		}
-	}
-	*/
 
 	// Display the subgraph
 	// cout<<"subgraph:"<<endl;
@@ -937,16 +875,8 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 	return arcbool;
 }
 
-
-
-
-
-
-
-
 // Initialize budget graph  with nominal scenario
 vector<vector<vector<vector<int> > > > init_graph(Instance inst){
-
 	vector<vector<vector<vector<int> > > > arcbool;
 	arcbool.resize(inst.T+2);
 
@@ -2063,7 +1993,7 @@ vector<string> allfile;
    }
    
    while((entry = readdir(dir)) != NULL){
-		// cout << entry->d_name << endl;
+		// cout << entry -> d_name << endl;
 		allfile.push_back(entry -> d_name);
    }
 
@@ -2081,7 +2011,7 @@ int main(int argc, const char* argv[]){
 	float time, timeKC, timeKCHOG;
 	int iter, iterKC, iterKCHOG;
 	// Simulation parameters
-	int limit_number_paths = 1000;		// Used for the DFS algo
+	int limit_number_paths = 1500;		// Used for the DFS algo
 	int number_orthogonal_axes = 10;	// Number of orthogonal axes we want for the heuristics (it's the upperbound, not necessarily the exact number of orthogonal axes)
 	float eps = 1e-1;
 	bool use_graph_export = false;		// To be corrected before use
@@ -2120,19 +2050,24 @@ int main(int argc, const char* argv[]){
 	ostringstream oss_augmented; 
 	ostringstream oss_augmented_HOG;
 	ostringstream oss_validation;
+	ostringstream oss_time_m_s;
 	oss_classic 	  << folder_path << experience_name << "_classic.csv";
 	oss_augmented 	  << folder_path << experience_name << "_HOG.csv";
 	oss_augmented_HOG << folder_path << experience_name << "_augmented_HOG.csv";
 	oss_validation    << folder_path << experience_name << "_validation.txt";
+	oss_time_m_s      << folder_path << experience_name << "_time_m_s.csv";
 	ofstream output_classic(oss_classic.str());
 	ofstream output_augmented(oss_augmented.str());
 	ofstream output_augmented_HOG(oss_augmented_HOG.str());
 	ofstream output_validation;
+	ofstream output_time_m_s(oss_time_m_s.str());
 
 	if(use_result_export){
 		output_validation.open(oss_validation.str());
 		output_validation << "Fichier | Gamma | tau | Validation\n";
 		output_validation << "------------------------------------------------------------\n";
+		//output_time_m_s.open(oss_time_m_s.str());
+		output_time_m_s << "Fichier, Gamma, tau, time_master_s_classic, time_subproblem_s_classic, time_master_s_augmented, time_subproblem_s_augmented, time_master_s_augmented_HOG, time_subproblem_s_augmented_HOG\n";
 	}
 
 	//================================================================= TEMPORAIRE ===========================================================================
@@ -2300,6 +2235,16 @@ int main(int argc, const char* argv[]){
 											<< benders_sol_augmented_HOG.time << ","
 											<< benders_sol_augmented_HOG.time_master << ","
 											<< benders_sol_augmented_HOG.time_subproblem << endl;
+
+					output_time_m_s << filename << ","
+									<< Gamma << ","
+									<< tau << ","
+									<< benders_sol.time_master << ","
+									<< benders_sol.time_subproblem << ","
+									<< benders_sol_augmented.time_master << ","
+									<< benders_sol_augmented.time_subproblem << ","
+									<< benders_sol_augmented_HOG.time_master << ","
+									<< benders_sol_augmented_HOG.time_subproblem << endl;
                 }
 			}
 
@@ -2325,6 +2270,14 @@ int main(int argc, const char* argv[]){
 				
 			}
 			*/
+
+			/*
+			
+			
+			
+			
+			
+			*/
 		}
 	}
 
@@ -2333,6 +2286,7 @@ int main(int argc, const char* argv[]){
 		output_augmented.close();
 		output_augmented_HOG.close();
 		output_validation.close();
+		output_time_m_s.close();
 	}
 	
 	cout<<"========== END OF THE PROGRAM =========="<<endl;

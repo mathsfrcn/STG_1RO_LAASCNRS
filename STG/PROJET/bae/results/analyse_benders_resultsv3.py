@@ -6,7 +6,7 @@ import os
 def analyze_benders_results(file_path):
     try:
         df = pd.read_csv(file_path, sep=r'[,\s]+', engine='python', 
-                         names=['Method', 'Gamma', 'Tau', 'Iterations', 'Time'])
+                         names=['Method', 'Gamma', 'Tau', 'Iterations', 'Time', 'Time_Master', 'Time_Subproblem'])
     except Exception as e:
         print("Error reading the file:", e)
         return
@@ -123,22 +123,23 @@ def analyze_benders_results(file_path):
     fig3.savefig(output_image_3, dpi=300, bbox_inches='tight')
 
     print(f"Dashboards saved under:\n- {output_image_1}\n- {output_image_2}\n- {output_image_3}")
+    print("===== Generation complete =====")
 
 def main():
     root = tk.Tk()
     root.withdraw()
     
     file_path = filedialog.askopenfilename(
-        title="Selectionnez le fichier de resultats",
-        filetypes=[("Donnees", "*.csv *.txt"), ("Tous", "*.*")]
+        title="Select the results file",
+        filetypes=[("Data", "*.csv *.txt"), ("All Files", "*.*")]
     )
     
     if file_path:
         analyze_benders_results(file_path)
     else:
-        print("Aucun fichier selectionne.")
+        print("No file selected.")
 
-method = False  # True, False
+method = False  # True if you want to use the GUI, False if you want to use the command line
 
 if method:  # Window with Tkinter
     import tkinter as tk
@@ -160,7 +161,6 @@ if method:  # Window with Tkinter
 
     if __name__ == "__main__":
         main()
-        print("===== Generation complete =====")
 else:
     import argparse
     import os
@@ -169,20 +169,19 @@ else:
 
     def main():
         
-        parser = argparse.ArgumentParser(description="Analyse des résultats d'optimisation.")
-        parser.add_argument("file_path", help="Chemin du fichier CSV/TXT à analyser", nargs="?")
+        parser = argparse.ArgumentParser(description="Analyze optimization results.")
+        parser.add_argument("file_path", help="Path to the CSV/TXT file to analyze", nargs="?")
         
         args = parser.parse_args()
         file_path = args.file_path
 
         if not file_path:
-            file_path = input("Entrez le chemin du fichier de résultats : ").strip()
+            file_path = input("Enter the path to the results file : ").strip()
 
         if file_path and os.path.exists(file_path):
             analyze_benders_results(file_path)
         else:
-            print(f"Erreur : Le fichier '{file_path}' n'existe pas ou est invalide.")
+            print(f"Error : The file '{file_path}' does not exist or is invalid.")
 
     if __name__ == "__main__":
         main()
-        print("===== Generation complete =====")
