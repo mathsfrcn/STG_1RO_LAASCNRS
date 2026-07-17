@@ -429,8 +429,7 @@ Instance read_instance_randomized(string filename, int budget, float read_instan
 	inst.Dt = standardToCumul(inst.dt);
 	inst.deltat.resize(inst.T);
 
-	cout << "Display Dt :\n";
-	display_vector_float(inst.Dt);
+	//cout << "Display Dt :\n"; display_vector_float(inst.Dt);
 	for(int t = 0; t<inst.T;t++){
 		if(inst.Dt[t] == 0){					// Ofc, if there is no demand we can't set up uncertainty
 			inst.deltat[t] = 0;
@@ -1980,6 +1979,166 @@ Benders_Result benders_Main(Instance inst, float eps, int max_iter, int max_time
 }
 
 
+vector<vector<vector<vector<int> > > > benders_Subproblem_DP_Matrix(Solution sol, float eps, float& ub_cost){
+    vector<vector<vector<vector<int> > > > arcbool; 
+    vector<vector<float> > pi_value; 				
+    vector<vector<vector<vector<float> > > > costs = budget_graph_cost(sol); 
+
+    // Initialisation des structures
+    pi_value.resize(sol.inst.T+2);
+    arcbool.resize(sol.inst.T+2);
+    for(int t = 0; t < sol.inst.T+2; t++){
+        pi_value[t].resize(sol.inst.Gamma+1);
+        arcbool[t].resize(sol.inst.Gamma+1);
+        for(int i = 0; i < sol.inst.Gamma+1; i++){
+            arcbool[t][i].resize(sol.inst.Gamma+1);
+            for(int j = 0; j < sol.inst.Gamma+1; j++){
+                arcbool[t][i][j].resize(2, 0); // Initialisé à 0
+            }
+        }
+    }
+
+    // Dynamic prog. for longest path
+
+    float tmp;
+    pi_value[0][0] = 0;
+    for(int t = 1; t < sol.inst.T+1; t++){
+        for(int j = 0; j < sol.inst.Gamma+1; j++){
+            tmp = pi_value[t-1][j] + costs[t][j][j][0];
+            for(int i = 0; i <= j; i++){
+                if(j <= i+sol.inst.deltat[t-1]){
+                    if(pi_value[t-1][i] + costs[t][i][j][0] > tmp){
+                        tmp = pi_value[t-1][i]+costs[t][i][j][0];
+                    }
+
+                    if(pi_value[t-1][i] + costs[t][i][j][1] > tmp){
+                        tmp = pi_value[t-1][i]+costs[t][i][j][1];
+                    } 
+                }
+            }
+
+            pi_value[t][j] = tmp;
+        }
+    }
+
+    // Calcul du pire coût à l'instant T
+    tmp = pi_value[sol.inst.T][0];
+    for(int i = 0; i < sol.inst.Gamma+1; i++){
+        if(pi_value[sol.inst.T][i] > tmp){
+            tmp = pi_value[sol.inst.T][i];
+        }
+    }
+
+    pi_value[sol.inst.T+1][0] = tmp;
+    ub_cost = tmp;
+
+    // ========================== Now the backtrack
+    int current_j = -1;
+    
+    for(int i = 0; i < sol.inst.Gamma+1; i++){
+        if(abs(pi_value[sol.inst.T][i] - ub_cost) < eps){
+            current_j = i;
+            break; // We stop when we have the first scenario
+        }
+    }
+
+    if(current_j != -1){
+        arcbool[sol.inst.T+1][current_j][0][0] = 1;	// Connexion T -> T+1
+        arcbool[sol.inst.T+1][current_j][0][1] = 1;
+
+        for(int t = sol.inst.T; t > 0; t--){
+            bool found_arc = false;
+            for(int i = 0; i <= current_j; i++){
+                if(current_j <= i+sol.inst.deltat[t-1] && (t != 1 || i == 0)){
+                    // Arc 0
+                    if(abs(pi_value[t][current_j] - (pi_value[t-1][i]+costs[t][i][current_j][0])) < eps){
+                        arcbool[t][i][current_j][0] = 1;
+                        current_j = i;
+                        found_arc = true;
+                        break; 
+                    }
+
+                    // Arc 1
+                    if(abs(pi_value[t][current_j] - (pi_value[t-1][i]+costs[t][i][current_j][1])) < eps){
+                        arcbool[t][i][current_j][1] = 1;
+                        current_j = i;
+                        found_arc = true;
+                        break;
+                    }
+                }
+            }
+
+            if(!found_arc) break;
+        }
+    }
+
+    return arcbool;
+}
+
+
+Benders_Result benders_Main_Matrix(Instance inst, float eps, int max_iter, int max_time_s){
+	auto start = high_resolution_clock::now();
+    Solution sol;
+    Solution new_sol;
+    float total_time_master = 0.0;
+    float total_time_subproblem = 0.0;
+    bool stopCriterion = false;
+    float proc_time;
+    int i = 0;
+    float ub_cost = 0;
+
+    // Initialization with the nominal scenario via the graph
+    vector<vector<vector<vector<int> > > > arcsol = init_graph(inst);
+
+    auto start_m = high_resolution_clock::now();
+    sol = KC_benders_Master(inst, arcsol);
+    auto stop_m = high_resolution_clock::now();
+    total_time_master += duration_cast<microseconds>(stop_m - start_m).count() * 1e-6;
+
+    while(!stopCriterion){
+        auto start_s = high_resolution_clock::now();
+        vector<vector<vector<vector<int> > > > arcsol_new = benders_Subproblem_DP_Matrix(sol, eps, ub_cost);
+        auto stop_s = high_resolution_clock::now();
+        total_time_subproblem += duration_cast<microseconds>(stop_s - start_s).count() * 1e-6;
+
+        if(ub_cost <= sol.obj_val + eps){
+            stopCriterion = true;
+            break;
+        }
+
+        // Merging the single new scenario with the global matrix
+        arcsol = merge_budget_graph(arcsol, arcsol_new);
+
+        auto start_m2 = high_resolution_clock::now();
+        sol = KC_benders_Master(inst, arcsol);
+        auto stop_m2 = high_resolution_clock::now();
+        total_time_master += duration_cast<microseconds>(stop_m2 - start_m2).count() * 1e-6;
+
+        auto current_time = high_resolution_clock::now();
+        long long elapsed_s = duration_cast<seconds>(current_time - start).count();
+
+        if(elapsed_s >= max_time_s){
+            cout << "TIMEOUT : benders stop." << endl;
+            break;
+        }
+
+        if(i >= max_iter){
+            cout << "MAXITER : benders stop." << endl;
+            break;
+        }
+
+        i++;
+        cout << "Iteration " << i << " - Master Obj (LB): " << sol.obj_val << " | Subproblem Cost (UB): " << ub_cost << endl;
+    }
+
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(stop - start);
+    proc_time = duration.count() * 1e-6;
+    
+    return {i, proc_time, total_time_master, total_time_subproblem, sol.obj_val};
+}
+
+
 //===========================================main
 
 
@@ -2003,13 +2162,14 @@ vector<string> allfile;
 }
 
 int main(int argc, const char* argv[]){
-	Benders_Result benders_sol;
+	Benders_Result benders_sol_classic;
+	Benders_Result benders_sol_matrix;
 	Benders_Result benders_sol_augmented;
 	Benders_Result benders_sol_augmented_HOG;
 	// Output parameters
 	float approx_coeff;
-	float time, timeKC, timeKCHOG;
-	int iter, iterKC, iterKCHOG;
+	float timeClassic, timeMatrix, timeKC, timeKCHOG;
+	int iterClassic, iterMatrix, iterKC, iterKCHOG;
 	// Simulation parameters
 	int limit_number_paths = 1500;		// Used for the DFS algo
 	int number_orthogonal_axes = 10;	// Number of orthogonal axes we want for the heuristics (it's the upperbound, not necessarily the exact number of orthogonal axes)
@@ -2046,17 +2206,20 @@ int main(int argc, const char* argv[]){
 		cout << "Enregistrement des résultats dans : " << folder_path << endl;
 	}
 
-	ostringstream oss_classic; 
+	ostringstream oss_classic;
+	ostringstream oss_matrix; 
 	ostringstream oss_augmented; 
 	ostringstream oss_augmented_HOG;
 	ostringstream oss_validation;
 	ostringstream oss_time_m_s;
 	oss_classic 	  << folder_path << experience_name << "_classic.csv";
+	oss_matrix		  << folder_path << experience_name << "_matrix.csv";
 	oss_augmented 	  << folder_path << experience_name << "_HOG.csv";
 	oss_augmented_HOG << folder_path << experience_name << "_augmented_HOG.csv";
 	oss_validation    << folder_path << experience_name << "_validation.txt";
 	oss_time_m_s      << folder_path << experience_name << "_time_m_s.csv";
 	ofstream output_classic(oss_classic.str());
+	ofstream output_matrix(oss_matrix.str());
 	ofstream output_augmented(oss_augmented.str());
 	ofstream output_augmented_HOG(oss_augmented_HOG.str());
 	ofstream output_validation;
@@ -2066,8 +2229,7 @@ int main(int argc, const char* argv[]){
 		output_validation.open(oss_validation.str());
 		output_validation << "Fichier | Gamma | tau | Validation\n";
 		output_validation << "------------------------------------------------------------\n";
-		//output_time_m_s.open(oss_time_m_s.str());
-		output_time_m_s << "Fichier, Gamma, tau, time_master_s_classic, time_subproblem_s_classic, time_master_s_augmented, time_subproblem_s_augmented, time_master_s_augmented_HOG, time_subproblem_s_augmented_HOG\n";
+		output_time_m_s << "Fichier, Gamma, tau, time_master_classic, time_subproblem_classic, time_master_matrix, time_subproblem_matrix, time_master_augmented, time_subproblem_augmented, time_master_augmented_HOG, time_subproblem_augmented_HOG\n";
 	}
 
 	//================================================================= TEMPORAIRE ===========================================================================
@@ -2099,10 +2261,10 @@ int main(int argc, const char* argv[]){
 
 	// Security
 	if(nbInst == 0){
-    	cerr << "ERREUR : Aucun fichier d'instance valide trouvé. Vérifiez le chemin." << endl;
+    	cerr << "ERROR: No valid instance file found. Check the path." << endl;
     	return -1;
 	} else{
-		cout << "Succès : " << nbInst << " fichiers trouvés dans le dossier d'instances." << endl;
+		cout << "Success : " << nbInst << " files found in the instances folder." << endl;
 	}
 
   	Instance inst;
@@ -2115,16 +2277,18 @@ int main(int argc, const char* argv[]){
 
 	for(int Gamma = 1; Gamma < 100; Gamma += 10){
 		for(int tau = 0; tau < 110; tau += 20){		
-			iter      = 0;
-			iterKC    = 0;
-			iterKCHOG = 0;
-			time      = 0;
-			timeKC    = 0;
-			timeKCHOG = 0;
+			iterClassic = 0;
+			iterMatrix  = 0;
+			iterKC      = 0;
+			iterKCHOG   = 0;
+			timeClassic = 0;
+			timeMatrix  = 0;
+			timeKC      = 0;
+			timeKCHOG   = 0;
 			debug.resize(0);
 			debug2.resize(0);
 
-			for(int i = 0; i<total_files; i++ ){
+			for(int i = 0; i < total_files; i++ ){
 				if(file_list[i] == "." || file_list[i] == "..") continue;
 	
 				if(choice_instances == 1){
@@ -2145,12 +2309,18 @@ int main(int argc, const char* argv[]){
 					inst = read_instance_randomized(filename, Gamma, read_instance_rd_lb, read_instance_rd_ub, adv_margin);
 				}
 
-				// Benders original				
-				benders_sol = benders_Main(inst, eps, max_iter, max_time_s);
-				iter += benders_sol.iter;
-				time += benders_sol.time;
-				cout << "\nSTANDARD-done (Obj :" << benders_sol.obj_value << ")" << endl;
+				// Original benders			
+				benders_sol_classic = benders_Main(inst, eps, max_iter, max_time_s);
+				iterClassic += benders_sol_classic.iter;
+				timeClassic += benders_sol_classic.time;
+				cout << "\nSTANDARD-done (Obj :" << benders_sol_classic.obj_value << ")" << endl;
 				
+				// Matrix benders
+				benders_sol_matrix = benders_Main_Matrix(inst, eps, max_iter, max_time_s);
+				iterMatrix += benders_sol_matrix.iter;
+				timeMatrix += benders_sol_matrix.time;
+				cout << "\nMATRIX-done (Obj :" << benders_sol_matrix.obj_value << ")" << endl;
+
 				// KC
 				approx_coeff = float(tau)/100;
 
@@ -2166,23 +2336,13 @@ int main(int argc, const char* argv[]){
                 cout << "\nKC_HOG---done (Obj :" << benders_sol_augmented_HOG.obj_value << ")"<< endl;
 
 				// Quality control of the solution
-				if(abs(benders_sol.obj_value - benders_sol_augmented.obj_value) > eps || abs(benders_sol.obj_value - benders_sol_augmented_HOG.obj_value) > eps){
+				if(abs(benders_sol_classic.obj_value - benders_sol_augmented.obj_value) > eps || abs(benders_sol_classic.obj_value - benders_sol_matrix.obj_value) > eps || abs(benders_sol_classic.obj_value - benders_sol_augmented_HOG.obj_value) > eps){
 					cout << "\nALERTE DEGRADATION" << endl;
 					validation_status = "ALERTE DEGRADATION";
 				} else{
 					cout << "\nQualité valide" << endl;
 					validation_status = "Qualite valide";
 				}
-
-				//if(use_result_export){
-				//	output_validation   << filename << " | "
-				//						<< Gamma << " | "
-				//						<< tau << " | "
-				//						//<< time_m << "|"
-				//						//<< time_s << "|"
-				//						<< validation_status << "|"
-				//						endl;
-				//}
 
 				// We export the exact time for each instance and each parameters
                 if(use_result_export){
@@ -2192,10 +2352,10 @@ int main(int argc, const char* argv[]){
                     output_classic 	<< "STANDARD," 
 									<< Gamma << "," 
 									<< tau << "," 
-									<< benders_sol.iter << "," 
-									<< benders_sol.time << ","
-									<< benders_sol.time_master << ","
-									<< benders_sol.time_subproblem << endl;
+									<< benders_sol_classic.iter << "," 
+									<< benders_sol_classic.time << ","
+									<< benders_sol_classic.time_master << ","
+									<< benders_sol_classic.time_subproblem << endl;
                     output_classic 	<< "KC," 
 									<< Gamma << "," 
 									<< tau << "," 
@@ -2204,14 +2364,31 @@ int main(int argc, const char* argv[]){
 									<< benders_sol_augmented.time_master << ","
 									<< benders_sol_augmented.time_subproblem << endl;
         
+					// Standard with Matrix
+					output_matrix 	<< "STANDARD," 
+									<< Gamma << "," 
+									<< tau << "," 
+									<< benders_sol_classic.iter << "," 
+									<< benders_sol_classic.time << ","
+									<< benders_sol_classic.time_master << ","
+									<< benders_sol_classic.time_subproblem << endl;
+
+					output_matrix 	<< "MATRIX," 
+									<< Gamma << "," 
+									<< tau << "," 
+									<< benders_sol_matrix.iter << "," 
+									<< benders_sol_matrix.time << ","
+									<< benders_sol_matrix.time_master << ","
+									<< benders_sol_matrix.time_subproblem << endl;
+
                     // Standard with KC augmented (HOG)
                     output_augmented 	<< "STANDARD," 
 										<< Gamma << "," 
 										<< tau << "," 
-										<< benders_sol.iter << "," 
-										<< benders_sol.time << ","
-										<< benders_sol.time_master << ","
-										<< benders_sol.time_subproblem << endl;
+										<< benders_sol_classic.iter << "," 
+										<< benders_sol_classic.time << ","
+										<< benders_sol_classic.time_master << ","
+										<< benders_sol_classic.time_subproblem << endl;
                     output_augmented 	<< "KC_HOG," 
 										<< Gamma << "," 
 										<< tau << "," 
@@ -2236,11 +2413,12 @@ int main(int argc, const char* argv[]){
 											<< benders_sol_augmented_HOG.time_master << ","
 											<< benders_sol_augmented_HOG.time_subproblem << endl;
 
+					// Time m s
 					output_time_m_s << filename << ","
 									<< Gamma << ","
 									<< tau << ","
-									<< benders_sol.time_master << ","
-									<< benders_sol.time_subproblem << ","
+									<< benders_sol_classic.time_master << ","
+									<< benders_sol_classic.time_subproblem << ","
 									<< benders_sol_augmented.time_master << ","
 									<< benders_sol_augmented.time_subproblem << ","
 									<< benders_sol_augmented_HOG.time_master << ","
@@ -2270,19 +2448,12 @@ int main(int argc, const char* argv[]){
 				
 			}
 			*/
-
-			/*
-			
-			
-			
-			
-			
-			*/
 		}
 	}
 
 	if(use_result_export){
 		output_classic.close();
+		output_matrix.close();
 		output_augmented.close();
 		output_augmented_HOG.close();
 		output_validation.close();
