@@ -2,10 +2,11 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 
-df <- test
+df <- test3
 
 colnames(df) <- c("filename", "Gamma", "tau", 
-                  "Benders_master", "Benders_subproblem", 
+                  "Benders_master", "Benders_subproblem",
+                  "Benders_Matrix_master", "Benders_Matrix_subproblem",
                   "Augmented_master", "Augmented_subproblem", 
                   "HOG_master", "HOG_subproblem")
 
@@ -21,6 +22,7 @@ df_long <- df %>%
 df_summary <- df %>%
   mutate(
     ratio_Benders = Benders_master / (Benders_master + Benders_subproblem),
+    ratio_Benders_matrix = Benders_Matrix_master / (Benders_Matrix_master + Benders_Matrix_subproblem),
     ratio_Augmented = Augmented_master / (Augmented_master + Augmented_subproblem),
     ratio_HOG = HOG_master / (HOG_master + HOG_subproblem)
   )
@@ -74,3 +76,4 @@ print(p1)
 print(p2)
 print(p3)
 print(p4)
+

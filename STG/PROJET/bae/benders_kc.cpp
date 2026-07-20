@@ -72,9 +72,9 @@ struct Benders_Result{
 };
 
 struct Arc_Decision{
-    int t;  // Time
-    int i;  // Budget at the start
-    int j;  // Budget at the end
+    int t;  	// Time
+    int i;  	// Budget at the start
+    int j;  	// Budget at the end
     int type;   // 0 or 1 (overstock / stockout)
 
     // Definition of two identical arcs
@@ -85,7 +85,9 @@ struct Arc_Decision{
 
 typedef vector<Arc_Decision> Path;
 
+
 // =========================================== Calculate the Jaccard distance for the orthogonality heuristic
+
 
 float calculate_jaccard_distance(const Path& pathA, const Path& pathB){
     int intersection_size = 0;
@@ -105,33 +107,30 @@ float calculate_jaccard_distance(const Path& pathA, const Path& pathB){
     return 1.0f - jaccard_similarity;
 }
 
-// =========================================== Calculate the Brays-Curtis distance for the orthogonality heuristic
 
-float calculate_BC_distance(const Path& pathA, const Path& pathB){
+// =========================================== Calculate the Manhattan distance for the orthogonality heuristic
+
+
+int calculate_L1_distance(const Path& pathA, const Path& pathB){
     if(pathA.size() != pathB.size()){
         return 0.0f;
     }
 
     int sum_diff = 0;
-    int sum_total = 0;
 
     for(size_t k = 0; k < pathA.size(); k++){
         int delta_A = pathA[k].j - pathA[k].i;
         int delta_B = pathB[k].j - pathB[k].i;
 
         sum_diff += abs(delta_A - delta_B); 	// Manhattan local distance
-        sum_total += (delta_A + delta_B);       // Total budget consumed by both routes
     }
 
-    if(sum_total == 0){
-        return 0.0f;
-    }
-
-    // Return the dissimilarity
-    return static_cast<float>(sum_diff) / static_cast<float>(sum_total);
+    return sum_diff;
 }
 
+
 // =========================================== Recursive extraction of worst-case scenarios following a Depth-First Search
+
 
 void extract_paths_dfs(
             int t,                                                  
@@ -1037,10 +1036,10 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 			int best_candidate_index = -1;
             
 			for(size_t c = 0; c < candidates_path.size(); c++){
-				float min_distance_selected = 2.0;
+				float min_distance_selected = 1e-9;
 
 				for(size_t s = 0; s < selected_paths.size(); s++){
-					float dist = calculate_BC_distance(candidates_path[c], selected_paths[s]);
+					float dist = calculate_L1_distance(candidates_path[c], selected_paths[s]);
 					if(dist < min_distance_selected){
 						min_distance_selected = dist;
 					}
@@ -1081,7 +1080,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOG(Solution sol, f
 				float min_distance_selected = 2.0;	// Brays-Curtis distance is in [0, 1]
 
 				for(size_t s = 0; s < selected_paths.size(); s++){
-					float dist = calculate_BC_distance(candidates_path[c], selected_paths[s]);
+					float dist = calculate_L1_distance(candidates_path[c], selected_paths[s]);
 
 					if(dist < min_distance_selected){
 						min_distance_selected = dist;
@@ -2178,7 +2177,7 @@ int main(int argc, const char* argv[]){
 	bool use_result_export = true;		// True if you want to export the results
 	float max_iter = 100;				// Security
 	float max_time_s = 3600;
-	float p_few = 0.65;					// Probabilitie for SelectFew heuristique
+	float p_few = 1;					// Probabilitie for SelectFew heuristique
 	string validation_status;
 	// Read instances randomized parameters
 	float read_instance_rd_lb = 0.4;	// The production plan will be between lb% and ub% of the cumulative demand
@@ -2189,7 +2188,7 @@ int main(int argc, const char* argv[]){
 	auto tm = *std::localtime(&t);
 
 	ostringstream oss_exp;
-	oss_exp << "/result_benders_" << put_time(&tm, "%Y-%m-%d_%H%M") << "_n=" << number_orthogonal_axes << "_l=" << limit_number_paths;
+	oss_exp << "/result_" << put_time(&tm, "%Y-%m-%d_%H%M") << "_n=" << number_orthogonal_axes << "_l=" << limit_number_paths << "_pfew=" << p_few << "_advmargin=" << adv_margin;
 	std::string experience_name = oss_exp.str();
 
 	ostringstream oss_folder;
@@ -2419,6 +2418,8 @@ int main(int argc, const char* argv[]){
 									<< tau << ","
 									<< benders_sol_classic.time_master << ","
 									<< benders_sol_classic.time_subproblem << ","
+									<< benders_sol_matrix.time_master << ","
+									<< benders_sol_matrix.time_subproblem << ","
 									<< benders_sol_augmented.time_master << ","
 									<< benders_sol_augmented.time_subproblem << ","
 									<< benders_sol_augmented_HOG.time_master << ","
