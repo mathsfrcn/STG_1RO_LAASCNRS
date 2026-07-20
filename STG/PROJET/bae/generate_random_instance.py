@@ -2,53 +2,74 @@ import random
 import os
 from os import listdir
 from os.path import isfile, join
+import numpy as np
 
-def generate_random_instance(filename, nb_periods, nb_items, demand_prob=0.3):    
-    with open(filename, 'w') as f:
-
+def generate_random_instance(file_path: str, nb_periods: int, nb_items: int, margin_settings: int, demand_prob: float, read_instance_rd_lb: float, read_instance_rd_ub: float):    
+    with open(file_path, 'w') as f:
+        # Parameters
         f.write(f"{nb_periods}\n")
         f.write(f"{nb_items}\n")
-        
-        for _ in range(nb_items):
-            demand_line = ["1" if random.random() <= demand_prob else "0" for _ in range(nb_periods)]
-            f.write(" ".join(demand_line) + "\n")
-            
-        # Stock cost
-        f.write("10\n")
-        
-        # Setup costs
-        for i in range(nb_items):
-            setup_line = []
-            for j in range(nb_items):
-                if i == j:
-                    setup_line.append("0")
-                else:
-                    setup_line.append(str(random.randint(100, 200)))
-            f.write(" ".join(setup_line) + "\n")
-            
-        # Optimal bound
-        f.write(f"{random.randint(1000, 5000)}\n")
 
-# ==========================================
-# GENERATION
-# ==========================================
+        dt_matrix = np.zeros((nb_items, nb_periods), dtype=int)
+        
+        for i in range(nb_items):
+            for p in range(nb_periods):
+                base_demand = 1 if random.random() <= demand_prob else 0
+                noise: int = random.randint(0, 1)
+                dt_matrix[i, p] = base_demand + noise
+            
+            f.write(" ".join(map(str, dt_matrix[i])) + "\n")
+
+        # dt, Dt
+        dt = dt_matrix.sum(axis=0)
+        Dt = np.cumsum(dt)
+
+        # Costs
+        cB: float = random.uniform(0, 10) + margin_settings
+        cI: float = random.uniform(0, 10) + margin_settings
+        bP: float = random.uniform(0, 10) + margin_settings
+        f.write(f"{cB} {cI} {bP}\n")
+
+        X = np.zeros(nb_periods, dtype=int)
+        for t in range(nb_periods):
+            if Dt[t] == 0:
+                X[t] = 0
+            else:
+                A = int(read_instance_rd_lb * Dt[t])
+                B = read_instance_rd_ub * Dt[t]
+                X[t] = random.randint(int(B), int(B) + A)   # Generate int between B and B + A
+        
+        f.write(" ".join(map(str, X)) + "\n")
+
+def main(outdir: str, nb_instances: int, nb_periods: int, nb_items: int, margin_settings: int, demand_prob: float, read_instance_rd_lb: float, read_instance_rd_ub: float):
+    if (not outdir or nb_instances <= 0 or nb_periods <= 0 or nb_items <= 0 or not (0 < demand_prob <= 1)):
+        print("ERROR: Invalid configuration")
+    else:
+        file_list = [f for f in listdir(outdir) if isfile(join(outdir, f))]
+
+        for file in file_list:
+            os.remove(f"toy_instances/{file}")
+
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+
+        for i in range(1, nb_instances+1):
+            file_path = f"{outdir}/toy_instance_{i}.txt"
+            generate_random_instance(file_path, nb_periods, nb_items, margin_settings, demand_prob, read_instance_rd_lb, read_instance_rd_ub)
+
+        print("SUCCES : Generation complete")
+
+##############################
+# Generation
+##############################
 
 outdir = "toy_instances"
-nb_instances = 30
-nb_periods = 52
-nb_items = 20
+nb_instances = 1
+nb_periods = 5
+nb_items = 4
+margin_settings = 10
 demand_prob = 0.5
+read_instance_rd_lb = 0.4   # The production plan will be between lb% and ub% of the cumulative demand
+read_instance_rd_ub = 0.8
 
-file_list = [f for f in listdir(outdir) if isfile(join(outdir, f))]
-
-for file in file_list:
-    os.remove(f"toy_instances/{file}")
-
-if not os.path.exists(outdir):
-    os.makedirs(outdir)
-
-for i in range(1, nb_instances+1):
-    file_path = f"{outdir}/toy_instance_{i}.txt"
-    generate_random_instance(file_path, nb_periods, nb_items, demand_prob)
-
-print(f"========== Generation complete ==========")
+main(outdir, nb_instances, nb_periods, nb_items, margin_settings, demand_prob, read_instance_rd_lb, read_instance_rd_ub)
