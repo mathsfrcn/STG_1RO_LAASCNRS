@@ -835,7 +835,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 	}
 
 	// Matrix for storing worst-cost paths
-    vector<vector<bool>> is_elite_node(sol.inst.T + 2, vector<bool>(sol.inst.Gamma + 1, false));	// suivre le ou les chemins dui pire cout
+    vector<vector<bool>> is_elite_node(sol.inst.T + 2, vector<bool>(sol.inst.Gamma + 1, false));	// suivre le ou les chemins du pire cout
     
     // Initialization of elite nodes at time T
     for(int i = 0; i < sol.inst.Gamma+1; i++){
@@ -861,12 +861,11 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
                                 pi_subopt_bool[t-1][i] = true;
                                 is_elite_node[t-1][i] = true;
                                 has_incoming_arc = true;
-                            } 
-                            else if((float)rand() / RAND_MAX < p_few){
-                                arcbool[t][i][j][0] = 1;
-                                pi_subopt_bool[t-1][i] = true;
-                                has_incoming_arc = true;
-                            }
+                            } //else if((float)rand() / RAND_MAX < p_few){
+                            //    arcbool[t][i][j][0] = 1;
+                            //    pi_subopt_bool[t-1][i] = true;
+                            //    has_incoming_arc = true;
+                            //}
                         }
 
                         if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][1])) < eps){	// Arc 1
@@ -1862,7 +1861,6 @@ Solution_ADV benders_Subproblem_DP(Solution sol, float eps){
 
 	//t = T+1
 	pi_subopt_bool[sol.inst.T+1][0] = true;
-	//cout<<"poeut"<<endl;
 	for(int i = 0; i < sol.inst.Gamma+1; i++){
 		// cout<<i<<" "<<pi_value[sol.inst.T][i]<<" "<<sub_OPT<<endl;
 		if(abs(pi_value[sol.inst.T][i] - pi_value[sol.inst.T+1][0]) < eps){
