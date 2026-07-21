@@ -2361,7 +2361,6 @@ int main(int argc, const char* argv[]){
 	Benders_Result benders_sol_KCU;
 	Benders_Result benders_sol_KCRDK;
 	Benders_Result benders_sol_KCHOG;
-
 	// Output parameters
 	float approx_coeff;
 	float timeBA, timeKC, timeKCU, timeKCRDK, timeKCHOG;
@@ -2374,7 +2373,7 @@ int main(int argc, const char* argv[]){
 	bool use_result_export = true;		// True if you want to export the results
 	float max_iter = 100;				// Security
 	float max_time_s = 3600;
-	float p_few = 1;					// Probabilitie for SelectFew heuristique
+	float p_few = 0.35;					// Probabilitie for SelectFew heuristique
 	string validation_status;
 	// Read instances randomized parameters
 	float read_instance_rd_lb = 0.4;	// The production plan will be between lb% and ub% of the cumulative demand

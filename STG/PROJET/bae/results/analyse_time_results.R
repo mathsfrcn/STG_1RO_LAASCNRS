@@ -73,29 +73,23 @@ p3 <- ggplot(df_long, aes(x = tau, y = Time, color = Component)) +
 df_long$tau_group <- cut(df_long$tau, breaks = 3, labels = c("Tau Faible", "Tau Moyen", "Tau Élevé"))
 
 df_ranking <- df_long %>%
-  # Somme du Master et du Subproblem pour chaque point de donnée (Gamma)
   group_by(Gamma, tau_group, Method) %>%
   summarise(Total_Time = sum(Time), .groups = "drop") %>%
-  # Moyenne globale par méthode sur toute la plage de Gamma
   group_by(tau_group, Method) %>%
   summarise(Mean_Time = mean(Total_Time), .groups = "drop") %>%
-  # Création du classement (1 = le temps le plus bas)
   group_by(tau_group) %>%
   mutate(
     Rank = rank(Mean_Time),
-    # Création du texte à afficher : Trophée pour le 1er, sinon "Rang X"
     Label = ifelse(Rank == 1,
-                   sprintf("🏆 1er\n(%.3f s)", Mean_Time),
+                   sprintf("Rang 1\n(%.3f s)", Mean_Time),
                    sprintf("Rang %d\n(%.3f s)", Rank, Mean_Time))
   )
 
-# 2. Création du graphique avec les annotations
 p4 <- ggplot(df_long, aes(x = Gamma, y = Time, fill = Component)) +
   geom_area(position = "stack", stat = "summary", fun = mean, alpha = 0.8) +
-  # Ajout des étiquettes de classement
   geom_text(
     data = df_ranking,
-    aes(x = 50, y = 2.5, label = Label), # x=50 centre le texte, y=2.5 le place en haut
+    aes(x = 50, y = 2.5, label = Label),
     inherit.aes = FALSE,
     size = 3.5,
     fontface = "bold",

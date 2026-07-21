@@ -64,9 +64,9 @@ def main(outdir: str, nb_instances: int, nb_periods: int, nb_items: int, margin_
 ##############################
 
 outdir = "toy_instances"
-nb_instances = 30
+nb_instances = 100
 nb_periods = 52
-nb_items = 20
+nb_items = 40
 margin_settings = 10        # Costs will be between 10.00 and 10.99
 demand_prob = 0.5
 read_instance_rd_lb = 0.4   # The production plan will be between lb% and ub% of the cumulative demand
