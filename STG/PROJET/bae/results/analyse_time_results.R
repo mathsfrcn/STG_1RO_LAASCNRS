@@ -2,9 +2,9 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 
-df <- test3
+df <- test4
 
-colnames(df) <- c("filename", "Gamma", "tau",
+colnames(df) <- c("Gamma", "tau",
                   "Benders_BA_master", "Benders_BA_subproblem",
                   "Benders_KC_master", "Benders_KC_subproblem",
                   "Benders_KCU_master", "Benders_KCU_subproblem",
@@ -22,10 +22,11 @@ df_long <- df %>%
 # Proportion of time spent in each
 df_summary <- df %>%
   mutate(
-    ratio_Benders = Benders_master / (Benders_master + Benders_subproblem),
-    ratio_Benders_matrix = Benders_Matrix_master / (Benders_Matrix_master + Benders_Matrix_subproblem),
-    ratio_Augmented = Augmented_master / (Augmented_master + Augmented_subproblem),
-    ratio_HOG = HOG_master / (HOG_master + HOG_subproblem)
+    ratio_Benders = Benders_BA_master / (Benders_BA_master + Benders_BA_subproblem),
+    ratio_KC = Benders_KC_master / (Benders_KC_master + Benders_KC_subproblem),
+    ratio_KCU = Benders_KCU_master / (Benders_KCU_master + Benders_KCU_subproblem),
+    ratio_KCRDK = Benders_KCRDK_master / (Benders_KCRDK_master + Benders_KCRDK_subproblem),
+    ratio_HOG = Benders_HOG_master / (Benders_HOG_master + Benders_HOG_subproblem)
   )
 
 cat("Average proportion of time spent in the Master:\n")
@@ -77,4 +78,3 @@ print(p1)
 print(p2)
 print(p3)
 print(p4)
-

@@ -2430,7 +2430,7 @@ int main(int argc, const char* argv[]){
 		output_validation.open(oss_validation.str());
 		output_validation << "Fichier 			| Gamma 	| tau 	| 	Validation\n";
 		output_validation << "------------------------------------------------------------\n";
-		output_time_m_s << "Fichier, Gamma, tau, time_master_BA, time_subproblem_BA, time_master_KC, time_subproblem_KC, time_master_KCU, time_subproblem_KCU, time_master_KCRDK, time_subproblem_KCRDK, time_master_KCHOG, time_subproblem_KCHOG\n";
+		output_time_m_s << "Gamma, tau, time_master_BA, time_subproblem_BA, time_master_KC, time_subproblem_KC, time_master_KCU, time_subproblem_KCU, time_master_KCRDK, time_subproblem_KCRDK, time_master_KCHOG, time_subproblem_KCHOG\n";
 	}
 
 	//================================================================= TEMPORAIRE ===========================================================================
@@ -2524,7 +2524,7 @@ int main(int argc, const char* argv[]){
 				benders_sol_KCRDK = KC_benders_Main(inst, approx_coeff, false, true, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
 				iterKCRDK += benders_sol_KCRDK.iter;
 				timeKCRDK += benders_sol_KCRDK.time;
-				cout << "\nKCRDK-done (Obj :" << benders_sol_KC.obj_value << ")" <<endl;
+				cout << "\nKCRDK-done (Obj :" << benders_sol_KCRDK.obj_value << ")" <<endl;
 
 				// KCHOG
                 benders_sol_KCHOG = KC_benders_Main(inst, approx_coeff, true, false, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);	// First bool is to use KC with HOG
@@ -2557,7 +2557,7 @@ int main(int argc, const char* argv[]){
                     output_BA_KC 	<< "KC," 
 									<< Gamma << "," 
 									<< tau << "," 
-									<< benders_sol_KC.iter << "," 
+									<< benders_sol_KC.iter << ","
 									<< benders_sol_KC.time << ","
 									<< benders_sol_KC.time_master << ","
 									<< benders_sol_KC.time_subproblem << endl;
@@ -2587,6 +2587,7 @@ int main(int argc, const char* argv[]){
 									<< benders_sol_BA.time << ","
 									<< benders_sol_BA.time_master << ","
 									<< benders_sol_BA.time_subproblem << endl;
+									
                     output_BA_HOG 	<< "KC_HOG," 
 									<< Gamma << "," 
 									<< tau << "," 
@@ -2596,7 +2597,7 @@ int main(int argc, const char* argv[]){
 									<< benders_sol_KCHOG.time_subproblem << endl;
 
 					// BA with KCRDK
-					output_BA_KCRDK << "BA" << ","
+					output_BA_KCRDK << "BA,"
 									<< Gamma << ","
 									<< tau << ","
 									<< benders_sol_BA.iter << ","
@@ -2604,7 +2605,7 @@ int main(int argc, const char* argv[]){
 									<< benders_sol_BA.time_master << ","
 									<< benders_sol_BA.time_subproblem << endl;
 
-					output_BA_KCRDK << "KCRDK" << ","
+					output_BA_KCRDK << "KCRDK,"
 									<< Gamma << ","
 									<< tau << ","
 									<< benders_sol_KCRDK.iter << ","
@@ -2644,31 +2645,31 @@ int main(int argc, const char* argv[]){
 									<< benders_sol_KCHOG.time_subproblem << endl;
 
 					// Stats
-					output_stats	<< "BA" << ","
+					output_stats	<< "BA,"
 								 	<< Gamma << ","
 								 	<< tau << ","
 								 	<< benders_sol_BA.time << ","
 								 	<< benders_sol_BA.iter << endl;
 
-					output_stats 	<< "KCU" << ","
+					output_stats 	<< "KCU,"
 								 	<< Gamma << ","
 								 	<< tau << ","
 								 	<< benders_sol_KCU.time << ","
 								 	<< benders_sol_KCU.iter << endl;
 
-					output_stats 	<< "KC" << ","
+					output_stats 	<< "KC,"
 									<< Gamma << ","
 									<< tau << ","
 									<< benders_sol_KC.time << ","
 								 	<< benders_sol_KC.iter << endl;
 
-					output_stats 	<< "KCRDK" << ","
+					output_stats 	<< "KCRDK,"
 									<< Gamma << ","
 									<< tau << ","
 									<< benders_sol_KCRDK.time << ","
 									<< benders_sol_KCRDK.iter << endl;
 
-					output_stats 	<< "HOG" << ","
+					output_stats 	<< "HOG,"
 									<< Gamma << ","
 									<< tau << ","
 									<< benders_sol_KCHOG.time << ","
