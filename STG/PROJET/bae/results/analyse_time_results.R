@@ -4,12 +4,19 @@ library(ggplot2)
 
 df <- test4
 
-colnames(df) <- c("Gamma", "tau",
-                  "Benders_BA_master", "Benders_BA_subproblem",
-                  "Benders_KC_master", "Benders_KC_subproblem",
-                  "Benders_KCU_master", "Benders_KCU_subproblem",
-                  "Benders_KCRDK_master", "Benders_KCRDK_subproblem",
-                  "Benders_HOG_master", "Benders_HOG_subproblem")
+df <- df %>%
+  rename(
+    Benders_BA_master = time_master_BA,
+    Benders_BA_subproblem = time_subproblem_BA,
+    Benders_KC_master = time_master_KC,
+    Benders_KC_subproblem = time_subproblem_KC,
+    Benders_KCU_master = time_master_KCU,
+    Benders_KCU_subproblem = time_subproblem_KCU,
+    Benders_KCRDK_master = time_master_KCRDK,
+    Benders_KCRDK_subproblem = time_subproblem_KCRDK,
+    Benders_HOG_master = time_master_KCHOG,
+    Benders_HOG_subproblem = time_subproblem_KCHOG
+  )
 
 df_long <- df %>%
   pivot_longer(
@@ -65,13 +72,44 @@ p3 <- ggplot(df_long, aes(x = tau, y = Time, color = Component)) +
 # Fig.04. Interaction between Gamma and Tau
 df_long$tau_group <- cut(df_long$tau, breaks = 3, labels = c("Tau Faible", "Tau Moyen", "Tau Élevé"))
 
+df_ranking <- df_long %>%
+  # Somme du Master et du Subproblem pour chaque point de donnée (Gamma)
+  group_by(Gamma, tau_group, Method) %>%
+  summarise(Total_Time = sum(Time), .groups = "drop") %>%
+  # Moyenne globale par méthode sur toute la plage de Gamma
+  group_by(tau_group, Method) %>%
+  summarise(Mean_Time = mean(Total_Time), .groups = "drop") %>%
+  # Création du classement (1 = le temps le plus bas)
+  group_by(tau_group) %>%
+  mutate(
+    Rank = rank(Mean_Time),
+    # Création du texte à afficher : Trophée pour le 1er, sinon "Rang X"
+    Label = ifelse(Rank == 1,
+                   sprintf("🏆 1er\n(%.3f s)", Mean_Time),
+                   sprintf("Rang %d\n(%.3f s)", Rank, Mean_Time))
+  )
+
+# 2. Création du graphique avec les annotations
 p4 <- ggplot(df_long, aes(x = Gamma, y = Time, fill = Component)) +
   geom_area(position = "stack", stat = "summary", fun = mean, alpha = 0.8) +
+  # Ajout des étiquettes de classement
+  geom_text(
+    data = df_ranking,
+    aes(x = 50, y = 2.5, label = Label), # x=50 centre le texte, y=2.5 le place en haut
+    inherit.aes = FALSE,
+    size = 3.5,
+    fontface = "bold",
+    color = "gray20",
+    vjust = 1
+  ) +
   facet_grid(tau_group ~ Method) +
   theme_minimal() +
-  labs(title = expression("Time allocation: Interaction between " * Gamma * " et " * tau),
-       x = expression(Gamma),
-       y = "Cumulative mean time (seconds)")
+  labs(
+    title = expression("Time allocation: Interaction between " * Gamma * " et " * tau),
+    x = expression(Gamma),
+    y = "Cumulative mean time (seconds)"
+  ) +
+  theme(legend.position = "bottom")
 
 # Display
 print(p1)
