@@ -16,7 +16,7 @@ def analyze_benders_results(file_path):
         print(f"Error: The file must contain exactly 2 methods. Found: {methods}")
         return
     
-    methods_sorted = sorted(methods, key=lambda x: 0 if x == 'STANDARD' else (1 if x == 'KC' else 2))
+    methods_sorted = sorted(methods, key=lambda x: 0 if x == 'BA' else (1 if x == 'KC' else 2))
     ref_method = methods_sorted[0]
     alt_method = methods_sorted[1]
     

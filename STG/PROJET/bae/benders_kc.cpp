@@ -1952,6 +1952,7 @@ Solution_ADV benders_Subproblem_DP(Solution sol, float eps){
 	}
 
 	// Dynamic prog. for longest path
+
 	float tmp;
 	pi_value[0][0] = 0;
 	for(int t=1; t < sol.inst.T+1; t++){
@@ -2491,7 +2492,7 @@ int main(int argc, const char* argv[]){
 								
 				cout << "\n" << filename << " " << Gamma << " " << tau << " " << endl;
 				
-				bool random = false;
+				bool random = true;
 				if(choice_instances == 4){
 					inst = read_hand_instance(filename, 2);
 				} else if(!random){
@@ -2527,7 +2528,7 @@ int main(int argc, const char* argv[]){
 				cout << "\nKCRDK-done (Obj :" << benders_sol_KCRDK.obj_value << ")" <<endl;
 
 				// KCHOG
-                benders_sol_KCHOG = KC_benders_Main(inst, approx_coeff, true, false, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);	// First bool is to use KC with HOG
+                benders_sol_KCHOG = KC_benders_Main(inst, approx_coeff, true, false, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
                 iterKCHOG += benders_sol_KCHOG.iter;
                 timeKCHOG += benders_sol_KCHOG.time;
                 cout << "\nKCHOG-done (Obj :" << benders_sol_KCHOG.obj_value << ")"<< endl;
@@ -2554,6 +2555,7 @@ int main(int argc, const char* argv[]){
 									<< benders_sol_BA.time << ","
 									<< benders_sol_BA.time_master << ","
 									<< benders_sol_BA.time_subproblem << endl;
+
                     output_BA_KC 	<< "KC," 
 									<< Gamma << "," 
 									<< tau << "," 
