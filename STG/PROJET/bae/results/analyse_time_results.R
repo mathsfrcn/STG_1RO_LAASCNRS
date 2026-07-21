@@ -4,11 +4,12 @@ library(ggplot2)
 
 df <- test3
 
-colnames(df) <- c("filename", "Gamma", "tau", 
-                  "Benders_master", "Benders_subproblem",
-                  "Benders_Matrix_master", "Benders_Matrix_subproblem",
-                  "Augmented_master", "Augmented_subproblem", 
-                  "HOG_master", "HOG_subproblem")
+colnames(df) <- c("filename", "Gamma", "tau",
+                  "Benders_BA_master", "Benders_BA_subproblem",
+                  "Benders_KC_master", "Benders_KC_subproblem",
+                  "Benders_KCU_master", "Benders_KCU_subproblem",
+                  "Benders_KCRDK_master", "Benders_KCRDK_subproblem",
+                  "Benders_HOG_master", "Benders_HOG_subproblem")
 
 df_long <- df %>%
   pivot_longer(
@@ -27,7 +28,7 @@ df_summary <- df %>%
     ratio_HOG = HOG_master / (HOG_master + HOG_subproblem)
   )
 
-cat("Average proportion of time spent in the Master :\n")
+cat("Average proportion of time spent in the Master:\n")
 print(summary(df_summary %>% select(starts_with("ratio"))))
 
 # Fig.01. Execution time

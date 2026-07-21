@@ -8,7 +8,7 @@ def analyze_benders_results(file_path):
         df = pd.read_csv(file_path, sep=r'[,\s]+', engine='python', 
                          names=['Method', 'Gamma', 'Tau', 'Iterations', 'Time', 'Time_Master', 'Time_Subproblem'])
     except Exception as e:
-        print("Error reading the file:", e)
+        print("Error: reading the file ", e)
         return
 
     methods = df['Method'].unique()
@@ -123,7 +123,7 @@ def analyze_benders_results(file_path):
     fig3.savefig(output_image_3, dpi=300, bbox_inches='tight')
 
     print(f"Dashboards saved under:\n- {output_image_1}\n- {output_image_2}\n- {output_image_3}")
-    print("===== Generation complete =====")
+    print("Succes: Generation complete")
 
 def main():
     root = tk.Tk()
@@ -137,7 +137,7 @@ def main():
     if file_path:
         analyze_benders_results(file_path)
     else:
-        print("No file selected.")
+        print("Error: No file selected")
 
 method = False  # True if you want to use the GUI, False if you want to use the command line
 
@@ -151,13 +151,13 @@ if method:  # Window with Tkinter
     
         file_path = filedialog.askopenfilename(
             title="Select the results file",
-            filetypes=[("Données", "*.csv *.txt"), ("Tous", "*.*")]
+            filetypes=[("Data", "*.csv *.txt"), ("All Files", "*.*")]
         )
         
         if file_path:
             analyze_benders_results(file_path)
         else:
-            print("No file selected.")
+            print("Error: No file selected")
 
     if __name__ == "__main__":
         main()
@@ -176,12 +176,12 @@ else:
         file_path = args.file_path
 
         if not file_path:
-            file_path = input("Enter the path to the results file : ").strip()
+            file_path = input("Enter the path to the results file: ").strip()
 
         if file_path and os.path.exists(file_path):
             analyze_benders_results(file_path)
         else:
-            print(f"Error : The file '{file_path}' does not exist or is invalid.")
+            print(f"Error: The file '{file_path}' does not exist or is invalid")
 
     if __name__ == "__main__":
         main()

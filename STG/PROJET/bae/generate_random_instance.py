@@ -43,7 +43,7 @@ def generate_random_instance(file_path: str, nb_periods: int, nb_items: int, mar
 
 def main(outdir: str, nb_instances: int, nb_periods: int, nb_items: int, margin_settings: int, demand_prob: float, read_instance_rd_lb: float, read_instance_rd_ub: float):
     if (not outdir or nb_instances <= 0 or nb_periods <= 0 or nb_items <= 0 or not (0 < demand_prob <= 1)):
-        print("ERROR: Invalid configuration")
+        print("Error: Invalid configuration")
     else:
         file_list = [f for f in listdir(outdir) if isfile(join(outdir, f))]
 
@@ -57,17 +57,17 @@ def main(outdir: str, nb_instances: int, nb_periods: int, nb_items: int, margin_
             file_path = f"{outdir}/toy_instance_{i}.txt"
             generate_random_instance(file_path, nb_periods, nb_items, margin_settings, demand_prob, read_instance_rd_lb, read_instance_rd_ub)
 
-        print("SUCCES : Generation complete")
+        print("Succes: Generation complete")
 
 ##############################
 # Generation
 ##############################
 
 outdir = "toy_instances"
-nb_instances = 1
-nb_periods = 5
-nb_items = 4
-margin_settings = 10
+nb_instances = 30
+nb_periods = 52
+nb_items = 20
+margin_settings = 10        # Costs will be between 10.00 and 10.99
 demand_prob = 0.5
 read_instance_rd_lb = 0.4   # The production plan will be between lb% and ub% of the cumulative demand
 read_instance_rd_ub = 0.8
