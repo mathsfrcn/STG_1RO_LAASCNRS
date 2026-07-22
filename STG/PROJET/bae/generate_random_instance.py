@@ -4,7 +4,7 @@ from os import listdir
 from os.path import isfile, join
 import numpy as np
 
-def generate_random_instance(file_path: str, nb_periods: int, nb_items: int, margin_settings: int, demand_prob: float, read_instance_rd_lb: float, read_instance_rd_ub: float):    
+def generate_random_instance(file_path: str, nb_periods: int, nb_items: int, margin_settings: int, demand_prob: float, use_periodicity: bool, start_in_period: bool, timespan_period: int, read_instance_rd_lb: float, read_instance_rd_ub: float):    
     with open(file_path, 'w') as f:
         # Parameters
         f.write(f"{nb_periods}\n")
@@ -12,13 +12,30 @@ def generate_random_instance(file_path: str, nb_periods: int, nb_items: int, mar
 
         dt_matrix = np.zeros((nb_items, nb_periods), dtype=int)
         
-        for i in range(nb_items):
-            for p in range(nb_periods):
-                base_demand = 1 if random.random() <= demand_prob else 0
-                noise: int = random.randint(0, 1)
-                dt_matrix[i, p] = base_demand + noise
-            
-            f.write(" ".join(map(str, dt_matrix[i])) + "\n")
+        if use_periodicity:
+            if start_in_period: # If you want to start during a period of activity
+                demand_periodicity: float = demand_prob
+            else:
+                demand_periodicity: float = 1-demand_prob
+
+            for i in range(nb_items):
+                for p in range(nb_periods):
+                    if p%timespan_period == 0 and p != 0:   # We flip at the beginning of each period
+                        demand_periodicity: float = 1-demand_periodicity
+                    
+                    base_demand = 1 if random.random() <= demand_periodicity else 0
+                    noise: int = random.randint(0, 1)
+                    dt_matrix[i, p] = base_demand + noise
+                    
+                f.write(" ".join(map(str, dt_matrix[i])) + "\n")
+        else:
+            for i in range(nb_items):
+                for p in range(nb_periods):
+                    base_demand: Literal[0, 1] = 1 if random.random() <= demand_prob else 0
+                    noise: int = random.randint(0, 1)
+                    dt_matrix[i, p] = base_demand + noise
+                
+                f.write(" ".join(map(str, dt_matrix[i])) + "\n")
 
         # dt, Dt
         dt = dt_matrix.sum(axis=0)
@@ -41,11 +58,11 @@ def generate_random_instance(file_path: str, nb_periods: int, nb_items: int, mar
         
         f.write(" ".join(map(str, X)) + "\n")
 
-def main(outdir: str, nb_instances: int, nb_periods: int, nb_items: int, margin_settings: int, demand_prob: float, read_instance_rd_lb: float, read_instance_rd_ub: float):
-    if (not outdir or nb_instances <= 0 or nb_periods <= 0 or nb_items <= 0 or not (0 < demand_prob <= 1)):
+def main(outdir: str, nb_instances: int, nb_periods: int, nb_items: int, margin_settings: int, demand_prob: float, use_periodicity: bool, start_in_period: bool, timespan_period: int, read_instance_rd_lb: float, read_instance_rd_ub: float):
+    if (not outdir or (nb_instances <= 0) or (nb_periods <= 0) or (nb_items <= 0) or not (0 < demand_prob <= 1) and (0 < timespan_period < nb_periods)):
         print("Error: Invalid configuration")
     else:
-        file_list = [f for f in listdir(outdir) if isfile(join(outdir, f))]
+        file_list: list[str] = [f for f in listdir(outdir) if isfile(join(outdir, f))]
 
         for file in file_list:
             os.remove(f"toy_instances/{file}")
@@ -54,8 +71,8 @@ def main(outdir: str, nb_instances: int, nb_periods: int, nb_items: int, margin_
             os.makedirs(outdir)
 
         for i in range(1, nb_instances+1):
-            file_path = f"{outdir}/toy_instance_{i}.txt"
-            generate_random_instance(file_path, nb_periods, nb_items, margin_settings, demand_prob, read_instance_rd_lb, read_instance_rd_ub)
+            file_path: str = f"{outdir}/toy_instance_{i}.txt"
+            generate_random_instance(file_path, nb_periods, nb_items, margin_settings, demand_prob, use_periodicity, start_in_period, timespan_period, read_instance_rd_lb, read_instance_rd_ub)
 
         print("Succes: Generation complete")
 
@@ -64,12 +81,15 @@ def main(outdir: str, nb_instances: int, nb_periods: int, nb_items: int, margin_
 ##############################
 
 outdir = "toy_instances"
-nb_instances = 100
-nb_periods = 52
-nb_items = 40
-margin_settings = 10        # Costs will be between 10.00 and 10.99
-demand_prob = 0.5
+use_periodicity     = True
+start_in_period     = True
+timespan_period     = 13     # ]0, nb_periods[
+nb_instances        = 30
+nb_periods          = 52
+nb_items            = 20
+margin_settings     = 10    # Costs will be between 10.00 and 10.99
+demand_prob         = 0.7
 read_instance_rd_lb = 0.4   # The production plan will be between lb% and ub% of the cumulative demand
 read_instance_rd_ub = 0.8
 
-main(outdir, nb_instances, nb_periods, nb_items, margin_settings, demand_prob, read_instance_rd_lb, read_instance_rd_ub)
+main(outdir, nb_instances, nb_periods, nb_items, margin_settings, demand_prob, use_periodicity, start_in_period, timespan_period, read_instance_rd_lb, read_instance_rd_ub)
