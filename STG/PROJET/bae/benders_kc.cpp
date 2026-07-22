@@ -2367,7 +2367,7 @@ int main(int argc, const char* argv[]){
 	int iterBA, iterKC, iterKCU, iterKCRDK, iterKCHOG;
 	// Simulation parameters
 	int limit_number_paths = 1500;		// Used for the DFS algo
-	int nb_path_to_select = 10;			// Number of paths the subprobleme give to the master at each iteration (it's the upperbound like the max of the parameter and the number found)
+	int nb_path_to_select = 1;			// Number of paths the subprobleme give to the master at each iteration (it's the upperbound like the max of the parameter and the number found)
 	float eps = 1e-1;
 	bool use_graph_export = false;		// To be corrected before use
 	bool use_result_export = true;		// True if you want to export the results
@@ -2491,7 +2491,7 @@ int main(int argc, const char* argv[]){
 								
 				cout << "\n" << filename << " " << Gamma << " " << tau << " " << endl;
 				
-				bool random = true;
+				bool random = false;
 				if(choice_instances == 4){
 					inst = read_hand_instance(filename, 2);
 				} else if(!random){
@@ -2500,7 +2500,7 @@ int main(int argc, const char* argv[]){
 					inst = read_instance_randomized(filename, Gamma, read_instance_rd_lb, read_instance_rd_ub, adv_margin);
 				}
 
-				// BA		
+				// BA
 				benders_sol_BA = benders_Main(inst, eps, max_iter, max_time_s);
 				iterBA += benders_sol_BA.iter;
 				timeBA += benders_sol_BA.time;
