@@ -1312,6 +1312,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_Unique_Dual(Solutio
 		if(abs(pi_value[sol.inst.T][i] - ub_cost) < eps){
 			if(start_j_late == -1) start_j_late = i;
 			start_j_early = i;
+			// break;
 		}
 	}
 	
@@ -1329,10 +1330,16 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_Unique_Dual(Solutio
 			for(int i = 0; i <= current_j; i++){
 				if(current_j <= i+sol.inst.deltat[t-1] && (t != 1 || i == 0)){
 					if(abs(pi_value[t][current_j] - (pi_value[t-1][i]+costs[t][i][current_j][0])) < eps){
-						arcbool[t][i][current_j][0] = 1; current_j = i; found = true; break; 
+						arcbool[t][i][current_j][0] = 1; 
+						current_j = i; 
+						found = true; 
+						break; 
 					}
 					if(abs(pi_value[t][current_j] - (pi_value[t-1][i]+costs[t][i][current_j][1])) < eps){
-						arcbool[t][i][current_j][1] = 1; current_j = i; found = true; break;
+						arcbool[t][i][current_j][1] = 1; 
+						current_j = i; 
+						found = true; 
+						break;
 					}
 				}
 			}
@@ -1666,7 +1673,7 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, KC_Method meth
 			case KC_Method::UniqueDual:
 				arcsol_new = KC_benders_Subproblem_Unique_Dual(sol, eps, ub_cost);
 				break;
-				
+
 			case KC_Method::KC:
 				arcsol_new = KC_benders_Subproblem(sol, approx_coeff, use_graph_export, ub_cost, eps, p_few);
 				break;
