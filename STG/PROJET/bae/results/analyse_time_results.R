@@ -10,12 +10,12 @@ df <- df %>%
     Benders_BA_subproblem     = time_subproblem_BA,
     Benders_KC_master         = time_master_KC,
     Benders_KC_subproblem     = time_subproblem_KC,
+    Benders_KCRDK_master      = time_master_KCRDK,
+    Benders_KCRDK_subproblem  = time_subproblem_KCRDK,
     Benders_KCU_master        = time_master_KCU,
     Benders_KCU_subproblem    = time_subproblem_KCU,
     Benders_KCUD_master       = time_master_KCUD,
     Benders_KCUD_subproblem   = time_subproblem_KCUD,
-    Benders_KCRDK_master      = time_master_KCRDK,
-    Benders_KCRDK_subproblem  = time_subproblem_KCRDK,
     Benders_HOG_master        = time_master_KCHOG,
     Benders_HOG_subproblem    = time_subproblem_KCHOG
   )
