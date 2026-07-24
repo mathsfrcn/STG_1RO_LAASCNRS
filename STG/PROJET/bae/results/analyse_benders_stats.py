@@ -9,7 +9,7 @@ def generate_summary(file_path):
     df = pd.read_csv(path_in, sep=',', names=['method', 'gamma', 'tau', 'time', 'iter'])
     df.columns = df.columns.str.strip()
 
-    gamma_values: list[int] = [1, 21, 41, 61, 81, 101]
+    gamma_values: list[int] = [1, 11, 21, 31, 41, 51, 61, 61, 81, 91, 101]
     df_filtered = df[df['gamma'].isin(gamma_values)]
     
     summary_table: DataFrame = pd.pivot_table(
@@ -83,5 +83,3 @@ else:
 
     if __name__ == "__main__":
         main()
-
-
