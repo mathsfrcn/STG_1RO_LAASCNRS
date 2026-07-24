@@ -81,7 +81,7 @@ def main(outdir: str, nb_instances: int, nb_periods: int, nb_items: int, margin_
 ##############################
 
 outdir = "toy_instances"
-use_periodicity     = True
+use_periodicity     = False
 start_in_period     = True
 timespan_period     = 13     # ]0, nb_periods[
 nb_instances        = 10
