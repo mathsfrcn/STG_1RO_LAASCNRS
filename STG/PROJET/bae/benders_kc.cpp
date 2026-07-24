@@ -1665,7 +1665,8 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, KC_Method meth
 			
 			case KC_Method::UniqueDual:
 				arcsol_new = KC_benders_Subproblem_Unique_Dual(sol, eps, ub_cost);
-
+				break;
+				
 			case KC_Method::KC:
 				arcsol_new = KC_benders_Subproblem(sol, approx_coeff, use_graph_export, ub_cost, eps, p_few);
 				break;
