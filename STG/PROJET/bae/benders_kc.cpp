@@ -2747,17 +2747,17 @@ int main(int argc, const char* argv[]){
 					// Time master subproblem
 					output_time_m_s << Gamma << ","
 									<< tau << ","
-									<< benders_sol_BA.time_master << ","
-									<< benders_sol_BA.time_subproblem << ","
-									<< benders_sol_KC.time_master << ","
-									<< benders_sol_KC.time_subproblem << ","
-									<< benders_sol_KCRDK.time_master << ","
+									<< benders_sol_BA.time_master 		<< ","
+									<< benders_sol_BA.time_subproblem 	<< ","
+									<< benders_sol_KC.time_master 		<< ","
+									<< benders_sol_KC.time_subproblem 	<< ","
+									<< benders_sol_KCRDK.time_master 	<< ","
 									<< benders_sol_KCRDK.time_subproblem << ","
-									<< benders_sol_KCU.time_master << ","
-									<< benders_sol_KCU.time_subproblem << ","
-									<< benders_sol_KCUD.time_master << ","
+									<< benders_sol_KCU.time_master 		<< ","
+									<< benders_sol_KCU.time_subproblem 	<< ","
+									<< benders_sol_KCUD.time_master 	<< ","
 									<< benders_sol_KCUD.time_subproblem << ","
-									<< benders_sol_KCHOG.time_master << ","
+									<< benders_sol_KCHOG.time_master 	<< ","
 									<< benders_sol_KCHOG.time_subproblem << endl;
 
 					// Stats
