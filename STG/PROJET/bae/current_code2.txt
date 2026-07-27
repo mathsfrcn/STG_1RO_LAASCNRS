@@ -1107,7 +1107,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_RDK(Solution sol, f
 
 	for(int i = 0; i < sol.inst.Gamma+1; i++){
 		if(pi_value[sol.inst.T][i] >= sub_OPT){
-			extract_paths_dfs(sol.inst.T, i, pi_value, costs, sol, current_path_buffer, optimal_paths, limit_number_paths, eps);
+			extract_paths_dfs(sol.inst.T, i, pi_value, costs, sol, current_path_buffer, candidates_path, limit_number_paths, eps);
 		}
 	}
 	

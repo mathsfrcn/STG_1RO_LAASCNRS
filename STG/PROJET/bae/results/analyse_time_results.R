@@ -2,7 +2,7 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 
-df <- test4
+df <- test
 
 df <- df %>%
   rename(
@@ -12,6 +12,8 @@ df <- df %>%
     Benders_KC_subproblem     = time_subproblem_KC,
     Benders_KCRDK_master      = time_master_KCRDK,
     Benders_KCRDK_subproblem  = time_subproblem_KCRDK,
+    Benders_KCRDKOPT_master   = time_master_KCRDKOPT,
+    Benders_KCRDKOPT_subproblem = time_subproblem_KCRDKOPT,
     Benders_KCU_master        = time_master_KCU,
     Benders_KCU_subproblem    = time_subproblem_KCU,
     Benders_KCUD_master       = time_master_KCUD,
@@ -36,6 +38,7 @@ df_summary <- df %>%
     ratio_KCU = Benders_KCU_master / (Benders_KCU_master + Benders_KCU_subproblem),
     ratio_KCUD = Benders_KCUD_master / (Benders_KCUD_master + Benders_KCUD_subproblem),
     ratio_KCRDK = Benders_KCRDK_master / (Benders_KCRDK_master + Benders_KCRDK_subproblem),
+    ratio_KCRDKOPT = Benders_KCRDKOPT_master / (Benders_KCRDKOPT_master + Benders_KCRDKOPT_subproblem),
     ratio_HOG = Benders_HOG_master / (Benders_HOG_master + Benders_HOG_subproblem)
   )
 
