@@ -1,0 +1,4 @@
+Fichier | Gamma | tau | Validation
+------------------------------------------------------------
+toy_instances/toy_instance_9.txt | 1 | 1 | ALERTE DEGRADATION
+toy_instances/toy_instance_2.txt | 1 | 1 | Qualite valide
