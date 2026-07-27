@@ -92,7 +92,7 @@ enum class KC_Method{
 	RDKOPT,
 	Unique,
 	UniqueDual
-};
+}; 
 
 
 // =========================================== Calculate the Jaccard distance for the orthogonality heuristic
