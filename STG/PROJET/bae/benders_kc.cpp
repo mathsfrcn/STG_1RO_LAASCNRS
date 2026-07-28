@@ -2765,9 +2765,6 @@ int main(int argc, const char* argv[]){
 	int limit_number_paths = 0;			// Used for the DFS algo
 	
 	int nb_path_to_select = 0;			// Number of paths the subprobleme give to the master at each iteration (it's the upperbound like the max of the parameter and the number found)
-	
-
-
 
 
 	float eps = 1e-1;
@@ -2890,322 +2887,321 @@ int main(int argc, const char* argv[]){
 		int seed = 31415;
 		srand (seed);
 
-		for(int Gamma = 1; Gamma < 110; Gamma += 10){
-			//for(int tau = 0; tau < 110; tau += 20){
+		for(int i = 0; i < total_files; i++ ){
+			if(file_list[i] == "." || file_list[i] == "..") continue;
+
+			if(choice_instances == 1){
+				filename = "parsed_large_instances/" + file_list[i];
+			} else if(choice_instances == 2){
+				filename = "test/" + file_list[i];
+			} else if(choice_instances == 3){
+				filename = "toy_instances/" + file_list[i];
+			} else{
+				filename = "hand_benders_instances/parsed_instances/" + file_list[i];
+			}
+
+			for(int Gamma = 1; Gamma < 110; Gamma += 10){
 			
+				bool random = false;
+				if(choice_instances == 4){
+					inst = read_hand_instance(filename, 2);
+				} else if(!random){
+					inst = read_instance_py(filename, Gamma, adv_margin);
+				} else{
+					inst = read_instance_randomized(filename, Gamma, read_instance_rd_lb, read_instance_rd_ub, adv_margin);
+				}
+			
+				//for(int tau = 0; tau < 110; tau += 20){
+				
 				int tau = 100;
 
 				iterBA = 0, iterKC = 0, iterKCRDK = 0, iterKCRDKL = 0, iterKCU = 0, iterKCUD = 0, iterKCHOG = 0, iterKCHOGL = 0;
 				timeBA = 0, timeKC = 0, timeKCRDK = 0, timeKCRDKL = 0, timeKCU = 0, timeKCUD = 0, timeKCHOG = 0, timeKCHOGL = 0;
 
-				for(int i = 0; i < total_files; i++ ){
-					if(file_list[i] == "." || file_list[i] == "..") continue;
-		
-					if(choice_instances == 1){
-						filename = "parsed_large_instances/" + file_list[i];
-					} else if(choice_instances == 2){
-						filename = "test/" + file_list[i];
-					} else if(choice_instances == 3){
-						filename = "toy_instances/" + file_list[i];
-					} else{
-						filename = "hand_benders_instances/parsed_instances/" + file_list[i];
-					}
-									
-					cout << "\n" << filename << " " << Gamma << " " << tau << " " << endl;
-					
-					bool random = false;
-					if(choice_instances == 4){
-						inst = read_hand_instance(filename, 2);
-					} else if(!random){
-						inst = read_instance_py(filename, Gamma, adv_margin);
-					} else{
-						inst = read_instance_randomized(filename, Gamma, read_instance_rd_lb, read_instance_rd_ub, adv_margin);
-					}
+				// BA		
+				benders_sol_BA = BA_benders_Main(inst, eps, max_iter, max_time_s);
+				iterBA += benders_sol_BA.iter;
+				timeBA += benders_sol_BA.time;
+				cout << "\nBA-------done (Obj :" << benders_sol_BA.obj_value << ")" << endl;
+			
+				// KC
+				approx_coeff = float(tau)/100;
 
-					// BA		
-					benders_sol_BA = BA_benders_Main(inst, eps, max_iter, max_time_s);
-					iterBA += benders_sol_BA.iter;
-					timeBA += benders_sol_BA.time;
-					cout << "\nBA-------done (Obj :" << benders_sol_BA.obj_value << ")" << endl;
+				//benders_sol_KC = KC_benders_Main(inst, approx_coeff, KC_Method::KC, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few); // First bool is to use HOG, the other is to use the KC random K method
+				//iterKC += benders_sol_KC.iter;
+				//timeKC += benders_sol_KC.time;
+				//cout << "\nKC-----done (Obj :" << benders_sol_KC.obj_value << ")" <<endl;
+
+				// KCRDK (random K)
+				//benders_sol_KCRDK = KC_benders_Main(inst, approx_coeff, KC_Method::RDK, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
+				//iterKCRDK += benders_sol_KCRDK.iter;
+				//timeKCRDK += benders_sol_KCRDK.time;
+				//cout << "\nKCRDK--done (Obj :" << benders_sol_KCRDK.obj_value << ")" <<endl;
+
+				// KCRDKL (KCRDK Lexicographical)
+				benders_sol_KCRDKL = KC_benders_Main(inst, approx_coeff, KC_Method::RDKL, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
+				iterKCRDKL += benders_sol_KCRDKL.iter;
+				timeKCRDKL += benders_sol_KCRDKL.time;
+				cout << "\nKCRDKL-done (Obj :" << benders_sol_KCRDKL.obj_value << ")" <<endl;
 				
-					// KC
-					approx_coeff = float(tau)/100;
+				// KCU	(KC Unique)
+				benders_sol_KCU = KC_benders_Main(inst, approx_coeff, KC_Method::Unique, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few); //KCU_benders_Main(inst, eps, max_iter, max_time_s);
+				iterKCU += benders_sol_KCU.iter;
+				timeKCU += benders_sol_KCU.time;
+				cout << "\nKCU----done (Obj :" << benders_sol_KCU.obj_value << ")" << endl;
 
-					//benders_sol_KC = KC_benders_Main(inst, approx_coeff, KC_Method::KC, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few); // First bool is to use HOG, the other is to use the KC random K method
-					//iterKC += benders_sol_KC.iter;
-					//timeKC += benders_sol_KC.time;
-					//cout << "\nKC-----done (Obj :" << benders_sol_KC.obj_value << ")" <<endl;
+				// KCUD (KC with two optimal paths)
+				//benders_sol_KCUD = KC_benders_Main(inst, approx_coeff, KC_Method::UniqueDual, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
+				//iterKCUD += benders_sol_KCUD.iter;
+				//timeKCUD += benders_sol_KCUD.time;
+				//cout << "\nKCUD---done (Obj :" << benders_sol_KCUD.obj_value << ")" << endl;
 
-					// KCRDK (random K)
-					//benders_sol_KCRDK = KC_benders_Main(inst, approx_coeff, KC_Method::RDK, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
-					//iterKCRDK += benders_sol_KCRDK.iter;
-					//timeKCRDK += benders_sol_KCRDK.time;
-					//cout << "\nKCRDK--done (Obj :" << benders_sol_KCRDK.obj_value << ")" <<endl;
+				// KCHOG
+				//benders_sol_KCHOG = KC_benders_Main(inst, approx_coeff, KC_Method::HOG, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
+				//iterKCHOG += benders_sol_KCHOG.iter;
+				//timeKCHOG += benders_sol_KCHOG.time;
+				//cout << "\nKCHOG--done (Obj :" << benders_sol_KCHOG.obj_value << ")"<< endl;
 
-					// KCRDKL (KCRDK Lexicographical)
-					benders_sol_KCRDKL = KC_benders_Main(inst, approx_coeff, KC_Method::RDKL, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
-					iterKCRDKL += benders_sol_KCRDKL.iter;
-					timeKCRDKL += benders_sol_KCRDKL.time;
-					cout << "\nKCRDKL-done (Obj :" << benders_sol_KCRDKL.obj_value << ")" <<endl;
+				// KCHOGL (HOG Lexicographical)
+				benders_sol_KCHOGL = KC_benders_Main(inst, approx_coeff, KC_Method::HOGL, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
+				iterKCHOGL += benders_sol_KCHOGL.iter;
+				timeKCHOGL += benders_sol_KCHOGL.time;
+				cout << "\nKCHOGL-done (Obj :" << benders_sol_KCHOGL.obj_value << ")"<< endl;
+
+				// Quality control of the solution
+				if(abs(benders_sol_BA.obj_value - benders_sol_KCU.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCRDKL.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCHOGL.obj_value) > eps){
+					cout << "\nDegraded quality" << endl;
+					validation_status = "Degraded quality";
+				} else{
+					cout << "\nValid quality" << endl;
+					validation_status = "Valid quality";
+				}
+
+				// We export the exact time for each instance and each parameters
+				if(use_result_export){
+					// Validation file
+					output_validation << filename << " | " << Gamma << " | " << tau << " | " << validation_status << endl;
+				
+					// BA with KC standard 
+					/*
+					output_BA_KC 	<< "BA," 
+									<< Gamma << "," 
+									<< tau << "," 
+									<< benders_sol_BA.iter << "," 
+									<< benders_sol_BA.time << ","
+									<< benders_sol_BA.time_master << ","
+									<< benders_sol_BA.time_subproblem << endl;
+
+					output_BA_KC 	<< "KC," 
+									<< Gamma << "," 
+									<< tau << "," 
+									<< benders_sol_KC.iter << ","
+									<< benders_sol_KC.time << ","
+									<< benders_sol_KC.time_master << ","
+									<< benders_sol_KC.time_subproblem << endl;
 					
-					// KCU	(KC Unique)
-					benders_sol_KCU = KC_benders_Main(inst, approx_coeff, KC_Method::Unique, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few); //KCU_benders_Main(inst, eps, max_iter, max_time_s);
-					iterKCU += benders_sol_KCU.iter;
-					timeKCU += benders_sol_KCU.time;
-					cout << "\nKCU----done (Obj :" << benders_sol_KCU.obj_value << ")" << endl;
+					// BA with KCRDK
+					output_BA_KCRDK << "BA,"
+									<< Gamma << ","
+									<< tau << ","
+									<< benders_sol_BA.iter << ","
+									<< benders_sol_BA.time << ","
+									<< benders_sol_BA.time_master << ","
+									<< benders_sol_BA.time_subproblem << endl;
 
-					// KCUD (KC with two optimal paths)
-					//benders_sol_KCUD = KC_benders_Main(inst, approx_coeff, KC_Method::UniqueDual, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
-					//iterKCUD += benders_sol_KCUD.iter;
-					//timeKCUD += benders_sol_KCUD.time;
-					//cout << "\nKCUD---done (Obj :" << benders_sol_KCUD.obj_value << ")" << endl;
+					output_BA_KCRDK << "KCRDK,"
+									<< Gamma << ","
+									<< tau << ","
+									<< benders_sol_KCRDK.iter << ","
+									<< benders_sol_KCRDK.time << ","
+									<< benders_sol_KCRDK.time_master << ","
+									<< benders_sol_KCRDK.time_subproblem << endl;
+					*/
 
-					// KCHOG
-					//benders_sol_KCHOG = KC_benders_Main(inst, approx_coeff, KC_Method::HOG, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
-					//iterKCHOG += benders_sol_KCHOG.iter;
-					//timeKCHOG += benders_sol_KCHOG.time;
-					//cout << "\nKCHOG--done (Obj :" << benders_sol_KCHOG.obj_value << ")"<< endl;
-
-					// KCHOGL (HOG Lexicographical)
-					benders_sol_KCHOGL = KC_benders_Main(inst, approx_coeff, KC_Method::HOGL, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
-					iterKCHOGL += benders_sol_KCHOGL.iter;
-					timeKCHOGL += benders_sol_KCHOGL.time;
-					cout << "\nKCHOGL-done (Obj :" << benders_sol_KCHOGL.obj_value << ")"<< endl;
-
-					// Quality control of the solution
-					if(abs(benders_sol_BA.obj_value - benders_sol_KCU.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCRDKL.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCHOGL.obj_value) > eps){
-						cout << "\nDegraded quality" << endl;
-						validation_status = "Degraded quality";
-					} else{
-						cout << "\nValid quality" << endl;
-						validation_status = "Valid quality";
-					}
-
-					// We export the exact time for each instance and each parameters
-					if(use_result_export){
-						// Validation file
-						output_validation << filename << " | " << Gamma << " | " << tau << " | " << validation_status << endl;
-					
-						// BA with KC standard 
-						/*
-						output_BA_KC 	<< "BA," 
-										<< Gamma << "," 
-										<< tau << "," 
-										<< benders_sol_BA.iter << "," 
-										<< benders_sol_BA.time << ","
-										<< benders_sol_BA.time_master << ","
-										<< benders_sol_BA.time_subproblem << endl;
-
-						output_BA_KC 	<< "KC," 
-										<< Gamma << "," 
-										<< tau << "," 
-										<< benders_sol_KC.iter << ","
-										<< benders_sol_KC.time << ","
-										<< benders_sol_KC.time_master << ","
-										<< benders_sol_KC.time_subproblem << endl;
-						
-						// BA with KCRDK
-						output_BA_KCRDK << "BA,"
+					// BA with KCRDKL
+					output_BA_KCRDKL	<< "BA,"
 										<< Gamma << ","
 										<< tau << ","
+										<< nb_path_to_select << ","
 										<< benders_sol_BA.iter << ","
 										<< benders_sol_BA.time << ","
 										<< benders_sol_BA.time_master << ","
 										<< benders_sol_BA.time_subproblem << endl;
-
-						output_BA_KCRDK << "KCRDK,"
+								
+					output_BA_KCRDKL	<< "KCRDKL,"
 										<< Gamma << ","
 										<< tau << ","
-										<< benders_sol_KCRDK.iter << ","
-										<< benders_sol_KCRDK.time << ","
-										<< benders_sol_KCRDK.time_master << ","
-										<< benders_sol_KCRDK.time_subproblem << endl;
-						*/
-
-						// BA with KCRDKL
-						output_BA_KCRDKL	<< "BA,"
-											<< Gamma << ","
-											<< tau << ","
-											<< nb_path_to_select << ","
-											<< benders_sol_BA.iter << ","
-											<< benders_sol_BA.time << ","
-											<< benders_sol_BA.time_master << ","
-											<< benders_sol_BA.time_subproblem << endl;
-									
-						output_BA_KCRDKL	<< "KCRDKL,"
-											<< Gamma << ","
-											<< tau << ","
-											<< nb_path_to_select << ","
-											<< benders_sol_KCRDKL.iter << ","
-											<< benders_sol_KCRDKL.time << ","
-											<< benders_sol_KCRDKL.time_master << ","
-											<< benders_sol_KCRDKL.time_subproblem << endl;
-
-						// BA with KCU
-						output_BA_KCU	<< "BA," 
-										<< Gamma << "," 
-										<< tau << ","
 										<< nb_path_to_select << ","
-										<< benders_sol_BA.iter << "," 
-										<< benders_sol_BA.time << ","
-										<< benders_sol_BA.time_master << ","
-										<< benders_sol_BA.time_subproblem << endl;
-
-						output_BA_KCU 	<< "KCU," 
-										<< Gamma << "," 
-										<< tau << ","
-										<< nb_path_to_select << ","
-										<< benders_sol_KCU.iter << "," 
-										<< benders_sol_KCU.time << ","
-										<< benders_sol_KCU.time_master << ","
-										<< benders_sol_KCU.time_subproblem << endl;
-						/*
-						// KCU with KCUD
-						output_BA_KCUD 	<< "KCU," 
-										<< Gamma << "," 
-										<< tau << "," 
-										<< benders_sol_KCU.iter << "," 
-										<< benders_sol_KCU.time << ","
-										<< benders_sol_KCU.time_master << ","
-										<< benders_sol_KCU.time_subproblem << endl;
-
-						output_BA_KCUD	<< "KCUD,"
-										<< Gamma << ","
-										<< tau << ","
-										<< benders_sol_KCUD.iter << ","
-										<< benders_sol_KCUD.time << ","
-										<< benders_sol_KCUD.time_master << ","
-										<< benders_sol_KCUD.time_subproblem << endl;
-
-						// BA with HOG
-						output_BA_HOG	<< "BA," 
-										<< Gamma << "," 
-										<< tau << "," 
-										<< benders_sol_BA.iter << "," 
-										<< benders_sol_BA.time << ","
-										<< benders_sol_BA.time_master << ","
-										<< benders_sol_BA.time_subproblem << endl;
-										
-						output_BA_HOG 	<< "KCHOG," 
-										<< Gamma << "," 
-										<< tau << "," 
-										<< benders_sol_KCHOG.iter << "," 
-										<< benders_sol_KCHOG.time << ","
-										<< benders_sol_KCHOG.time_master << ","
-										<< benders_sol_KCHOG.time_subproblem << endl;
-						*/
-
-						// BA with HOGL
-						output_BA_HOGL	<< "BA," 
-										<< Gamma << "," 
-										<< tau << ","
-										<< nb_path_to_select << ","
-										<< benders_sol_BA.iter << "," 
-										<< benders_sol_BA.time << ","
-										<< benders_sol_BA.time_master << ","
-										<< benders_sol_BA.time_subproblem << endl;
-										
-						output_BA_HOGL 	<< "KCHOGL," 
-										<< Gamma << "," 
-										<< tau << ","
-										<< nb_path_to_select << ","
-										<< benders_sol_KCHOGL.iter << "," 
-										<< benders_sol_KCHOGL.time << ","
-										<< benders_sol_KCHOGL.time_master << ","
-										<< benders_sol_KCHOGL.time_subproblem << endl;
-
-						/*
-						// KC with HOG
-						output_KC_HOG 	<< "KC," 
-										<< Gamma << "," 
-										<< tau << "," 
-										<< benders_sol_KC.iter << "," 
-										<< benders_sol_KC.time << ","
-										<< benders_sol_KC.time_master << ","
-										<< benders_sol_KC.time_subproblem << endl;
-										
-						output_KC_HOG 	<< "KCHOG," 
-										<< Gamma << "," 
-										<< tau << "," 
-										<< benders_sol_KCHOG.iter << "," 
-										<< benders_sol_KCHOG.time << ","
-										<< benders_sol_KCHOG.time_master << ","
-										<< benders_sol_KCHOG.time_subproblem << endl;
-						*/
-
-						// Time master subproblem
-						output_time_m_s << Gamma 								<< ","
-										<< tau 									<< ","
-										<< nb_path_to_select 					<< ","
-										<< benders_sol_BA.time_master 			<< ","
-										<< benders_sol_BA.time_subproblem 		<< ","
-										//<< benders_sol_KC.time_master 			<< ","
-										//<< benders_sol_KC.time_subproblem 		<< ","
-										//<< benders_sol_KCRDK.time_master 		<< ","
-										//<< benders_sol_KCRDK.time_subproblem 	<< ","
-										<< benders_sol_KCRDKL.time_master 		<< ","
-										<< benders_sol_KCRDKL.time_subproblem 	<< ","
-										<< benders_sol_KCU.time_master 			<< ","
-										<< benders_sol_KCU.time_subproblem 		<< ","
-										//<< benders_sol_KCUD.time_master 		<< ","
-										//<< benders_sol_KCUD.time_subproblem 	<< ","
-										//<< benders_sol_KCHOG.time_master 		<< ","
-										//<< benders_sol_KCHOG.time_subproblem 	<< ","
-										<< benders_sol_KCHOGL.time_master 		<< ","
-										<< benders_sol_KCHOGL.time_subproblem 	<< endl;
-
-						// Stats
-						output_stats	<< "BA,"
-										<< Gamma << ","
-										<< tau << ","
-										<< benders_sol_BA.time << ","
-										<< benders_sol_BA.iter << endl;
-
-						//output_stats 	<< "KC,"
-						//				<< Gamma << ","
-						//				<< tau << ","
-						//				<< benders_sol_KC.time << ","
-						//				<< benders_sol_KC.iter << endl;
-
-						//output_stats 	<< "KCRDK,"
-						//				<< Gamma << ","
-						//				<< tau << ","
-						//				<< benders_sol_KCRDK.time << ","
-						//				<< benders_sol_KCRDK.iter << endl;
-
-						output_stats	<< "KCRDKL,"
-										<< Gamma << ","
-										<< tau << ","
+										<< benders_sol_KCRDKL.iter << ","
 										<< benders_sol_KCRDKL.time << ","
-										<< benders_sol_KCRDKL.iter << endl;
+										<< benders_sol_KCRDKL.time_master << ","
+										<< benders_sol_KCRDKL.time_subproblem << endl;
 
-						output_stats 	<< "KCU,"
-										<< Gamma << ","
-										<< tau << ","
-										<< benders_sol_KCU.time << ","
-										<< benders_sol_KCU.iter << endl;
+					// BA with KCU
+					output_BA_KCU	<< "BA," 
+									<< Gamma << "," 
+									<< tau << ","
+									<< nb_path_to_select << ","
+									<< benders_sol_BA.iter << "," 
+									<< benders_sol_BA.time << ","
+									<< benders_sol_BA.time_master << ","
+									<< benders_sol_BA.time_subproblem << endl;
 
-						//output_stats 	<< "KCUD,"
-						//				<< Gamma << ","
-						//				<< tau << ","
-						//				<< benders_sol_KCUD.time << ","
-						//				<< benders_sol_KCUD.iter << endl;
+					output_BA_KCU 	<< "KCU," 
+									<< Gamma << "," 
+									<< tau << ","
+									<< nb_path_to_select << ","
+									<< benders_sol_KCU.iter << "," 
+									<< benders_sol_KCU.time << ","
+									<< benders_sol_KCU.time_master << ","
+									<< benders_sol_KCU.time_subproblem << endl;
+					/*
+					// KCU with KCUD
+					output_BA_KCUD 	<< "KCU," 
+									<< Gamma << "," 
+									<< tau << "," 
+									<< benders_sol_KCU.iter << "," 
+									<< benders_sol_KCU.time << ","
+									<< benders_sol_KCU.time_master << ","
+									<< benders_sol_KCU.time_subproblem << endl;
 
-						//output_stats 	<< "HOG,"
-						//				<< Gamma << ","
-						//				<< tau << ","
-						//				<< benders_sol_KCHOG.time << ","
-						//				<< benders_sol_KCHOG.iter << endl;
-						
-						output_stats 	<< "HOGL,"
-										<< Gamma << ","
-										<< tau << ","
-										<< nb_path_to_select << ","
-										<< benders_sol_KCHOGL.time << ","
-										<< benders_sol_KCHOGL.iter << endl;
-					}
+					output_BA_KCUD	<< "KCUD,"
+									<< Gamma << ","
+									<< tau << ","
+									<< benders_sol_KCUD.iter << ","
+									<< benders_sol_KCUD.time << ","
+									<< benders_sol_KCUD.time_master << ","
+									<< benders_sol_KCUD.time_subproblem << endl;
+
+					// BA with HOG
+					output_BA_HOG	<< "BA," 
+									<< Gamma << "," 
+									<< tau << "," 
+									<< benders_sol_BA.iter << "," 
+									<< benders_sol_BA.time << ","
+									<< benders_sol_BA.time_master << ","
+									<< benders_sol_BA.time_subproblem << endl;
+									
+					output_BA_HOG 	<< "KCHOG," 
+									<< Gamma << "," 
+									<< tau << "," 
+									<< benders_sol_KCHOG.iter << "," 
+									<< benders_sol_KCHOG.time << ","
+									<< benders_sol_KCHOG.time_master << ","
+									<< benders_sol_KCHOG.time_subproblem << endl;
+					*/
+
+					// BA with HOGL
+					output_BA_HOGL	<< "BA," 
+									<< Gamma << "," 
+									<< tau << ","
+									<< nb_path_to_select << ","
+									<< benders_sol_BA.iter << "," 
+									<< benders_sol_BA.time << ","
+									<< benders_sol_BA.time_master << ","
+									<< benders_sol_BA.time_subproblem << endl;
+									
+					output_BA_HOGL 	<< "KCHOGL," 
+									<< Gamma << "," 
+									<< tau << ","
+									<< nb_path_to_select << ","
+									<< benders_sol_KCHOGL.iter << "," 
+									<< benders_sol_KCHOGL.time << ","
+									<< benders_sol_KCHOGL.time_master << ","
+									<< benders_sol_KCHOGL.time_subproblem << endl;
+
+					/*
+					// KC with HOG
+					output_KC_HOG 	<< "KC," 
+									<< Gamma << "," 
+									<< tau << "," 
+									<< benders_sol_KC.iter << "," 
+									<< benders_sol_KC.time << ","
+									<< benders_sol_KC.time_master << ","
+									<< benders_sol_KC.time_subproblem << endl;
+									
+					output_KC_HOG 	<< "KCHOG," 
+									<< Gamma << "," 
+									<< tau << "," 
+									<< benders_sol_KCHOG.iter << "," 
+									<< benders_sol_KCHOG.time << ","
+									<< benders_sol_KCHOG.time_master << ","
+									<< benders_sol_KCHOG.time_subproblem << endl;
+					*/
+
+					// Time master subproblem
+					output_time_m_s << Gamma 								<< ","
+									<< tau 									<< ","
+									<< nb_path_to_select 					<< ","
+									<< benders_sol_BA.time_master 			<< ","
+									<< benders_sol_BA.time_subproblem 		<< ","
+									//<< benders_sol_KC.time_master 			<< ","
+									//<< benders_sol_KC.time_subproblem 		<< ","
+									//<< benders_sol_KCRDK.time_master 		<< ","
+									//<< benders_sol_KCRDK.time_subproblem 	<< ","
+									<< benders_sol_KCRDKL.time_master 		<< ","
+									<< benders_sol_KCRDKL.time_subproblem 	<< ","
+									<< benders_sol_KCU.time_master 			<< ","
+									<< benders_sol_KCU.time_subproblem 		<< ","
+									//<< benders_sol_KCUD.time_master 		<< ","
+									//<< benders_sol_KCUD.time_subproblem 	<< ","
+									//<< benders_sol_KCHOG.time_master 		<< ","
+									//<< benders_sol_KCHOG.time_subproblem 	<< ","
+									<< benders_sol_KCHOGL.time_master 		<< ","
+									<< benders_sol_KCHOGL.time_subproblem 	<< endl;
+
+					// Stats
+					output_stats	<< "BA,"
+									<< Gamma << ","
+									<< tau << ","
+									<< benders_sol_BA.time << ","
+									<< benders_sol_BA.iter << endl;
+
+					//output_stats 	<< "KC,"
+					//				<< Gamma << ","
+					//				<< tau << ","
+					//				<< benders_sol_KC.time << ","
+					//				<< benders_sol_KC.iter << endl;
+
+					//output_stats 	<< "KCRDK,"
+					//				<< Gamma << ","
+					//				<< tau << ","
+					//				<< benders_sol_KCRDK.time << ","
+					//				<< benders_sol_KCRDK.iter << endl;
+
+					output_stats	<< "KCRDKL,"
+									<< Gamma << ","
+									<< tau << ","
+									<< benders_sol_KCRDKL.time << ","
+									<< benders_sol_KCRDKL.iter << endl;
+
+					output_stats 	<< "KCU,"
+									<< Gamma << ","
+									<< tau << ","
+									<< benders_sol_KCU.time << ","
+									<< benders_sol_KCU.iter << endl;
+
+					//output_stats 	<< "KCUD,"
+					//				<< Gamma << ","
+					//				<< tau << ","
+					//				<< benders_sol_KCUD.time << ","
+					//				<< benders_sol_KCUD.iter << endl;
+
+					//output_stats 	<< "HOG,"
+					//				<< Gamma << ","
+					//				<< tau << ","
+					//				<< benders_sol_KCHOG.time << ","
+					//				<< benders_sol_KCHOG.iter << endl;
+					
+					output_stats 	<< "HOGL,"
+									<< Gamma << ","
+									<< tau << ","
+									<< nb_path_to_select << ","
+									<< benders_sol_KCHOGL.time << ","
+									<< benders_sol_KCHOGL.iter << endl;
 				}
-			//}
+			}
+		//}
 		}
 
 		if(use_result_export){
@@ -3271,9 +3267,9 @@ int main(int argc, const char* argv[]){
 		ofstream output_KC_HOG(oss_KC_HOG.str());
 		*/
 
-		ostringstream output_KCRDKL_KCHOGL(oss_KCRDKL_KHOGL.str());
-		ostringstream output_KCRDKL_KCUD(oss_KCRDKL_KCUD.str());
-		ostringstream output_KCUD_KCHOGL(oss_KCUD_HOGL.str());
+		ofstream output_KCRDKL_KCHOGL(oss_KCRDKL_KHOGL.str());
+		ofstream output_KCRDKL_KCUD(oss_KCRDKL_KCUD.str());
+		ofstream output_KCUD_KCHOGL(oss_KCUD_HOGL.str());
 
 		ofstream output_validation;
 		ofstream output_time_m_s(oss_time_m_s.str());
@@ -3324,39 +3320,42 @@ int main(int argc, const char* argv[]){
 		int seed = 31415;
 		srand (seed);
 
-		for(int Gamma = 1; Gamma < 100; Gamma += 10){
-			//for(int tau = 0; tau < 110; tau += 20){
-			for(int nb_path_to_select = 500; nb_path_to_select < 2000; nb_path_to_select += 500){
 
-				int tau = 100;
+		for(int i = 0; i < total_files; i++ ){
+			if(file_list[i] == "." || file_list[i] == "..") continue;
 
-				iterBA = 0, iterKC = 0, iterKCRDK = 0, iterKCRDKL = 0, iterKCU = 0, iterKCUD = 0, iterKCHOG = 0, iterKCHOGL = 0;
-				timeBA = 0, timeKC = 0, timeKCRDK = 0, timeKCRDKL = 0, timeKCU = 0, timeKCUD = 0, timeKCHOG = 0, timeKCHOGL = 0;
+			if(choice_instances == 1){
+				filename = "parsed_large_instances/" + file_list[i];
+			} else if(choice_instances == 2){
+				filename = "test/" + file_list[i];
+			} else if(choice_instances == 3){
+				filename = "toy_instances/" + file_list[i];
+			} else{
+				filename = "hand_benders_instances/parsed_instances/" + file_list[i];
+			}
 
-				for(int i = 0; i < total_files; i++ ){
-					if(file_list[i] == "." || file_list[i] == "..") continue;
-		
-					if(choice_instances == 1){
-						filename = "parsed_large_instances/" + file_list[i];
-					} else if(choice_instances == 2){
-						filename = "test/" + file_list[i];
-					} else if(choice_instances == 3){
-						filename = "toy_instances/" + file_list[i];
-					} else{
-						filename = "hand_benders_instances/parsed_instances/" + file_list[i];
-					}
-									
+			for(int Gamma = 1; Gamma < 110; Gamma += 10){
+			
+				bool random = false;
+				if(choice_instances == 4){
+					inst = read_hand_instance(filename, 2);
+				} else if(!random){
+					inst = read_instance_py(filename, Gamma, adv_margin);
+				} else{
+					inst = read_instance_randomized(filename, Gamma, read_instance_rd_lb, read_instance_rd_ub, adv_margin);
+				}
+			
+				//for(int tau = 0; tau < 110; tau += 20){
+				for(int limit_number_paths = 500; limit_number_paths < 2000; limit_number_paths += 500){
+
+					int tau = 100;
+
+					iterBA = 0, iterKC = 0, iterKCRDK = 0, iterKCRDKL = 0, iterKCU = 0, iterKCUD = 0, iterKCHOG = 0, iterKCHOGL = 0;
+					timeBA = 0, timeKC = 0, timeKCRDK = 0, timeKCRDKL = 0, timeKCU = 0, timeKCUD = 0, timeKCHOG = 0, timeKCHOGL = 0;
+
+					
 					cout << "\n" << filename << " " << Gamma << " " << tau << " " << endl;
 					
-					bool random = false;
-					if(choice_instances == 4){
-						inst = read_hand_instance(filename, 2);
-					} else if(!random){
-						inst = read_instance_py(filename, Gamma, adv_margin);
-					} else{
-						inst = read_instance_randomized(filename, Gamma, read_instance_rd_lb, read_instance_rd_ub, adv_margin);
-					}
-
 					// BA		
 					//benders_sol_BA = BA_benders_Main(inst, eps, max_iter, max_time_s);
 					//iterBA += benders_sol_BA.iter;
@@ -3719,41 +3718,32 @@ int main(int argc, const char* argv[]){
 			//output_BA_HOG.close();
 			//output_BA_KCRDKL.close();
 			//output_KC_HOG.close();
+			output_KCRDKL_KCHOGL.close();
+			output_KCRDKL_KCUD.close();
+			output_KCUD_KCHOGL.close();
 			output_validation.close();
 			output_time_m_s.close();
 			output_stats.close();
 		}
 	} else if(test == 3){
-			ostringstream oss_BA_KC;
-		ostringstream oss_BA_KCRDK;
-		ostringstream oss_BA_KCRDKL;
-		ostringstream oss_BA_KCU;
-		ostringstream oss_KCU_KCUD;
-		ostringstream oss_BA_HOG;
-		ostringstream oss_BA_HOGL;
-		ostringstream oss_KC_HOG;
+		int limit_number_paths = 500;			// Used for the DFS algo
+		int nb_path_to_select = 2;
+
+
+		ostringstream oss_KCHOGL_KCRDKL;
+
 		ostringstream oss_validation;
 		ostringstream oss_time_m_s;
 		ostringstream oss_stats;
-		oss_BA_KC 	   	<< folder_path << experience_name << "_BA_KC.csv";
-		oss_BA_KCRDK    << folder_path << experience_name << "_BA_KCRDK.csv";
-		oss_BA_KCRDKL   << folder_path << experience_name << "_BA_KCRDKL.csv";
-		oss_BA_KCU		<< folder_path << experience_name << "_BA_KCU.csv";
-		oss_KCU_KCUD	<< folder_path << experience_name << "_KCU_KCUD.csv";
-		oss_BA_HOG 	  	<< folder_path << experience_name << "_BA_HOG.csv";
-		oss_BA_HOGL		<< folder_path << experience_name << "_BA_HOGL.csv";
-		oss_KC_HOG   	<< folder_path << experience_name << "_KC_HOG.csv";
+		
+		oss_KCHOGL_KCRDKL << folder_path << experience_name << "_KCHOGL_KCRDKL.csv";
+		
 		oss_validation  << folder_path << experience_name << "_validation.txt";
 		oss_time_m_s    << folder_path << experience_name << "_time_m_s.csv";
 		oss_stats		<< folder_path << experience_name << "_stats.csv";
-		ofstream output_BA_KC(oss_BA_KC.str());
-		ofstream output_BA_KCRDK(oss_BA_KCRDK.str());
-		ofstream output_BA_KCRDKL(oss_BA_KCRDKL.str());
-		ofstream output_BA_KCU(oss_BA_KCU.str());
-		ofstream output_BA_KCUD(oss_KCU_KCUD.str());
-		ofstream output_BA_HOG(oss_BA_HOG.str());
-		ofstream output_BA_HOGL(oss_BA_HOGL.str());
-		ofstream output_KC_HOG(oss_KC_HOG.str());
+
+		ofstream output_KCHOGL_KCRDKL(oss_KCHOGL_KCRDKL.str());
+		
 		ofstream output_validation;
 		ofstream output_time_m_s(oss_time_m_s.str());
 		ofstream output_stats(oss_stats.str());
@@ -3762,7 +3752,7 @@ int main(int argc, const char* argv[]){
 			output_validation.open(oss_validation.str());
 			output_validation << "Fichier 			| Gamma 	| tau 	| 	Validation\n";
 			output_validation << "------------------------------------------------------------\n";
-			output_time_m_s << "Gamma, tau, time_master_BA, time_subproblem_BA, time_master_KC, time_subproblem_KC, time_master_KCRDK, time_subproblem_KCRDK, time_master_KCRDKL, time_subproblem_KCRDKL, time_master_KCU, time_subproblem_KCU, time_master_KCUD, time_subproblem_KCUD, time_master_KCHOG, time_subproblem_KCHOG, time_master_KCHOGL, time_subproblem_KCHOGL\n";
+			output_time_m_s << "Gamma, tau, nb_path_to_select, limit_number_paths, time_master_KCRDKL, time_subproblem_KCRDKL, time_master_KCHOGL, time_subproblem_KCHOGL\n";
 		}
 
 		//================================================================= TEMPORAIRE ===========================================================================
@@ -3803,317 +3793,126 @@ int main(int argc, const char* argv[]){
 		int seed = 31415;
 		srand (seed);
 
-		for(int Gamma = 1; Gamma < 100; Gamma += 10){
-			for(int tau = 0; tau < 110; tau += 20){
-				iterBA = 0, iterKC = 0, iterKCRDK = 0, iterKCRDKL = 0, iterKCU = 0, iterKCUD = 0, iterKCHOG = 0, iterKCHOGL = 0;
-				timeBA = 0, timeKC = 0, timeKCRDK = 0, timeKCRDKL = 0, timeKCU = 0, timeKCUD = 0, timeKCHOG = 0, timeKCHOGL = 0;
+		for(int i = 0; i < total_files; i++ ){
+			if(file_list[i] == "." || file_list[i] == "..") continue;
 
-				for(int i = 0; i < total_files; i++ ){
-					if(file_list[i] == "." || file_list[i] == "..") continue;
-		
-					if(choice_instances == 1){
-						filename = "parsed_large_instances/" + file_list[i];
-					} else if(choice_instances == 2){
-						filename = "test/" + file_list[i];
-					} else if(choice_instances == 3){
-						filename = "toy_instances/" + file_list[i];
-					} else{
-						filename = "hand_benders_instances/parsed_instances/" + file_list[i];
-					}
-									
-					cout << "\n" << filename << " " << Gamma << " " << tau << " " << endl;
-					
-					bool random = false;
-					if(choice_instances == 4){
-						inst = read_hand_instance(filename, 2);
-					} else if(!random){
-						inst = read_instance_py(filename, Gamma, adv_margin);
-					} else{
-						inst = read_instance_randomized(filename, Gamma, read_instance_rd_lb, read_instance_rd_ub, adv_margin);
-					}
+			if(choice_instances == 1){
+				filename = "parsed_large_instances/" + file_list[i];
+			} else if(choice_instances == 2){
+				filename = "test/" + file_list[i];
+			} else if(choice_instances == 3){
+				filename = "toy_instances/" + file_list[i];
+			} else{
+				filename = "hand_benders_instances/parsed_instances/" + file_list[i];
+			}
 
-					// BA		
-					benders_sol_BA = BA_benders_Main(inst, eps, max_iter, max_time_s);
-					iterBA += benders_sol_BA.iter;
-					timeBA += benders_sol_BA.time;
-					cout << "\nBA-------done (Obj :" << benders_sol_BA.obj_value << ")" << endl;
-				
-					// KC
-					approx_coeff = float(tau)/100;
+			for(int Gamma = 1; Gamma < 110; Gamma += 10){
+			
+				bool random = false;
+				if(choice_instances == 4){
+					inst = read_hand_instance(filename, 2);
+				} else if(!random){
+					inst = read_instance_py(filename, Gamma, adv_margin);
+				} else{
+					inst = read_instance_randomized(filename, Gamma, read_instance_rd_lb, read_instance_rd_ub, adv_margin);
+				}
+			
+				for(int tau = 80; tau < 105; tau += 10){
 
-					benders_sol_KC = KC_benders_Main(inst, approx_coeff, KC_Method::KC, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few); // First bool is to use HOG, the other is to use the KC random K method
-					iterKC += benders_sol_KC.iter;
-					timeKC += benders_sol_KC.time;
-					cout << "\nKC-----done (Obj :" << benders_sol_KC.obj_value << ")" <<endl;
+					for(int nb_path_to_select = 3; nb_path_to_select < 12; nb_path_to_select += 2){
 
-					// KCRDK (random K)
-					benders_sol_KCRDK = KC_benders_Main(inst, approx_coeff, KC_Method::RDK, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
-					iterKCRDK += benders_sol_KCRDK.iter;
-					timeKCRDK += benders_sol_KCRDK.time;
-					cout << "\nKCRDK--done (Obj :" << benders_sol_KCRDK.obj_value << ")" <<endl;
+						for(int limit_number_paths = 500; limit_number_paths < 2000; limit_number_paths += 500){
 
-					// KCRDKL (KCRDK Lexicographical)
-					benders_sol_KCRDKL = KC_benders_Main(inst, approx_coeff, KC_Method::RDKL, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
-					iterKCRDKL += benders_sol_KCRDKL.iter;
-					timeKCRDKL += benders_sol_KCRDKL.time;
-					cout << "\nKCRDKL-done (Obj :" << benders_sol_KCRDKL.obj_value << ")" <<endl;
-					
-					// KCU	(KC Unique)
-					benders_sol_KCU = KC_benders_Main(inst, approx_coeff, KC_Method::Unique, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few); //KCU_benders_Main(inst, eps, max_iter, max_time_s);
-					iterKCU += benders_sol_KCU.iter;
-					timeKCU += benders_sol_KCU.time;
-					cout << "\nKCU----done (Obj :" << benders_sol_KCU.obj_value << ")" << endl;
+			
+							iterBA = 0, iterKC = 0, iterKCRDK = 0, iterKCRDKL = 0, iterKCU = 0, iterKCUD = 0, iterKCHOG = 0, iterKCHOGL = 0;
+							timeBA = 0, timeKC = 0, timeKCRDK = 0, timeKCRDKL = 0, timeKCU = 0, timeKCUD = 0, timeKCHOG = 0, timeKCHOGL = 0;
 
-					// KCUD (KC with two optimal paths)
-					benders_sol_KCUD = KC_benders_Main(inst, approx_coeff, KC_Method::UniqueDual, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
-					iterKCUD += benders_sol_KCUD.iter;
-					timeKCUD += benders_sol_KCUD.time;
-					cout << "\nKCUD---done (Obj :" << benders_sol_KCUD.obj_value << ")" << endl;
+			
+							
+							// KC
+							approx_coeff = float(tau)/100;
 
-					// KCHOG
-					benders_sol_KCHOG = KC_benders_Main(inst, approx_coeff, KC_Method::HOG, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
-					iterKCHOG += benders_sol_KCHOG.iter;
-					timeKCHOG += benders_sol_KCHOG.time;
-					cout << "\nKCHOG--done (Obj :" << benders_sol_KCHOG.obj_value << ")"<< endl;
+							
+							// KCRDKL (KCRDK Lexicographical)
+							benders_sol_KCRDKL = KC_benders_Main(inst, approx_coeff, KC_Method::RDKL, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
+							iterKCRDKL += benders_sol_KCRDKL.iter;
+							timeKCRDKL += benders_sol_KCRDKL.time;
+							cout << "\nKCRDKL-done (Obj :" << benders_sol_KCRDKL.obj_value << ")" <<endl;
+							
+							
+							// KCHOGL (HOG Lexicographical)
+							benders_sol_KCHOGL = KC_benders_Main(inst, approx_coeff, KC_Method::HOGL, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
+							iterKCHOGL += benders_sol_KCHOGL.iter;
+							timeKCHOGL += benders_sol_KCHOGL.time;
+							cout << "\nKCHOGL-done (Obj :" << benders_sol_KCHOGL.obj_value << ")"<< endl;
 
-					// KCHOGL (HOG Lexicographical)
-					benders_sol_KCHOGL = KC_benders_Main(inst, approx_coeff, KC_Method::HOGL, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
-					iterKCHOGL += benders_sol_KCHOGL.iter;
-					timeKCHOGL += benders_sol_KCHOGL.time;
-					cout << "\nKCHOGL-done (Obj :" << benders_sol_KCHOGL.obj_value << ")"<< endl;
+							// Quality control of the solution
+							if(abs(benders_sol_KCRDKL.obj_value - benders_sol_KCHOGL.obj_value) > eps){
+								cout << "\nALERTE DEGRADATION" << endl;
+								validation_status = "Qualite degrade";
+							} else{
+								cout << "\nQualité valide" << endl;
+								validation_status = "Qualite valide";
+							}
 
-					// Quality control of the solution
-					if(abs(benders_sol_BA.obj_value - benders_sol_KC.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCRDK.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCU.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCHOG.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCHOGL.obj_value) > eps){
-						cout << "\nALERTE DEGRADATION" << endl;
-						validation_status = "Qualite degrade";
-					} else{
-						cout << "\nQualité valide" << endl;
-						validation_status = "Qualite valide";
-					}
+							// We export the exact time for each instance and each parameters
+							if(use_result_export){
+								// Validation file
+								output_validation << filename << " | " << Gamma << " | " << tau << " | " << validation_status << endl;
+							
+								
 
-					// We export the exact time for each instance and each parameters
-					if(use_result_export){
-						// Validation file
-						output_validation << filename << " | " << Gamma << " | " << tau << " | " << validation_status << endl;
-					
-						// BA with KC standard 
-						output_BA_KC 	<< "BA," 
-										<< Gamma << "," 
-										<< tau << "," 
-										<< benders_sol_BA.iter << "," 
-										<< benders_sol_BA.time << ","
-										<< benders_sol_BA.time_master << ","
-										<< benders_sol_BA.time_subproblem << endl;
+								
+											
+								output_KCHOGL_KCRDKL	<< "KCRDKL,"
+														<< Gamma << ","
+														<< tau << ","
+														<< nb_path_to_select << ","
+														<< limit_number_paths << ","
+														<< benders_sol_KCRDKL.iter << ","
+														<< benders_sol_KCRDKL.time << ","
+														<< benders_sol_KCRDKL.time_master << ","
+														<< benders_sol_KCRDKL.time_subproblem << endl;
+												
+								output_KCHOGL_KCRDKL 	<< "KCHOGL," 
+														<< Gamma << "," 
+														<< tau << ","
+														<< nb_path_to_select << ","
+														<< limit_number_paths << ","
+														<< benders_sol_KCHOGL.iter << "," 
+														<< benders_sol_KCHOGL.time << ","
+														<< benders_sol_KCHOGL.time_master << ","
+														<< benders_sol_KCHOGL.time_subproblem << endl;
 
-						output_BA_KC 	<< "KC," 
-										<< Gamma << "," 
-										<< tau << "," 
-										<< benders_sol_KC.iter << ","
-										<< benders_sol_KC.time << ","
-										<< benders_sol_KC.time_master << ","
-										<< benders_sol_KC.time_subproblem << endl;
-						
-						// BA with KCRDK
-						output_BA_KCRDK << "BA,"
-										<< Gamma << ","
-										<< tau << ","
-										<< benders_sol_BA.iter << ","
-										<< benders_sol_BA.time << ","
-										<< benders_sol_BA.time_master << ","
-										<< benders_sol_BA.time_subproblem << endl;
+								// Time master subproblem
+								output_time_m_s << Gamma 								<< ","
+												<< tau 									<< ","
+												<< benders_sol_KCRDKL.time_master 		<< ","
+												<< benders_sol_KCRDKL.time_subproblem 	<< ","
+												<< benders_sol_KCHOGL.time_master 		<< ","
+												<< benders_sol_KCHOGL.time_subproblem 	<< endl;
 
-						output_BA_KCRDK << "KCRDK,"
-										<< Gamma << ","
-										<< tau << ","
-										<< benders_sol_KCRDK.iter << ","
-										<< benders_sol_KCRDK.time << ","
-										<< benders_sol_KCRDK.time_master << ","
-										<< benders_sol_KCRDK.time_subproblem << endl;
-
-						// BA with KCRDKL
-						output_BA_KCRDKL	<< "BA,"
-											<< Gamma << ","
-											<< tau << ","
-											<< benders_sol_BA.iter << ","
-											<< benders_sol_BA.time << ","
-											<< benders_sol_BA.time_master << ","
-											<< benders_sol_BA.time_subproblem << endl;
-									
-						output_BA_KCRDKL	<< "KCRDKL,"
-											<< Gamma << ","
-											<< tau << ","
-											<< benders_sol_KCRDKL.iter << ","
-											<< benders_sol_KCRDKL.time << ","
-											<< benders_sol_KCRDKL.time_master << ","
-											<< benders_sol_KCRDKL.time_subproblem << endl;
-
-						// BA with KCU
-						output_BA_KCU	<< "BA," 
-										<< Gamma << "," 
-										<< tau << "," 
-										<< benders_sol_BA.iter << "," 
-										<< benders_sol_BA.time << ","
-										<< benders_sol_BA.time_master << ","
-										<< benders_sol_BA.time_subproblem << endl;
-
-						output_BA_KCU 	<< "KCU," 
-										<< Gamma << "," 
-										<< tau << "," 
-										<< benders_sol_KCU.iter << "," 
-										<< benders_sol_KCU.time << ","
-										<< benders_sol_KCU.time_master << ","
-										<< benders_sol_KCU.time_subproblem << endl;
-
-						// KCU with KCUD
-						output_BA_KCUD 	<< "KCU," 
-										<< Gamma << "," 
-										<< tau << "," 
-										<< benders_sol_KCU.iter << "," 
-										<< benders_sol_KCU.time << ","
-										<< benders_sol_KCU.time_master << ","
-										<< benders_sol_KCU.time_subproblem << endl;
-
-						output_BA_KCUD	<< "KCUD,"
-										<< Gamma << ","
-										<< tau << ","
-										<< benders_sol_KCUD.iter << ","
-										<< benders_sol_KCUD.time << ","
-										<< benders_sol_KCUD.time_master << ","
-										<< benders_sol_KCUD.time_subproblem << endl;
-
-						// BA with HOG
-						output_BA_HOG	<< "BA," 
-										<< Gamma << "," 
-										<< tau << "," 
-										<< benders_sol_BA.iter << "," 
-										<< benders_sol_BA.time << ","
-										<< benders_sol_BA.time_master << ","
-										<< benders_sol_BA.time_subproblem << endl;
-										
-						output_BA_HOG 	<< "KCHOG," 
-										<< Gamma << "," 
-										<< tau << "," 
-										<< benders_sol_KCHOG.iter << "," 
-										<< benders_sol_KCHOG.time << ","
-										<< benders_sol_KCHOG.time_master << ","
-										<< benders_sol_KCHOG.time_subproblem << endl;
-
-						// BA with HOGL
-						output_BA_HOGL	<< "BA," 
-										<< Gamma << "," 
-										<< tau << "," 
-										<< benders_sol_BA.iter << "," 
-										<< benders_sol_BA.time << ","
-										<< benders_sol_BA.time_master << ","
-										<< benders_sol_BA.time_subproblem << endl;
-										
-						output_BA_HOGL 	<< "KCHOGL," 
-										<< Gamma << "," 
-										<< tau << "," 
-										<< benders_sol_KCHOGL.iter << "," 
-										<< benders_sol_KCHOGL.time << ","
-										<< benders_sol_KCHOGL.time_master << ","
-										<< benders_sol_KCHOGL.time_subproblem << endl;
-
-						// KC with HOG
-						output_KC_HOG 	<< "KC," 
-										<< Gamma << "," 
-										<< tau << "," 
-										<< benders_sol_KC.iter << "," 
-										<< benders_sol_KC.time << ","
-										<< benders_sol_KC.time_master << ","
-										<< benders_sol_KC.time_subproblem << endl;
-										
-						output_KC_HOG 	<< "KCHOG," 
-										<< Gamma << "," 
-										<< tau << "," 
-										<< benders_sol_KCHOG.iter << "," 
-										<< benders_sol_KCHOG.time << ","
-										<< benders_sol_KCHOG.time_master << ","
-										<< benders_sol_KCHOG.time_subproblem << endl;
-
-						// Time master subproblem
-						output_time_m_s << Gamma 								<< ","
-										<< tau 									<< ","
-										<< benders_sol_BA.time_master 			<< ","
-										<< benders_sol_BA.time_subproblem 		<< ","
-										<< benders_sol_KC.time_master 			<< ","
-										<< benders_sol_KC.time_subproblem 		<< ","
-										<< benders_sol_KCRDK.time_master 		<< ","
-										<< benders_sol_KCRDK.time_subproblem 	<< ","
-										<< benders_sol_KCRDKL.time_master 		<< ","
-										<< benders_sol_KCRDKL.time_subproblem 	<< ","
-										<< benders_sol_KCU.time_master 			<< ","
-										<< benders_sol_KCU.time_subproblem 		<< ","
-										<< benders_sol_KCUD.time_master 		<< ","
-										<< benders_sol_KCUD.time_subproblem 	<< ","
-										<< benders_sol_KCHOG.time_master 		<< ","
-										<< benders_sol_KCHOG.time_subproblem 	<< ","
-										<< benders_sol_KCHOGL.time_master 		<< ","
-										<< benders_sol_KCHOGL.time_subproblem 	<< endl;
-
-						// Stats
-						output_stats	<< "BA,"
-										<< Gamma << ","
-										<< tau << ","
-										<< benders_sol_BA.time << ","
-										<< benders_sol_BA.iter << endl;
-
-						output_stats 	<< "KC,"
-										<< Gamma << ","
-										<< tau << ","
-										<< benders_sol_KC.time << ","
-										<< benders_sol_KC.iter << endl;
-
-						output_stats 	<< "KCRDK,"
-										<< Gamma << ","
-										<< tau << ","
-										<< benders_sol_KCRDK.time << ","
-										<< benders_sol_KCRDK.iter << endl;
-
-						output_stats	<< "KCRDKL,"
-										<< Gamma << ","
-										<< tau << ","
-										<< benders_sol_KCRDKL.time << ","
-										<< benders_sol_KCRDKL.iter << endl;
-
-						output_stats 	<< "KCU,"
-										<< Gamma << ","
-										<< tau << ","
-										<< benders_sol_KCU.time << ","
-										<< benders_sol_KCU.iter << endl;
-
-						output_stats 	<< "KCUD,"
-										<< Gamma << ","
-										<< tau << ","
-										<< benders_sol_KCUD.time << ","
-										<< benders_sol_KCUD.iter << endl;
-
-						output_stats 	<< "HOG,"
-										<< Gamma << ","
-										<< tau << ","
-										<< benders_sol_KCHOG.time << ","
-										<< benders_sol_KCHOG.iter << endl;
-						
-						output_stats 	<< "HOGL,"
-										<< Gamma << ","
-										<< tau << ","
-										<< benders_sol_KCHOGL.time << ","
-										<< benders_sol_KCHOGL.iter << endl;
+								// Stats
+								output_stats	<< "KCRDKL,"
+												<< Gamma << ","
+												<< tau << ","
+												<< benders_sol_KCRDKL.time << ","
+												<< benders_sol_KCRDKL.iter << endl;
+								
+								output_stats 	<< "KCHOGL,"
+												<< Gamma << ","
+												<< tau << ","
+												<< benders_sol_KCHOGL.time << ","
+												<< benders_sol_KCHOGL.iter << endl;
+							}
+						}
 					}
 				}
 			}
 		}
 
 		if(use_result_export){
-			output_BA_KC.close();
-			output_BA_KCRDK.close();
-			output_BA_KCRDKL.close();
-			output_BA_KCU.close();
-			output_BA_KCUD.close();
-			output_BA_HOG.close();
-			output_BA_KCRDKL.close();
-			output_KC_HOG.close();
+			output_KCHOGL_KCRDKL.close();
 			output_validation.close();
 			output_time_m_s.close();
 			output_stats.close();
