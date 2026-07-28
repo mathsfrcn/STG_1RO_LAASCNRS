@@ -6,7 +6,7 @@ import os
 def analyze_benders_results(file_path):
     try:
         df = pd.read_csv(file_path, sep=r'[,\s]+', engine='python', 
-                         names=['Method', 'Gamma', 'Tau', 'Iterations', 'Time', 'Time_Master', 'Time_Subproblem'])
+                         names=['Method', 'Gamma', 'Tau', 'nb_path_to_take', 'Iterations', 'Time', 'Time_Master', 'Time_Subproblem'])
     except Exception as e:
         print("Error: reading the file ", e)
         return
@@ -62,8 +62,8 @@ def analyze_benders_results(file_path):
 
 
     ax = axes[0, 1]
-    sns.lineplot(data=df, x='Tau', y='Iterations', hue='Method', marker='o', palette={ref_method: '#d62728', alt_method: '#2ca02c'}, ax=ax)
-    ax.set_title("Impact of tau on averaged iterations")
+    sns.lineplot(data=df, x='Gamma', y='Iterations', hue='Method', marker='o', palette={ref_method: '#d62728', alt_method: '#2ca02c'}, ax=ax)
+    ax.set_title("Impact of Gamma on averaged iterations")
 
     # Heatmaps
     pivot_means = pivot_df.groupby(['Gamma', 'Tau']).mean().reset_index()

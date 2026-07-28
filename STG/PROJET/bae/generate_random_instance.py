@@ -81,10 +81,10 @@ def main(outdir: str, nb_instances: int, nb_periods: int, nb_items: int, margin_
 ##############################
 
 outdir = "toy_instances"
-use_periodicity     = False
+use_periodicity     = True
 start_in_period     = True
 timespan_period     = 13     # ]0, nb_periods[
-nb_instances        = 20
+nb_instances        = 50
 nb_periods          = 52
 nb_items            = 20
 margin_settings     = 10    # Costs will be between 10.00 and 10.99
