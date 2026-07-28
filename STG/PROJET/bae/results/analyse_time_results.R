@@ -8,18 +8,18 @@ df <- df %>%
   rename(
     Benders_BA_master         = time_master_BA,
     Benders_BA_subproblem     = time_subproblem_BA,
-    Benders_KC_master         = time_master_KC,
-    Benders_KC_subproblem     = time_subproblem_KC,
-    Benders_KCRDK_master      = time_master_KCRDK,
-    Benders_KCRDK_subproblem  = time_subproblem_KCRDK,
+    #Benders_KC_master         = time_master_KC,
+    #Benders_KC_subproblem     = time_subproblem_KC,
+    #Benders_KCRDK_master      = time_master_KCRDK,
+    #Benders_KCRDK_subproblem  = time_subproblem_KCRDK,
     Benders_KCRDKL_master   = time_master_KCRDKL,
     Benders_KCRDKL_subproblem = time_subproblem_KCRDKL,
     Benders_KCU_master        = time_master_KCU,
     Benders_KCU_subproblem    = time_subproblem_KCU,
-    Benders_KCUD_master       = time_master_KCUD,
-    Benders_KCUD_subproblem   = time_subproblem_KCUD,
-    Benders_HOG_master        = time_master_KCHOG,
-    Benders_HOG_subproblem    = time_subproblem_KCHOG,
+    #Benders_KCUD_master       = time_master_KCUD,
+    #Benders_KCUD_subproblem   = time_subproblem_KCUD,
+    #Benders_HOG_master        = time_master_KCHOG,
+    #Benders_HOG_subproblem    = time_subproblem_KCHOG,
     Benders_HOGL_master        = time_master_KCHOGL,
     Benders_HOGL_subproblem    = time_subproblem_KCHOGL
   )
@@ -35,13 +35,13 @@ df_long <- df %>%
 # Proportion of time spent in each
 df_summary <- df %>%
   mutate(
-    ratio_Benders = Benders_BA_master / (Benders_BA_master + Benders_BA_subproblem),
-    ratio_KC = Benders_KC_master / (Benders_KC_master + Benders_KC_subproblem),
+    ratio_BA = Benders_BA_master / (Benders_BA_master + Benders_BA_subproblem),
+    #ratio_KC = Benders_KC_master / (Benders_KC_master + Benders_KC_subproblem),
     ratio_KCU = Benders_KCU_master / (Benders_KCU_master + Benders_KCU_subproblem),
-    ratio_KCUD = Benders_KCUD_master / (Benders_KCUD_master + Benders_KCUD_subproblem),
-    ratio_KCRDK = Benders_KCRDK_master / (Benders_KCRDK_master + Benders_KCRDK_subproblem),
+    #ratio_KCUD = Benders_KCUD_master / (Benders_KCUD_master + Benders_KCUD_subproblem),
+    #ratio_KCRDK = Benders_KCRDK_master / (Benders_KCRDK_master + Benders_KCRDK_subproblem),
     ratio_KCRDKL = Benders_KCRDKL_master / (Benders_KCRDKL_master + Benders_KCRDKL_subproblem),
-    ratio_HOG = Benders_HOG_master / (Benders_HOG_master + Benders_HOG_subproblem),
+    #ratio_HOG = Benders_HOG_master / (Benders_HOG_master + Benders_HOG_subproblem),
     ratio_HOGL = Benders_HOGL_master / (Benders_HOGL_master + Benders_HOGL_subproblem)
   )
 
@@ -108,7 +108,7 @@ p4 <- ggplot(df_long, aes(x = Gamma, y = Time, fill = Component)) +
   facet_grid(tau_group ~ Method) +
   theme_minimal() +
   labs(
-    title = expression("Time allocation: Interaction between " * Gamma * " et " * tau),
+    title = expression("Time allocation relative to " * Gamma),
     x = expression(Gamma),
     y = "Cumulative mean time (seconds)"
   ) +
