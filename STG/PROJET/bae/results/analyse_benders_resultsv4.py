@@ -6,7 +6,7 @@ import os
 def analyze_benders_results(file_path):
     try:
         df = pd.read_csv(file_path, sep=r'[,\s]+', engine='python', 
-                         names=['Method', 'Gamma', 'Tau', 'nb_path_to_take', 'limit_dfs', 'Iterations', 'Time', 'Time_Master', 'Time_Subproblem'])
+                         names=['Method', 'Gamma', 'Tau', 'nb_path', 'limit_dfs', 'Iterations', 'Time', 'Time_Master', 'Time_Subproblem'])
     except Exception as e:
         print("Error: reading the file ", e)
         return
@@ -39,7 +39,7 @@ def analyze_benders_results(file_path):
 
     sns.set_theme(style='whitegrid')
 
-    # Fig.01
+    # Fig.01 - Dashboard Principal
     fig1 = plt.figure(figsize=(16, 12))
     fig1.canvas.manager.set_window_title(f"Benders decomposition - {file_name}")
     axes = fig1.subplots(2, 2)
@@ -47,9 +47,6 @@ def analyze_benders_results(file_path):
 
     # Scatter Plot
     ax = axes[0, 0]
-
-    pivot_df['Speedup'] = pivot_df[f'Time_{ref_method}'] / pivot_df[f'Time_{alt_method}']
-    
     sns.lineplot(data=pivot_df, x='Gamma', y='Speedup', hue='Tau', 
                  marker='o', palette='tab10', linewidth=2, ax=ax)
     
@@ -60,13 +57,12 @@ def analyze_benders_results(file_path):
     ax.fill_between(pivot_df['Gamma'].unique(), 1.0, pivot_df['Speedup'].max() * 1.1, color='green', alpha=0.05, label=f'Victory zone {alt_method}')
     ax.legend(title='Tau')
 
-
     ax = axes[0, 1]
     sns.lineplot(data=df, x='Gamma', y='Iterations', hue='Method', marker='o', palette={ref_method: '#d62728', alt_method: '#2ca02c'}, ax=ax)
     ax.set_title("Impact of Gamma on averaged iterations")
 
     # Heatmaps
-    pivot_means = pivot_df.groupby(['Gamma', 'Tau']).mean().reset_index()
+    pivot_means = pivot_df.groupby(['Gamma', 'Tau']).mean(numeric_only=True).reset_index()
     
     ax = axes[1, 0]
     heat_time = pivot_means.pivot(index="Gamma", columns="Tau", values="Time_Saved")
@@ -83,7 +79,7 @@ def analyze_benders_results(file_path):
     output_image_1 = os.path.join(target_directory, f"{base_name_no_ext}_{ref_method}_vs_{alt_method}_dashboard.png")
     fig1.savefig(output_image_1, dpi=300, bbox_inches='tight')
 
-    # Fig.02
+    # Fig.02 - Dispersion
     fig2 = plt.figure(figsize=(12, 8))
     fig2.canvas.manager.set_window_title(f"Dispersion Analysis - {file_name}")
     ax2 = fig2.add_subplot(111)
@@ -103,7 +99,7 @@ def analyze_benders_results(file_path):
     output_image_2 = os.path.join(target_directory, f"{base_name_no_ext}_{ref_method}_vs_{alt_method}_dispersion.png")
     fig2.savefig(output_image_2, dpi=300, bbox_inches='tight')
 
-    # Fig.03
+    # Fig.03 - Boxplots
     fig3 = plt.figure(figsize=(16, 8))
     fig3.canvas.manager.set_window_title(f"Boxplot Analysis - {file_name}")
     ax3 = fig3.add_subplot(111)
@@ -122,8 +118,46 @@ def analyze_benders_results(file_path):
     output_image_3 = os.path.join(target_directory, f"{base_name_no_ext}_{ref_method}_vs_{alt_method}_boxplots.png")
     fig3.savefig(output_image_3, dpi=300, bbox_inches='tight')
 
-    print(f"Dashboards saved under:\n- {output_image_1}\n- {output_image_2}\n- {output_image_3}")
-    print("Succes: Generation complete")
+    # ==========================================
+    # Fig.04 - Impact des paramètres DFS
+    # ==========================================
+    fig4 = plt.figure(figsize=(16, 12))
+    fig4.canvas.manager.set_window_title(f"DFS Parameters Analysis - {file_name}")
+    axes4 = fig4.subplots(2, 2)
+    fig4.suptitle(f'Impact of nb_path and limit_dfs on Performance ({file_name})', fontsize=16, fontweight='bold')
+    palette_colors = {ref_method: '#d62728', alt_method: '#2ca02c'}
+
+    # 1. Temps en fonction de nb_path
+    sns.lineplot(data=df, x='nb_path', y='Time', hue='Method', marker='o', palette=palette_colors, ax=axes4[0, 0])
+    axes4[0, 0].set_title("Evolution of Time depending on nb_path")
+    axes4[0, 0].set_xlabel("Number of paths (nb_path)")
+    axes4[0, 0].set_ylabel("Time (s)")
+
+    # 2. Itérations en fonction de nb_path
+    sns.lineplot(data=df, x='nb_path', y='Iterations', hue='Method', marker='o', palette=palette_colors, ax=axes4[0, 1])
+    axes4[0, 1].set_title("Evolution of Iterations depending on nb_path")
+    axes4[0, 1].set_xlabel("Number of paths (nb_path)")
+    axes4[0, 1].set_ylabel("Iterations")
+
+    # 3. Temps en fonction de limit_dfs
+    sns.lineplot(data=df, x='limit_dfs', y='Time', hue='Method', marker='o', palette=palette_colors, ax=axes4[1, 0])
+    axes4[1, 0].set_title("Evolution of Time depending on limit_dfs")
+    axes4[1, 0].set_xlabel("DFS Limit (limit_dfs)")
+    axes4[1, 0].set_ylabel("Time (s)")
+
+    # 4. Itérations en fonction de limit_dfs
+    sns.lineplot(data=df, x='limit_dfs', y='Iterations', hue='Method', marker='o', palette=palette_colors, ax=axes4[1, 1])
+    axes4[1, 1].set_title("Evolution of Iterations depending on limit_dfs")
+    axes4[1, 1].set_xlabel("DFS Limit (limit_dfs)")
+    axes4[1, 1].set_ylabel("Iterations")
+
+    fig4.tight_layout()
+    fig4.subplots_adjust(top=0.90)
+    output_image_4 = os.path.join(target_directory, f"{base_name_no_ext}_{ref_method}_vs_{alt_method}_dfs_params.png")
+    fig4.savefig(output_image_4, dpi=300, bbox_inches='tight')
+
+    print(f"Dashboards saved under:\n- {output_image_1}\n- {output_image_2}\n- {output_image_3}\n- {output_image_4}")
+    print("Success: Generation complete")
 
 def main():
     root = tk.Tk()

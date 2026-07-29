@@ -3826,8 +3826,6 @@ int main(int argc, const char* argv[]){
 			
 							iterBA = 0, iterKC = 0, iterKCRDK = 0, iterKCRDKL = 0, iterKCU = 0, iterKCUD = 0, iterKCHOG = 0, iterKCHOGL = 0;
 							timeBA = 0, timeKC = 0, timeKCRDK = 0, timeKCRDKL = 0, timeKCU = 0, timeKCUD = 0, timeKCHOG = 0, timeKCHOGL = 0;
-
-			
 							
 							// KC
 							approx_coeff = float(tau)/100;
@@ -3859,11 +3857,7 @@ int main(int argc, const char* argv[]){
 							if(use_result_export){
 								// Validation file
 								output_validation << filename << " | " << Gamma << " | " << tau << " | " << validation_status << endl;
-							
-								
-
-								
-											
+						
 								output_KCHOGL_KCRDKL	<< "KCRDKL,"
 														<< Gamma << ","
 														<< tau << ","
@@ -3896,12 +3890,16 @@ int main(int argc, const char* argv[]){
 								output_stats	<< "KCRDKL,"
 												<< Gamma << ","
 												<< tau << ","
+												<< nb_path_to_select << ","
+												<< limit_number_paths << ","
 												<< benders_sol_KCRDKL.time << ","
 												<< benders_sol_KCRDKL.iter << endl;
 								
 								output_stats 	<< "KCHOGL,"
 												<< Gamma << ","
 												<< tau << ","
+												<< nb_path_to_select << ","
+												<< limit_number_paths << ","
 												<< benders_sol_KCHOGL.time << ","
 												<< benders_sol_KCHOGL.iter << endl;
 							}
