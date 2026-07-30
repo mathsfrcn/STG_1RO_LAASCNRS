@@ -1,0 +1,7 @@
+Gamma, tau, time_master_BA, time_subproblem_BA, time_master_KC, time_subproblem_KC, time_master_KCRDK, time_subproblem_KCRDK, time_master_KCRDKL, time_subproblem_KCRDKL, time_master_KCU, time_subproblem_KCU, time_master_KCUD, time_subproblem_KCUD, time_master_KCHOG, time_subproblem_KCHOG, time_master_KCHOGL, time_subproblem_KCHOGL
+1,100,0.007092,0.000169
+21,100,0.060246,0.006325
+41,100,0.265912,0.032511
+61,100,0.469733,0.071125
+81,100,0.99931,0.115268
+101,100,1.74518,0.214407
