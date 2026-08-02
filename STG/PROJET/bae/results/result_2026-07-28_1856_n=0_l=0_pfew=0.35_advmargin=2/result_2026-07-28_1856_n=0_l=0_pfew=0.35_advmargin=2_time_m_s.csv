@@ -1,4 +1,4 @@
-Gamma, tau, nb_path_to_select, limit_number_paths, time_master_KCRDKL, time_subproblem_KCRDKL, time_master_KCHOGL, time_subproblem_KCHOGL
+Gamma, tau, time_master_KCRDKL, time_subproblem_KCRDKL, time_master_KCHOGL, time_subproblem_KCHOGL
 1,80,0.007836,0.000811,0.004398,0.00084
 1,80,0.00428,0.001321,0.004564,0.001776
 1,80,0.004091,0.002157,0.004239,0.002498

@@ -2800,7 +2800,7 @@ int main(int argc, const char* argv[]){
 		cout << "Recording of results in: " << folder_path << endl;
 	}
 
-	int test = 77;
+	int test = 3;
 
 	// Test BA KCU pour N=1
 	if(test == 1){
@@ -3726,24 +3726,20 @@ int main(int argc, const char* argv[]){
 			output_stats.close();
 		}
 	} else if(test == 3){
-		int limit_number_paths = 500;			// Used for the DFS algo
+		int limit_number_paths = 100;			// Used for the DFS algo
 		int nb_path_to_select = 2;
 
-
 		ostringstream oss_KCHOGL_KCRDKL;
-
 		ostringstream oss_validation;
 		ostringstream oss_time_m_s;
 		ostringstream oss_stats;
 		
 		oss_KCHOGL_KCRDKL << folder_path << experience_name << "_KCHOGL_KCRDKL.csv";
-		
 		oss_validation  << folder_path << experience_name << "_validation.txt";
 		oss_time_m_s    << folder_path << experience_name << "_time_m_s.csv";
 		oss_stats		<< folder_path << experience_name << "_stats.csv";
 
 		ofstream output_KCHOGL_KCRDKL(oss_KCHOGL_KCRDKL.str());
-		
 		ofstream output_validation;
 		ofstream output_time_m_s(oss_time_m_s.str());
 		ofstream output_stats(oss_stats.str());
@@ -3782,17 +3778,15 @@ int main(int argc, const char* argv[]){
 
 		// Security
 		if(nbInst == 0){
-			cerr << "ERROR: No valid instance file found. Check the path." << endl;
+			cerr << "Error: No valid instance file found. Check the path." << endl;
 			return -1;
 		} else{
-			cout << "Success : " << nbInst << " files found in the instances folder." << endl;
+			cout << "Success: " << nbInst << " files found in the instances folder." << endl;
 		}
 
 		Instance inst;
 		string filename;
-		int seed = 31415;
-		srand (seed);
-
+		
 		for(int i = 0; i < total_files; i++ ){
 			if(file_list[i] == "." || file_list[i] == "..") continue;
 
@@ -3818,29 +3812,18 @@ int main(int argc, const char* argv[]){
 				}
 			
 				for(int tau = 80; tau < 105; tau += 10){
-
 					for(int nb_path_to_select = 3; nb_path_to_select < 12; nb_path_to_select += 2){
-
-						for(int limit_number_paths = 500; limit_number_paths < 2000; limit_number_paths += 500){
-			
-							iterBA = 0, iterKC = 0, iterKCRDK = 0, iterKCRDKL = 0, iterKCU = 0, iterKCUD = 0, iterKCHOG = 0, iterKCHOGL = 0;
-							timeBA = 0, timeKC = 0, timeKCRDK = 0, timeKCRDKL = 0, timeKCU = 0, timeKCUD = 0, timeKCHOG = 0, timeKCHOGL = 0;
-							
+						for(int limit_number_paths = 100; limit_number_paths < 1500; limit_number_paths += 100){
 							// KC
 							approx_coeff = float(tau)/100;
-
 							
 							// KCRDKL (KCRDK Lexicographical)
 							benders_sol_KCRDKL = KC_benders_Main(inst, approx_coeff, KC_Method::RDKL, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
-							iterKCRDKL += benders_sol_KCRDKL.iter;
-							timeKCRDKL += benders_sol_KCRDKL.time;
 							cout << "\nKCRDKL-done (Obj :" << benders_sol_KCRDKL.obj_value << ")" <<endl;
 							
 							
 							// KCHOGL (HOG Lexicographical)
 							benders_sol_KCHOGL = KC_benders_Main(inst, approx_coeff, KC_Method::HOGL, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
-							iterKCHOGL += benders_sol_KCHOGL.iter;
-							timeKCHOGL += benders_sol_KCHOGL.time;
 							cout << "\nKCHOGL-done (Obj :" << benders_sol_KCHOGL.obj_value << ")"<< endl;
 
 							// Quality control of the solution
@@ -3916,6 +3899,7 @@ int main(int argc, const char* argv[]){
 			output_time_m_s.close();
 			output_stats.close();
 		}
+
 	} else if(test == 4){
 		ostringstream oss_BA_KC;
 		ostringstream oss_BA_KCRDK;
@@ -4310,7 +4294,8 @@ int main(int argc, const char* argv[]){
 			output_validation.close();
 			output_time_m_s.close();
 			output_stats.close();
-		}	
+		}
+		
 	} else {
 		ostringstream oss_BA_KC;
 		ostringstream oss_BA_KCRDK;

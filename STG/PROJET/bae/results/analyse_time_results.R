@@ -6,16 +6,18 @@ df <- test
 
 df <- df %>%
   rename(
-    Benders_BA_master         = time_master_BA,
-    Benders_BA_subproblem     = time_subproblem_BA,
+    #limit_dfs = limit_number_paths,
+    nb_path = nb_path_to_select,
+    #Benders_BA_master         = time_master_BA,
+    #Benders_BA_subproblem     = time_subproblem_BA,
     #Benders_KC_master         = time_master_KC,
     #Benders_KC_subproblem     = time_subproblem_KC,
     #Benders_KCRDK_master      = time_master_KCRDK,
     #Benders_KCRDK_subproblem  = time_subproblem_KCRDK,
     Benders_KCRDKL_master   = time_master_KCRDKL,
     Benders_KCRDKL_subproblem = time_subproblem_KCRDKL,
-    Benders_KCU_master        = time_master_KCU,
-    Benders_KCU_subproblem    = time_subproblem_KCU,
+    #Benders_KCU_master        = time_master_KCU,
+    #Benders_KCU_subproblem    = time_subproblem_KCU,
     #Benders_KCUD_master       = time_master_KCUD,
     #Benders_KCUD_subproblem   = time_subproblem_KCUD,
     #Benders_HOG_master        = time_master_KCHOG,
@@ -35,9 +37,9 @@ df_long <- df %>%
 # Proportion of time spent in each
 df_summary <- df %>%
   mutate(
-    ratio_BA = Benders_BA_master / (Benders_BA_master + Benders_BA_subproblem),
+    #ratio_BA = Benders_BA_master / (Benders_BA_master + Benders_BA_subproblem),
     #ratio_KC = Benders_KC_master / (Benders_KC_master + Benders_KC_subproblem),
-    ratio_KCU = Benders_KCU_master / (Benders_KCU_master + Benders_KCU_subproblem),
+    #ratio_KCU = Benders_KCU_master / (Benders_KCU_master + Benders_KCU_subproblem),
     #ratio_KCUD = Benders_KCUD_master / (Benders_KCUD_master + Benders_KCUD_subproblem),
     #ratio_KCRDK = Benders_KCRDK_master / (Benders_KCRDK_master + Benders_KCRDK_subproblem),
     ratio_KCRDKL = Benders_KCRDKL_master / (Benders_KCRDKL_master + Benders_KCRDKL_subproblem),
@@ -114,9 +116,62 @@ p4 <- ggplot(df_long, aes(x = Gamma, y = Time, fill = Component)) +
   ) +
   theme(legend.position = "bottom")
 
+# Fig.05. Temps cumulé par rapport à nb_path (Aires empilées)
+p5 <- ggplot(df_long, aes(x = nb_path, y = Time, fill = Component)) +
+  geom_area(position = "stack", stat = "summary", fun = mean, alpha = 0.8) +
+  facet_wrap(~ Method) +
+  theme_minimal() +
+  labs(
+    title = "Temps cumulé selon nb_path",
+    x = "Nombre de chemins (nb_path)",
+    y = "Temps moyen cumulé (s)"
+  ) +
+  theme(legend.position = "bottom")
+
+# Fig.06. Temps cumulé par rapport à limit_dfs (Aires empilées)
+p6 <- ggplot(df_long, aes(x = limit_dfs, y = Time, fill = Component)) +
+  geom_area(position = "stack", stat = "summary", fun = mean, alpha = 0.8) +
+  facet_wrap(~ Method) +
+  theme_minimal() +
+  labs(
+    title = "Temps cumulé selon limit_dfs",
+    x = "Limite DFS (limit_dfs)",
+    y = "Temps moyen cumulé (s)"
+  ) +
+  theme(legend.position = "bottom")
+
+# Fig.07. Évolution lissée selon nb_path (Courbes séparées pour voir les croisements)
+p7 <- ggplot(df_long, aes(x = nb_path, y = Time, color = Component)) +
+  geom_smooth(method = "loess", se = FALSE, linewidth = 1.2) +
+  facet_wrap(~ Method) +
+  theme_bw() +
+  labs(
+    title = "Évolution lissée selon nb_path",
+    x = "Nombre de chemins (nb_path)",
+    y = "Temps moyen (s)",
+    color = "Component"
+  ) +
+  theme(legend.position = "bottom")
+
+# Fig.08. Évolution lissée selon limit_dfs (Courbes séparées)
+p8 <- ggplot(df_long, aes(x = limit_dfs, y = Time, color = Component)) +
+  geom_smooth(method = "loess", se = FALSE, linewidth = 1.2) +
+  facet_wrap(~ Method) +
+  theme_bw() +
+  labs(
+    title = "Évolution lissée selon limit_dfs",
+    x = "Limite DFS (limit_dfs)",
+    y = "Temps moyen (s)",
+    color = "Component"
+  ) +
+  theme(legend.position = "bottom")
+
 # Display
 print(p1)
 print(p2)
 print(p3)
 print(p4)
+print(p5)
+print(p6)
+print(p7)
 
