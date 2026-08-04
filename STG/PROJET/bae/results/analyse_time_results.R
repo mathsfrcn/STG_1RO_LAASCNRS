@@ -6,7 +6,7 @@ df <- test
 
 df <- df %>%
   rename(
-    #limit_dfs = limit_number_paths,
+    limit_dfs = limit_number_paths,
     nb_path = nb_path_to_select,
     #Benders_BA_master         = time_master_BA,
     #Benders_BA_subproblem     = time_subproblem_BA,
@@ -18,8 +18,8 @@ df <- df %>%
     Benders_KCRDKL_subproblem = time_subproblem_KCRDKL,
     #Benders_KCU_master        = time_master_KCU,
     #Benders_KCU_subproblem    = time_subproblem_KCU,
-    #Benders_KCUD_master       = time_master_KCUD,
-    #Benders_KCUD_subproblem   = time_subproblem_KCUD,
+    Benders_KCUD_master       = time_master_KCUD,
+    Benders_KCUD_subproblem   = time_subproblem_KCUD,
     #Benders_HOG_master        = time_master_KCHOG,
     #Benders_HOG_subproblem    = time_subproblem_KCHOG,
     Benders_HOGL_master        = time_master_KCHOGL,
@@ -40,7 +40,7 @@ df_summary <- df %>%
     #ratio_BA = Benders_BA_master / (Benders_BA_master + Benders_BA_subproblem),
     #ratio_KC = Benders_KC_master / (Benders_KC_master + Benders_KC_subproblem),
     #ratio_KCU = Benders_KCU_master / (Benders_KCU_master + Benders_KCU_subproblem),
-    #ratio_KCUD = Benders_KCUD_master / (Benders_KCUD_master + Benders_KCUD_subproblem),
+    ratio_KCUD = Benders_KCUD_master / (Benders_KCUD_master + Benders_KCUD_subproblem),
     #ratio_KCRDK = Benders_KCRDK_master / (Benders_KCRDK_master + Benders_KCRDK_subproblem),
     ratio_KCRDKL = Benders_KCRDKL_master / (Benders_KCRDKL_master + Benders_KCRDKL_subproblem),
     #ratio_HOG = Benders_HOG_master / (Benders_HOG_master + Benders_HOG_subproblem),

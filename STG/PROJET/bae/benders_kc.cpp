@@ -2800,7 +2800,7 @@ int main(int argc, const char* argv[]){
 		cout << "Recording of results in: " << folder_path << endl;
 	}
 
-	int test = 3;
+	int test = 4;
 
 	// Test BA KCU pour N=1
 	if(test == 1){
@@ -3346,7 +3346,7 @@ int main(int argc, const char* argv[]){
 				}
 			
 				//for(int tau = 0; tau < 110; tau += 20){
-				for(int limit_number_paths = 500; limit_number_paths < 2000; limit_number_paths += 500){
+				for(int limit_number_paths = 100; limit_number_paths < 1500; limit_number_paths += 100){
 
 					int tau = 100;
 
@@ -3900,7 +3900,203 @@ int main(int argc, const char* argv[]){
 			output_stats.close();
 		}
 
-	} else if(test == 4){
+	} else if(test== 4){
+		ostringstream oss_HOG_HOGL;
+		ostringstream oss_BA_KCRDK;
+		ostringstream oss_BA_KCRDKL;
+		ostringstream oss_BA_KCU;
+		ostringstream oss_KCU_KCUD;
+		ostringstream oss_BA_HOG;
+		ostringstream oss_BA_HOGL;
+		ostringstream oss_KC_HOG;
+		ostringstream oss_validation;
+		ostringstream oss_time_m_s;
+		ostringstream oss_stats;
+		oss_HOG_HOGL 	   	<< folder_path << experience_name << "_HOG_HOGL.csv";
+		oss_BA_KCRDK    << folder_path << experience_name << "_BA_KCRDK.csv";
+		oss_BA_KCRDKL   << folder_path << experience_name << "_BA_KCRDKL.csv";
+		oss_BA_KCU		<< folder_path << experience_name << "_BA_KCU.csv";
+		oss_KCU_KCUD	<< folder_path << experience_name << "_KCU_KCUD.csv";
+		oss_BA_HOG 	  	<< folder_path << experience_name << "_BA_HOG.csv";
+		oss_BA_HOGL		<< folder_path << experience_name << "_BA_HOGL.csv";
+		oss_KC_HOG   	<< folder_path << experience_name << "_KC_HOG.csv";
+		oss_validation  << folder_path << experience_name << "_validation.txt";
+		oss_time_m_s    << folder_path << experience_name << "_time_m_s.csv";
+		oss_stats		<< folder_path << experience_name << "_stats.csv";
+		ofstream output_HOG_HOGL(oss_HOG_HOGL.str());
+		ofstream output_BA_KCRDK(oss_BA_KCRDK.str());
+		ofstream output_BA_KCRDKL(oss_BA_KCRDKL.str());
+		ofstream output_BA_KCU(oss_BA_KCU.str());
+		ofstream output_BA_KCUD(oss_KCU_KCUD.str());
+		ofstream output_BA_HOG(oss_BA_HOG.str());
+		ofstream output_BA_HOGL(oss_BA_HOGL.str());
+		ofstream output_KC_HOG(oss_KC_HOG.str());
+		ofstream output_validation;
+		ofstream output_time_m_s(oss_time_m_s.str());
+		ofstream output_stats(oss_stats.str());
+
+		if(use_result_export){
+			output_validation.open(oss_validation.str());
+			output_validation << "Fichier 			| Gamma 	| tau 	| 	Validation\n";
+			output_validation << "------------------------------------------------------------\n";
+			output_time_m_s << "Gamma, tau, nb_path_to_select, limit_number_paths, time_master_KCHOG, time_subproblem_KCHOG, time_master_KCHOGL, time_subproblem_KCHOGL\n";
+		}
+
+		//================================================================= TEMPORAIRE ===========================================================================
+
+		vector<string> file_list;
+		int choice_instances = 3;
+		
+		if(choice_instances == 1){
+			file_list = list_dir("./parsed_large_instances/");
+		} else if(choice_instances == 2){
+			file_list = list_dir("./test/");
+		} else if(choice_instances == 3){
+			file_list = list_dir("./toy_instances/");
+		} else{
+			file_list = list_dir("./hand_benders_instances/parsed_instances/");
+		}
+		
+		//========================================================================================================================================================
+
+		int total_files = file_list.size();
+		int nbInst = 0;
+		for(int i = 0; i < total_files; i++){
+			if(file_list[i] != "." && file_list[i] != ".."){
+				nbInst++;
+			}
+		}
+
+		// Security
+		if(nbInst == 0){
+			cerr << "Error: No valid instance file found. Check the path." << endl;
+			return -1;
+		} else{
+			cout << "Success: " << nbInst << " files found in the instances folder." << endl;
+		}
+
+		Instance inst;
+		string filename;
+		int seed = 31415;
+		srand (seed);
+
+		for(int i = 0; i < total_files; i++ ){
+			if(file_list[i] == "." || file_list[i] == "..") continue;
+
+			if(choice_instances == 1){
+				filename = "parsed_large_instances/" + file_list[i];
+			} else if(choice_instances == 2){
+				filename = "test/" + file_list[i];
+			} else if(choice_instances == 3){
+				filename = "toy_instances/" + file_list[i];
+			} else{
+				filename = "hand_benders_instances/parsed_instances/" + file_list[i];
+			}
+
+			for(int Gamma = 1; Gamma < 110; Gamma += 10){
+			
+				bool random = false;
+				if(choice_instances == 4){
+					inst = read_hand_instance(filename, 2);
+				} else if(!random){
+					inst = read_instance_py(filename, Gamma, adv_margin);
+				} else{
+					inst = read_instance_randomized(filename, Gamma, read_instance_rd_lb, read_instance_rd_ub, adv_margin);
+				}
+			
+				for(int tau = 80; tau < 105; tau += 10){
+					for(int nb_path_to_select = 3; nb_path_to_select < 12; nb_path_to_select += 2){
+						for(int limit_number_paths = 100; limit_number_paths < 1500; limit_number_paths += 100){
+							
+							cout << "\n" << filename << " " << Gamma << " " << tau << " " << endl;
+
+							// KCHOG
+							benders_sol_KCHOG = KC_benders_Main(inst, approx_coeff, KC_Method::HOG, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
+							iterKCHOG += benders_sol_KCHOG.iter;
+							timeKCHOG += benders_sol_KCHOG.time;
+							cout << "\nKCHOG--done (Obj :" << benders_sol_KCHOG.obj_value << ")"<< endl;
+
+							// KCHOGL (HOG Lexicographical)
+							benders_sol_KCHOGL = KC_benders_Main(inst, approx_coeff, KC_Method::HOGL, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
+							iterKCHOGL += benders_sol_KCHOGL.iter;
+							timeKCHOGL += benders_sol_KCHOGL.time;
+							cout << "\nKCHOGL-done (Obj :" << benders_sol_KCHOGL.obj_value << ")"<< endl;
+				
+							validation_status = "Valid quality";
+							
+
+							// We export the exact time for each instance and each parameters
+							if(use_result_export){
+								// Validation file
+								output_validation << filename << " | " << Gamma << " | " << tau << " | " << validation_status << endl;
+											
+								output_HOG_HOGL	<< "KCHOG," 
+												<< Gamma << "," 
+												<< tau << ","
+												<< nb_path_to_select << ","
+												<< limit_number_paths << ","
+												<< benders_sol_KCHOG.iter << "," 
+												<< benders_sol_KCHOG.time << ","
+												<< benders_sol_KCHOG.time_master << ","
+												<< benders_sol_KCHOG.time_subproblem << endl;
+
+								output_HOG_HOGL	<< "KCHOGL," 
+												<< Gamma << "," 
+												<< tau << ","
+												<< nb_path_to_select << ","
+												<< limit_number_paths << ","
+												<< benders_sol_KCHOGL.iter << "," 
+												<< benders_sol_KCHOGL.time << ","
+												<< benders_sol_KCHOGL.time_master << ","
+												<< benders_sol_KCHOGL.time_subproblem << endl;
+
+								// Time master subproblem
+								output_time_m_s << Gamma 								<< ","
+												<< tau 									<< ","
+												<< nb_path_to_select 					<< ","
+												<< limit_number_paths 					<< ","										
+												<< benders_sol_KCHOG.time_master 		<< ","
+												<< benders_sol_KCHOG.time_subproblem 	<< ","
+												<< benders_sol_KCHOGL.time_master 		<< ","
+												<< benders_sol_KCHOGL.time_subproblem 	<< endl;
+
+								// Stats
+								output_stats 	<< "KCHOG,"
+												<< Gamma << ","
+												<< tau << ","
+												<< nb_path_to_select << ","
+												<< limit_number_paths << ","
+												<< benders_sol_KCHOG.time << ","
+												<< benders_sol_KCHOG.iter << endl;
+								
+								output_stats 	<< "KCHOGL,"
+												<< Gamma << ","
+												<< tau << ","
+												<< nb_path_to_select << ","
+												<< limit_number_paths << ","
+												<< benders_sol_KCHOGL.time << ","
+												<< benders_sol_KCHOGL.iter << endl;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if(use_result_export){
+
+			output_BA_KCRDK.close();
+			output_BA_KCRDKL.close();
+			output_BA_KCU.close();
+			output_BA_KCUD.close();
+			output_BA_HOG.close();
+			output_BA_KCRDKL.close();
+			output_KC_HOG.close();
+			output_validation.close();
+			output_time_m_s.close();
+			output_stats.close();
+		}
+	} else if(test == 5){
 		ostringstream oss_BA_KC;
 		ostringstream oss_BA_KCRDK;
 		ostringstream oss_BA_KCRDKL;
