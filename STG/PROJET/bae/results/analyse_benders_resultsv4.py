@@ -43,7 +43,7 @@ def analyze_benders_results(file_path):
     fig1 = plt.figure(figsize=(16, 12))
     fig1.canvas.manager.set_window_title(f"Benders decomposition - {file_name}")
     axes = fig1.subplots(2, 2)
-    fig1.suptitle(f'Comparative Analysis: {ref_method} VS {alt_method} ({file_name})', fontsize=16, fontweight='bold')
+    fig1.suptitle(f'Comparative Analysis: {ref_method} VS {alt_method}', fontsize=16, fontweight='bold')
 
     # Scatter Plot
     ax = axes[0, 0]
@@ -89,9 +89,9 @@ def analyze_benders_results(file_path):
                  marker='o', palette='tab10', linewidth=2, ax=ax2)
 
     ax2.axhline(1.0, color='red', linestyle='--', label='Egalite (Speedup = 1)')
-    ax2.set_title(f"Speedup Dispersion: {ref_method} vs {alt_method}\n(Line = Media | Shaded area = Interquartile range Q1–Q3)", fontsize=14)
-    ax2.set_xlabel("Uncertainty budget", fontsize=12)
-    ax2.set_ylabel(f"Ratio Speedup (T_ref / T_alt)", fontsize=12)
+    ax2.set_title(f"Speedup Dispersion: {ref_method} vs {alt_method}\n(Line = Media | Shaded area = Interquartile range Q1–Q3)", fontsize=16)
+    ax2.set_xlabel("Uncertainty budget", fontsize=16)
+    ax2.set_ylabel(f"Ratio Speedup (T_ref / T_alt)", fontsize=16)
     
     ax2.legend(title='Tolerance', bbox_to_anchor=(1.05, 1), loc='upper left')
 
@@ -108,9 +108,9 @@ def analyze_benders_results(file_path):
                 palette='tab10', width=0.7, ax=ax3, fliersize=4)
 
     ax3.axhline(1.0, color='red', linestyle='--', linewidth=2, label='Egalite (Speedup = 1)')
-    ax3.set_title(f"Seepup Distribution: {ref_method} vs {alt_method}", fontsize=14, fontweight='bold')
-    ax3.set_xlabel("Uncertainty budget", fontsize=12)
-    ax3.set_ylabel(f"Ratio Speedup (T_{ref_method} / T_{alt_method})", fontsize=12)
+    ax3.set_title(f"Seepup Distribution: {ref_method} vs {alt_method}", fontsize=16, fontweight='bold')
+    ax3.set_xlabel("Uncertainty budget", fontsize=16)
+    ax3.set_ylabel(f"Ratio Speedup (T_{ref_method} / T_{alt_method})", fontsize=16)
     
     ax3.legend(title='Tolerance', bbox_to_anchor=(1.01, 1), loc='upper left')
 
@@ -118,9 +118,6 @@ def analyze_benders_results(file_path):
     output_image_3 = os.path.join(target_directory, f"{base_name_no_ext}_{ref_method}_vs_{alt_method}_boxplots.png")
     fig3.savefig(output_image_3, dpi=300, bbox_inches='tight')
 
-    # ==========================================
-    # Fig.04 - Impact des paramètres DFS
-    # ==========================================
     fig4 = plt.figure(figsize=(16, 12))
     fig4.canvas.manager.set_window_title(f"DFS Parameters Analysis - {file_name}")
     axes4 = fig4.subplots(2, 2)
