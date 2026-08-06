@@ -2,7 +2,7 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 
-df <- test
+df <- datas
 
 df <- df %>%
   rename(
@@ -18,8 +18,8 @@ df <- df %>%
     Benders_KCRDKL_subproblem = time_subproblem_KCRDKL,
     #Benders_KCU_master        = time_master_KCU,
     #Benders_KCU_subproblem    = time_subproblem_KCU,
-    Benders_KCUD_master       = time_master_KCUD,
-    Benders_KCUD_subproblem   = time_subproblem_KCUD,
+    #Benders_KCUD_master       = time_master_KCUD,
+    #Benders_KCUD_subproblem   = time_subproblem_KCUD,
     #Benders_HOG_master        = time_master_KCHOG,
     #Benders_HOG_subproblem    = time_subproblem_KCHOG,
     Benders_HOGL_master        = time_master_KCHOGL,
@@ -40,7 +40,7 @@ df_summary <- df %>%
     #ratio_BA = Benders_BA_master / (Benders_BA_master + Benders_BA_subproblem),
     #ratio_KC = Benders_KC_master / (Benders_KC_master + Benders_KC_subproblem),
     #ratio_KCU = Benders_KCU_master / (Benders_KCU_master + Benders_KCU_subproblem),
-    ratio_KCUD = Benders_KCUD_master / (Benders_KCUD_master + Benders_KCUD_subproblem),
+    #ratio_KCUD = Benders_KCUD_master / (Benders_KCUD_master + Benders_KCUD_subproblem),
     #ratio_KCRDK = Benders_KCRDK_master / (Benders_KCRDK_master + Benders_KCRDK_subproblem),
     ratio_KCRDKL = Benders_KCRDKL_master / (Benders_KCRDKL_master + Benders_KCRDKL_subproblem),
     #ratio_HOG = Benders_HOG_master / (Benders_HOG_master + Benders_HOG_subproblem),
@@ -81,7 +81,7 @@ p3 <- ggplot(df_long, aes(x = tau, y = Time, color = Component)) +
        color = "Component")
 
 # Fig.04. Interaction between Gamma and Tau
-df_long$tau_group <- cut(df_long$tau, breaks = 3, labels = c("Tau Faible", "Tau Moyen", "Tau Élevé"))
+df_long$tau_group <- cut(df_long$tau, breaks = 3, labels = c("Low tau", "Medium tau", "High tau"))
 
 df_ranking <- df_long %>%
   group_by(Gamma, tau_group, Method) %>%
@@ -122,9 +122,9 @@ p5 <- ggplot(df_long, aes(x = nb_path, y = Time, fill = Component)) +
   facet_wrap(~ Method) +
   theme_minimal() +
   labs(
-    title = "Temps cumulé selon nb_path",
-    x = "Nombre de chemins (nb_path)",
-    y = "Temps moyen cumulé (s)"
+    title = "Cumulative time by nb_path",
+    x = "Number of paths (nb_path)",
+    y = "Cumulative average time (s)"
   ) +
   theme(legend.position = "bottom")
 
@@ -134,9 +134,9 @@ p6 <- ggplot(df_long, aes(x = limit_dfs, y = Time, fill = Component)) +
   facet_wrap(~ Method) +
   theme_minimal() +
   labs(
-    title = "Temps cumulé selon limit_dfs",
-    x = "Limite DFS (limit_dfs)",
-    y = "Temps moyen cumulé (s)"
+    title = "Cumulative time by limit_dfs",
+    x = "DFS limit (limit_dfs)",
+    y = "Cumulative average time (s)"
   ) +
   theme(legend.position = "bottom")
 
@@ -146,9 +146,9 @@ p7 <- ggplot(df_long, aes(x = nb_path, y = Time, color = Component)) +
   facet_wrap(~ Method) +
   theme_bw() +
   labs(
-    title = "Évolution lissée selon nb_path",
-    x = "Nombre de chemins (nb_path)",
-    y = "Temps moyen (s)",
+    title = "Smoothed trend based on nb_path",
+    x = "Number of paths (nb_path)",
+    y = "Mean time (s)",
     color = "Component"
   ) +
   theme(legend.position = "bottom")
@@ -159,9 +159,9 @@ p8 <- ggplot(df_long, aes(x = limit_dfs, y = Time, color = Component)) +
   facet_wrap(~ Method) +
   theme_bw() +
   labs(
-    title = "Évolution lissée selon limit_dfs",
-    x = "Limite DFS (limit_dfs)",
-    y = "Temps moyen (s)",
+    title = "Smoothed trend based on limit_dfs",
+    x = "DFS limit (limit_dfs)",
+    y = "Mean time (s)",
     color = "Component"
   ) +
   theme(legend.position = "bottom")
@@ -174,4 +174,4 @@ print(p4)
 print(p5)
 print(p6)
 print(p7)
-
+print(p8)
