@@ -2806,7 +2806,6 @@ int main(int argc, const char* argv[]){
 		int limit_number_paths = 1;			// Used for the DFS algo
 		int nb_path_to_select = 1;			// Number of paths the subprobleme give to the master at each iteration (it's the upperbound like the max of the parameter and the number found)
 
-
 		//ostringstream oss_BA_KC;
 		//ostringstream oss_BA_KCRDK;
 		ostringstream oss_BA_KCRDKL;
@@ -2845,7 +2844,7 @@ int main(int argc, const char* argv[]){
 			output_validation.open(oss_validation.str());
 			output_validation << "Fichier 			| Gamma 	| tau 	| 	Validation\n";
 			output_validation << "------------------------------------------------------------\n";
-			output_time_m_s << "Gamma, tau, nb_path_to_select, time_master_BA, time_subproblem_BA, time_master_KCRDKL, time_subproblem_KCRDKL, time_master_KCU, time_subproblem_KCU, time_master_KCHOGL, time_subproblem_KCHOGL\n";
+			output_time_m_s << "Gamma, tau, nb_path_to_select, limit_number_paths, time_master_BA, time_subproblem_BA, time_master_KCRDKL, time_subproblem_KCRDKL, time_master_KCU, time_subproblem_KCU, time_master_KCHOGL, time_subproblem_KCHOGL\n";
 		}
 
 		//================================================================= TEMPORAIRE ===========================================================================
@@ -3022,6 +3021,7 @@ int main(int argc, const char* argv[]){
 										<< Gamma << ","
 										<< tau << ","
 										<< nb_path_to_select << ","
+										<< limit_number_paths					<< ","
 										<< benders_sol_BA.iter << ","
 										<< benders_sol_BA.time << ","
 										<< benders_sol_BA.time_master << ","
@@ -3031,6 +3031,7 @@ int main(int argc, const char* argv[]){
 										<< Gamma << ","
 										<< tau << ","
 										<< nb_path_to_select << ","
+										<< limit_number_paths					<< ","
 										<< benders_sol_KCRDKL.iter << ","
 										<< benders_sol_KCRDKL.time << ","
 										<< benders_sol_KCRDKL.time_master << ","
@@ -3041,6 +3042,7 @@ int main(int argc, const char* argv[]){
 									<< Gamma << "," 
 									<< tau << ","
 									<< nb_path_to_select << ","
+									<< limit_number_paths					<< ","
 									<< benders_sol_BA.iter << "," 
 									<< benders_sol_BA.time << ","
 									<< benders_sol_BA.time_master << ","
@@ -3050,6 +3052,7 @@ int main(int argc, const char* argv[]){
 									<< Gamma << "," 
 									<< tau << ","
 									<< nb_path_to_select << ","
+									<< limit_number_paths					<< ","
 									<< benders_sol_KCU.iter << "," 
 									<< benders_sol_KCU.time << ","
 									<< benders_sol_KCU.time_master << ","
@@ -3095,6 +3098,7 @@ int main(int argc, const char* argv[]){
 									<< Gamma << "," 
 									<< tau << ","
 									<< nb_path_to_select << ","
+									<< limit_number_paths					<< ","
 									<< benders_sol_BA.iter << "," 
 									<< benders_sol_BA.time << ","
 									<< benders_sol_BA.time_master << ","
@@ -3104,6 +3108,7 @@ int main(int argc, const char* argv[]){
 									<< Gamma << "," 
 									<< tau << ","
 									<< nb_path_to_select << ","
+									<< limit_number_paths		<< ","
 									<< benders_sol_KCHOGL.iter << "," 
 									<< benders_sol_KCHOGL.time << ","
 									<< benders_sol_KCHOGL.time_master << ","
@@ -3132,6 +3137,7 @@ int main(int argc, const char* argv[]){
 					output_time_m_s << Gamma 								<< ","
 									<< tau 									<< ","
 									<< nb_path_to_select 					<< ","
+									<< limit_number_paths					<< ","
 									<< benders_sol_BA.time_master 			<< ","
 									<< benders_sol_BA.time_subproblem 		<< ","
 									//<< benders_sol_KC.time_master 			<< ","
@@ -3153,6 +3159,8 @@ int main(int argc, const char* argv[]){
 					output_stats	<< "BA,"
 									<< Gamma << ","
 									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_BA.time << ","
 									<< benders_sol_BA.iter << endl;
 
@@ -3171,12 +3179,16 @@ int main(int argc, const char* argv[]){
 					output_stats	<< "KCRDKL,"
 									<< Gamma << ","
 									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_KCRDKL.time << ","
 									<< benders_sol_KCRDKL.iter << endl;
 
 					output_stats 	<< "KCU,"
 									<< Gamma << ","
 									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_KCU.time << ","
 									<< benders_sol_KCU.iter << endl;
 
@@ -3196,6 +3208,7 @@ int main(int argc, const char* argv[]){
 									<< Gamma << ","
 									<< tau << ","
 									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_KCHOGL.time << ","
 									<< benders_sol_KCHOGL.iter << endl;
 				}
@@ -4134,7 +4147,7 @@ int main(int argc, const char* argv[]){
 			output_validation.open(oss_validation.str());
 			output_validation << "Fichier 			| Gamma 	| tau 	| 	Validation\n";
 			output_validation << "------------------------------------------------------------\n";
-			output_time_m_s << "Gamma, tau, time_master_BA, time_subproblem_BA, time_master_KC, time_subproblem_KC, time_master_KCRDK, time_subproblem_KCRDK, time_master_KCRDKL, time_subproblem_KCRDKL, time_master_KCU, time_subproblem_KCU, time_master_KCUD, time_subproblem_KCUD, time_master_KCHOG, time_subproblem_KCHOG, time_master_KCHOGL, time_subproblem_KCHOGL\n";
+			output_time_m_s << "Gamma, tau, nb_path_to_select, limit_number_paths, time_master_BA, time_subproblem_BA, time_master_KC, time_subproblem_KC, time_master_KCRDK, time_subproblem_KCRDK, time_master_KCRDKL, time_subproblem_KCRDKL, time_master_KCU, time_subproblem_KCU, time_master_KCUD, time_subproblem_KCUD, time_master_KCHOG, time_subproblem_KCHOG, time_master_KCHOGL, time_subproblem_KCHOGL\n";
 		}
 
 		//================================================================= TEMPORAIRE ===========================================================================
@@ -4270,7 +4283,9 @@ int main(int argc, const char* argv[]){
 					// BA with KC standard 
 					output_BA_KC 	<< "BA," 
 									<< Gamma << "," 
-									<< tau << "," 
+									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_BA.iter << "," 
 									<< benders_sol_BA.time << ","
 									<< benders_sol_BA.time_master << ","
@@ -4278,7 +4293,9 @@ int main(int argc, const char* argv[]){
 
 					output_BA_KC 	<< "KC," 
 									<< Gamma << "," 
-									<< tau << "," 
+									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_KC.iter << ","
 									<< benders_sol_KC.time << ","
 									<< benders_sol_KC.time_master << ","
@@ -4288,6 +4305,8 @@ int main(int argc, const char* argv[]){
 					output_BA_KCRDK << "BA,"
 									<< Gamma << ","
 									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_BA.iter << ","
 									<< benders_sol_BA.time << ","
 									<< benders_sol_BA.time_master << ","
@@ -4296,6 +4315,8 @@ int main(int argc, const char* argv[]){
 					output_BA_KCRDK << "KCRDK,"
 									<< Gamma << ","
 									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_KCRDK.iter << ","
 									<< benders_sol_KCRDK.time << ","
 									<< benders_sol_KCRDK.time_master << ","
@@ -4305,6 +4326,8 @@ int main(int argc, const char* argv[]){
 					output_BA_KCRDKL	<< "BA,"
 										<< Gamma << ","
 										<< tau << ","
+										<< nb_path_to_select << ","
+										<< limit_number_paths << ","
 										<< benders_sol_BA.iter << ","
 										<< benders_sol_BA.time << ","
 										<< benders_sol_BA.time_master << ","
@@ -4313,6 +4336,8 @@ int main(int argc, const char* argv[]){
 					output_BA_KCRDKL	<< "KCRDKL,"
 										<< Gamma << ","
 										<< tau << ","
+										<< nb_path_to_select << ","
+										<< limit_number_paths << ","
 										<< benders_sol_KCRDKL.iter << ","
 										<< benders_sol_KCRDKL.time << ","
 										<< benders_sol_KCRDKL.time_master << ","
@@ -4321,7 +4346,9 @@ int main(int argc, const char* argv[]){
 					// BA with KCU
 					output_BA_KCU	<< "BA," 
 									<< Gamma << "," 
-									<< tau << "," 
+									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_BA.iter << "," 
 									<< benders_sol_BA.time << ","
 									<< benders_sol_BA.time_master << ","
@@ -4329,7 +4356,9 @@ int main(int argc, const char* argv[]){
 
 					output_BA_KCU 	<< "KCU," 
 									<< Gamma << "," 
-									<< tau << "," 
+									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_KCU.iter << "," 
 									<< benders_sol_KCU.time << ","
 									<< benders_sol_KCU.time_master << ","
@@ -4338,7 +4367,9 @@ int main(int argc, const char* argv[]){
 					// KCU with KCUD
 					output_BA_KCUD 	<< "KCU," 
 									<< Gamma << "," 
-									<< tau << "," 
+									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_KCU.iter << "," 
 									<< benders_sol_KCU.time << ","
 									<< benders_sol_KCU.time_master << ","
@@ -4347,6 +4378,8 @@ int main(int argc, const char* argv[]){
 					output_BA_KCUD	<< "KCUD,"
 									<< Gamma << ","
 									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_KCUD.iter << ","
 									<< benders_sol_KCUD.time << ","
 									<< benders_sol_KCUD.time_master << ","
@@ -4355,7 +4388,9 @@ int main(int argc, const char* argv[]){
 					// BA with HOG
 					output_BA_HOG	<< "BA," 
 									<< Gamma << "," 
-									<< tau << "," 
+									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_BA.iter << "," 
 									<< benders_sol_BA.time << ","
 									<< benders_sol_BA.time_master << ","
@@ -4363,7 +4398,9 @@ int main(int argc, const char* argv[]){
 									
 					output_BA_HOG 	<< "KCHOG," 
 									<< Gamma << "," 
-									<< tau << "," 
+									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_KCHOG.iter << "," 
 									<< benders_sol_KCHOG.time << ","
 									<< benders_sol_KCHOG.time_master << ","
@@ -4372,7 +4409,9 @@ int main(int argc, const char* argv[]){
 					// BA with HOGL
 					output_BA_HOGL	<< "BA," 
 									<< Gamma << "," 
-									<< tau << "," 
+									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_BA.iter << "," 
 									<< benders_sol_BA.time << ","
 									<< benders_sol_BA.time_master << ","
@@ -4380,7 +4419,9 @@ int main(int argc, const char* argv[]){
 									
 					output_BA_HOGL 	<< "KCHOGL," 
 									<< Gamma << "," 
-									<< tau << "," 
+									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_KCHOGL.iter << "," 
 									<< benders_sol_KCHOGL.time << ","
 									<< benders_sol_KCHOGL.time_master << ","
@@ -4389,7 +4430,9 @@ int main(int argc, const char* argv[]){
 					// KC with HOG
 					output_KC_HOG 	<< "KC," 
 									<< Gamma << "," 
-									<< tau << "," 
+									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_KC.iter << "," 
 									<< benders_sol_KC.time << ","
 									<< benders_sol_KC.time_master << ","
@@ -4397,7 +4440,9 @@ int main(int argc, const char* argv[]){
 									
 					output_KC_HOG 	<< "KCHOG," 
 									<< Gamma << "," 
-									<< tau << "," 
+									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_KCHOG.iter << "," 
 									<< benders_sol_KCHOG.time << ","
 									<< benders_sol_KCHOG.time_master << ","
@@ -4406,6 +4451,8 @@ int main(int argc, const char* argv[]){
 					// Time master subproblem
 					output_time_m_s << Gamma 								<< ","
 									<< tau 									<< ","
+									<< nb_path_to_select 					<< ","
+									<< limit_number_paths 					<< ","
 									<< benders_sol_BA.time_master 			<< ","
 									<< benders_sol_BA.time_subproblem 		<< ","
 									<< benders_sol_KC.time_master 			<< ","
@@ -4427,48 +4474,64 @@ int main(int argc, const char* argv[]){
 					output_stats	<< "BA,"
 									<< Gamma << ","
 									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_BA.time << ","
 									<< benders_sol_BA.iter << endl;
 
 					output_stats 	<< "KC,"
 									<< Gamma << ","
 									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_KC.time << ","
 									<< benders_sol_KC.iter << endl;
 
 					output_stats 	<< "KCRDK,"
 									<< Gamma << ","
 									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_KCRDK.time << ","
 									<< benders_sol_KCRDK.iter << endl;
 
 					output_stats	<< "KCRDKL,"
 									<< Gamma << ","
 									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_KCRDKL.time << ","
 									<< benders_sol_KCRDKL.iter << endl;
 
 					output_stats 	<< "KCU,"
 									<< Gamma << ","
 									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_KCU.time << ","
 									<< benders_sol_KCU.iter << endl;
 
 					output_stats 	<< "KCUD,"
 									<< Gamma << ","
 									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_KCUD.time << ","
 									<< benders_sol_KCUD.iter << endl;
 
 					output_stats 	<< "HOG,"
 									<< Gamma << ","
 									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_KCHOG.time << ","
 									<< benders_sol_KCHOG.iter << endl;
 					
 					output_stats 	<< "HOGL,"
 									<< Gamma << ","
 									<< tau << ","
+									<< nb_path_to_select << ","
+									<< limit_number_paths << ","
 									<< benders_sol_KCHOGL.time << ","
 									<< benders_sol_KCHOGL.iter << endl;
 				}

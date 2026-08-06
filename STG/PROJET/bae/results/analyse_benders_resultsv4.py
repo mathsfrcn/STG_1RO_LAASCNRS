@@ -88,10 +88,10 @@ def analyze_benders_results(file_path):
                  estimator='median', errorbar=('pi', 50), 
                  marker='o', palette='tab10', linewidth=2, ax=ax2)
 
-    ax2.axhline(1.0, color='red', linestyle='--', label='Egalite (Speedup = 1)')
+    ax2.axhline(1.0, color='red', linestyle='--', label='Equality (Speedup = 1)')
     ax2.set_title(f"Speedup Dispersion: {ref_method} vs {alt_method}\n(Line = Media | Shaded area = Interquartile range Q1–Q3)", fontsize=16)
     ax2.set_xlabel("Uncertainty budget", fontsize=16)
-    ax2.set_ylabel(f"Ratio Speedup (T_ref / T_alt)", fontsize=16)
+    ax2.set_ylabel(f"Ratio Speedup ({ref_method} / {alt_method})", fontsize=16)
     
     ax2.legend(title='Tolerance', bbox_to_anchor=(1.05, 1), loc='upper left')
 
@@ -107,10 +107,10 @@ def analyze_benders_results(file_path):
     sns.boxplot(data=pivot_df, x='Gamma', y='Speedup', hue='Tau', 
                 palette='tab10', width=0.7, ax=ax3, fliersize=4)
 
-    ax3.axhline(1.0, color='red', linestyle='--', linewidth=2, label='Egalite (Speedup = 1)')
+    ax3.axhline(1.0, color='red', linestyle='--', linewidth=2, label='Equality (Speedup = 1)')
     ax3.set_title(f"Seepup Distribution: {ref_method} vs {alt_method}", fontsize=16, fontweight='bold')
     ax3.set_xlabel("Uncertainty budget", fontsize=16)
-    ax3.set_ylabel(f"Ratio Speedup (T_{ref_method} / T_{alt_method})", fontsize=16)
+    ax3.set_ylabel(f"Ratio Speedup ({ref_method} / {alt_method})", fontsize=16)
     
     ax3.legend(title='Tolerance', bbox_to_anchor=(1.01, 1), loc='upper left')
 
@@ -121,7 +121,7 @@ def analyze_benders_results(file_path):
     fig4 = plt.figure(figsize=(16, 12))
     fig4.canvas.manager.set_window_title(f"DFS Parameters Analysis - {file_name}")
     axes4 = fig4.subplots(2, 2)
-    fig4.suptitle(f'Impact of nb_path and limit_dfs on Performance ({file_name})', fontsize=16, fontweight='bold')
+    fig4.suptitle(f'Impact of nb_path and limit_dfs on Performance', fontsize=16, fontweight='bold')
     palette_colors = {ref_method: '#d62728', alt_method: '#2ca02c'}
 
     # 1. Temps en fonction de nb_path
