@@ -1795,6 +1795,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_HOGL(Solution sol, 
 		}
 	}
 
+	// maybe we can optimize this section by memoisation 
 	if(!optimal_paths.empty()){		// Discrétisation par la distance sur l'ensemble optimal
 		selected_paths.push_back(optimal_paths[0]);
         optimal_paths.erase(optimal_paths.begin());
