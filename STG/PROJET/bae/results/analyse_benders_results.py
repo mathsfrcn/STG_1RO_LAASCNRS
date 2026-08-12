@@ -1,85 +1,160 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import tkinter as tk
 import os
-from tkinter import filedialog
 
 def analyze_benders_results(file_path):
-    # Configuration
     try:
         df = pd.read_csv(file_path, sep=r'[,\s]+', engine='python', 
-                         names=['Method', 'Gamma', 'Tau', 'Iterations', 'Time'])
+                         names=['Method', 'Gamma', 'Tau', 'nb_path', 'limit_dfs', 'Iterations', 'Time', 'Time_Master', 'Time_Subproblem'])
     except Exception as e:
-        print("Error reading file :", e)
+        print("Error: reading the file ", e)
         return
 
-    methods = df["Method"].unique()
-
+    methods = df['Method'].unique()
     if len(methods) != 2:
-        print(f"Error : The file must contain at least 2 references.")
-        return -1
+        print(f"Error: The file must contain exactly 2 methods. Found: {methods}")
+        return
     
-    methods_sorted = sorted(methods, key=lambda x: 0 if x == 'STANDARD' else (1 if x == 'KC' else 2))
+    methods_sorted = sorted(methods, key=lambda x: 0 if x == 'BA' else (1 if x == 'KC' else 2))
     ref_method = methods_sorted[0]
     alt_method = methods_sorted[1]
+    
+    df['Instance_ID'] = df.groupby(['Method', 'Gamma', 'Tau']).cumcount()   # Add id for variance
 
-    pivot_df = df.pivot_table(index=['Gamma', 'Tau'], 
+    pivot_df = df.pivot_table(index=['Instance_ID', 'Gamma', 'Tau'], 
                               columns='Method', 
                               values=['Iterations', 'Time']).reset_index()
     
     pivot_df.columns = [f"{col[0]}_{col[1]}" if col[1] else col[0] for col in pivot_df.columns]
 
-    pivot_df['Time_Saved'] = pivot_df[f'Time_{ref_method}'] - pivot_df[f'Time_{alt_method}']    # If > 0, KC is the best
+    pivot_df['Time_Saved'] = pivot_df[f'Time_{ref_method}'] - pivot_df[f'Time_{alt_method}']
     pivot_df['Iter_Saved'] = pivot_df[f'Iterations_{ref_method}'] - pivot_df[f'Iterations_{alt_method}']
+    
+    pivot_df['Speedup'] = pivot_df[f'Time_{ref_method}'] / pivot_df[f'Time_{alt_method}']
 
     file_name = os.path.basename(file_path)
-    sns.set_theme(style='whitegrid')
-    fig = plt.figure
-    fig = plt.figure(figsize=(16, 12))
-    fig.canvas.manager.set_window_title(f"Benders analyse - {file_name}")
-    axes = fig.subplots(2, 2)
-    fig.suptitle(f'Comparative analysis : {ref_method} vs {alt_method}', fontsize=16, fontweight='bold')
-
-    # Fig01
-    ax = axes[0, 0]
-    max_time = max(pivot_df[f'Time_{ref_method}'].max(), pivot_df[f'Time_{alt_method}'].max()) * 1.1
-    sns.scatterplot(data=pivot_df, x=f'Time_{ref_method}', y=f'Time_{alt_method}', hue='Gamma', size='Tau', sizes=(20, 200), palette='viridis', ax=ax, alpha=0.8)
-    ax.plot([0, max_time], [0, max_time], 'r--', label='Equality')
-    ax.fill_between([0, max_time], [0, max_time], [0, 0], color='green', alpha=0.1, label=f'{alt_method} victory zone')
-    ax.set_title("Overall resolution time (s)")
-    ax.set_xlim(0, max_time)
-    ax.set_ylim(0, max_time)
-    ax.legend(title='Gamma budget')
-
-    # Fig02
-    ax = axes[0, 1]
-    df_iter = df.groupby(['Tau', 'Method'])['Iterations'].mean().reset_index()
-    sns.lineplot(data=df_iter, x='Tau', y='Iterations', hue='Method', marker='o', palette={ref_method: '#d62728', alt_method: '#2ca02c'}, ax=ax)
-    ax.set_title("Impact of tau on interations")
-
-    # Fig03
-    ax = axes[1, 0]
-    heat_time = pivot_df.pivot(index="Gamma", columns="Tau", values="Time_Saved")
-    sns.heatmap(heat_time, cmap="RdYlGn", center=0, annot=True, fmt=".4f", ax=ax)
-    ax.set_title("Time saving matrix (s)")
-
-    # Fig04
-    ax = axes[1, 1]
-    heat_iter = pivot_df.pivot(index="Gamma", columns="Tau", values="Iter_Saved")
-    sns.heatmap(heat_iter, cmap="RdYlGn", center=0, annot=True, fmt=".1f", ax=ax)
-    ax.set_title("Iteration gain matrix")
-
-    plt.tight_layout()
-    plt.subplots_adjust(top=0.92)
-
     base_name_no_ext = os.path.splitext(file_name)[0]
-    output_image_name = f"{base_name_no_ext}_{ref_method}_{alt_method}.png"
     target_directory = os.path.dirname(file_path)
-    output_image_path = os.path.join(target_directory, output_image_name)
 
-    plt.savefig(output_image_path, dpi=300, bbox_inches='tight')
-    plt.show()
+    sns.set_theme(style='whitegrid')
+
+    # Fig.01 - Dashboard Principal
+    fig1 = plt.figure(figsize=(16, 12))
+    fig1.canvas.manager.set_window_title(f"Benders decomposition - {file_name}")
+    axes = fig1.subplots(2, 2)
+    fig1.suptitle(f'Comparative Analysis: {ref_method} VS {alt_method}', fontsize=16, fontweight='bold')
+
+    # Scatter Plot
+    ax = axes[0, 0]
+    sns.lineplot(data=pivot_df, x='Gamma', y='Speedup', hue='Tau', 
+                 marker='o', palette='tab10', linewidth=2, ax=ax)
+    
+    ax.axhline(1.0, color='red', linestyle='--', label='Equality')
+    ax.set_title(f"Speedup of {alt_method} relative to {ref_method}")
+    ax.set_xlabel("Gamma")
+    ax.set_ylabel(f"Ratio of Times ({ref_method} / {alt_method})")
+    ax.fill_between(pivot_df['Gamma'].unique(), 1.0, pivot_df['Speedup'].max() * 1.1, color='green', alpha=0.05, label=f'Victory zone {alt_method}')
+    ax.legend(title='Tau')
+
+    ax = axes[0, 1]
+    sns.lineplot(data=df, x='Gamma', y='Iterations', hue='Method', marker='o', palette={ref_method: '#d62728', alt_method: '#2ca02c'}, ax=ax)
+    ax.set_title("Impact of Gamma on averaged iterations")
+
+    # Heatmaps
+    pivot_means = pivot_df.groupby(['Gamma', 'Tau']).mean(numeric_only=True).reset_index()
+    
+    ax = axes[1, 0]
+    heat_time = pivot_means.pivot(index="Gamma", columns="Tau", values="Time_Saved")
+    sns.heatmap(heat_time, cmap="RdYlGn", center=0, annot=True, fmt=".4f", ax=ax)
+    ax.set_title(f"Average Time Saved (s)")
+
+    ax = axes[1, 1]
+    heat_iter = pivot_means.pivot(index="Gamma", columns="Tau", values="Iter_Saved")
+    sns.heatmap(heat_iter, cmap="RdYlGn", center=0, annot=True, fmt=".1f", ax=ax)
+    ax.set_title(f"Average Iteration Gain")
+
+    fig1.tight_layout()
+    fig1.subplots_adjust(top=0.90)
+    output_image_1 = os.path.join(target_directory, f"{base_name_no_ext}_{ref_method}_vs_{alt_method}_dashboard.png")
+    fig1.savefig(output_image_1, dpi=300, bbox_inches='tight')
+
+    # Fig.02 - Dispersion
+    fig2 = plt.figure(figsize=(12, 8))
+    fig2.canvas.manager.set_window_title(f"Dispersion Analysis - {file_name}")
+    ax2 = fig2.add_subplot(111)
+
+    sns.lineplot(data=pivot_df, x='Gamma', y='Speedup', hue='Tau', 
+                 estimator='median', errorbar=('pi', 50), 
+                 marker='o', palette='tab10', linewidth=2, ax=ax2)
+
+    ax2.axhline(1.0, color='red', linestyle='--', label='Equality (Speedup = 1)')
+    ax2.set_title(f"Speedup Dispersion: {ref_method} vs {alt_method}\n(Line = Media | Shaded area = Interquartile range Q1–Q3)", fontsize=16)
+    ax2.set_xlabel("Uncertainty budget", fontsize=16)
+    ax2.set_ylabel(f"Ratio Speedup ({ref_method} / {alt_method})", fontsize=16)
+    
+    ax2.legend(title='Tolerance', bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    fig2.tight_layout()
+    output_image_2 = os.path.join(target_directory, f"{base_name_no_ext}_{ref_method}_vs_{alt_method}_dispersion.png")
+    fig2.savefig(output_image_2, dpi=300, bbox_inches='tight')
+
+    # Fig.03 - Boxplots
+    fig3 = plt.figure(figsize=(16, 8))
+    fig3.canvas.manager.set_window_title(f"Boxplot Analysis - {file_name}")
+    ax3 = fig3.add_subplot(111)
+
+    sns.boxplot(data=pivot_df, x='Gamma', y='Speedup', hue='Tau', 
+                palette='tab10', width=0.7, ax=ax3, fliersize=4)
+
+    ax3.axhline(1.0, color='red', linestyle='--', linewidth=2, label='Equality (Speedup = 1)')
+    ax3.set_title(f"Seepup Distribution: {ref_method} vs {alt_method}", fontsize=16, fontweight='bold')
+    ax3.set_xlabel("Uncertainty budget", fontsize=16)
+    ax3.set_ylabel(f"Ratio Speedup ({ref_method} / {alt_method})", fontsize=16)
+    
+    ax3.legend(title='Tolerance', bbox_to_anchor=(1.01, 1), loc='upper left')
+
+    fig3.tight_layout()
+    output_image_3 = os.path.join(target_directory, f"{base_name_no_ext}_{ref_method}_vs_{alt_method}_boxplots.png")
+    fig3.savefig(output_image_3, dpi=300, bbox_inches='tight')
+
+    fig4 = plt.figure(figsize=(16, 12))
+    fig4.canvas.manager.set_window_title(f"DFS Parameters Analysis - {file_name}")
+    axes4 = fig4.subplots(2, 2)
+    fig4.suptitle(f'Impact of nb_path and limit_dfs on Performance', fontsize=16, fontweight='bold')
+    palette_colors = {ref_method: '#d62728', alt_method: '#2ca02c'}
+
+    # 1. Temps en fonction de nb_path
+    sns.lineplot(data=df, x='nb_path', y='Time', hue='Method', marker='o', palette=palette_colors, ax=axes4[0, 0])
+    axes4[0, 0].set_title("Evolution of Time depending on nb_path")
+    axes4[0, 0].set_xlabel("Number of paths (nb_path)")
+    axes4[0, 0].set_ylabel("Time (s)")
+
+    # 2. Itérations en fonction de nb_path
+    sns.lineplot(data=df, x='nb_path', y='Iterations', hue='Method', marker='o', palette=palette_colors, ax=axes4[0, 1])
+    axes4[0, 1].set_title("Evolution of Iterations depending on nb_path")
+    axes4[0, 1].set_xlabel("Number of paths (nb_path)")
+    axes4[0, 1].set_ylabel("Iterations")
+
+    # 3. Temps en fonction de limit_dfs
+    sns.lineplot(data=df, x='limit_dfs', y='Time', hue='Method', marker='o', palette=palette_colors, ax=axes4[1, 0])
+    axes4[1, 0].set_title("Evolution of Time depending on limit_dfs")
+    axes4[1, 0].set_xlabel("DFS Limit (limit_dfs)")
+    axes4[1, 0].set_ylabel("Time (s)")
+
+    # 4. Itérations en fonction de limit_dfs
+    sns.lineplot(data=df, x='limit_dfs', y='Iterations', hue='Method', marker='o', palette=palette_colors, ax=axes4[1, 1])
+    axes4[1, 1].set_title("Evolution of Iterations depending on limit_dfs")
+    axes4[1, 1].set_xlabel("DFS Limit (limit_dfs)")
+    axes4[1, 1].set_ylabel("Iterations")
+
+    fig4.tight_layout()
+    fig4.subplots_adjust(top=0.90)
+    output_image_4 = os.path.join(target_directory, f"{base_name_no_ext}_{ref_method}_vs_{alt_method}_dfs_params.png")
+    fig4.savefig(output_image_4, dpi=300, bbox_inches='tight')
+
+    print(f"Dashboards saved under:\n- {output_image_1}\n- {output_image_2}\n- {output_image_3}\n- {output_image_4}")
+    print("Success: Generation complete")
 
 def main():
     root = tk.Tk()
@@ -87,13 +162,57 @@ def main():
     
     file_path = filedialog.askopenfilename(
         title="Select the results file",
-        filetypes=[("Données", "*.csv *.txt"), ("Tous", "*.*")]
+        filetypes=[("Data", "*.csv *.txt"), ("All Files", "*.*")]
     )
     
     if file_path:
         analyze_benders_results(file_path)
     else:
-        print("No file selected.")
+        print("Error: No file selected")
 
-if __name__ == "__main__":
-    main()
+method = False  # True if you want to use the GUI, False if you want to use the command line
+
+if method:  # Window with Tkinter
+    import tkinter as tk
+    from tkinter import filedialog
+
+    def main():
+        root = tk.Tk()
+        root.withdraw()
+    
+        file_path = filedialog.askopenfilename(
+            title="Select the results file",
+            filetypes=[("Data", "*.csv *.txt"), ("All Files", "*.*")]
+        )
+        
+        if file_path:
+            analyze_benders_results(file_path)
+        else:
+            print("Error: No file selected")
+
+    if __name__ == "__main__":
+        main()
+else:
+    import argparse
+    import os
+    import matplotlib
+    matplotlib.use('Agg')
+
+    def main():
+        
+        parser = argparse.ArgumentParser(description="Analyze optimization results.")
+        parser.add_argument("file_path", help="Path to the CSV/TXT file to analyze", nargs="?")
+        
+        args = parser.parse_args()
+        file_path = args.file_path
+
+        if not file_path:
+            file_path = input("Enter the path to the results file: ").strip()
+
+        if file_path and os.path.exists(file_path):
+            analyze_benders_results(file_path)
+        else:
+            print(f"Error: The file '{file_path}' does not exist or is invalid")
+
+    if __name__ == "__main__":
+        main()
