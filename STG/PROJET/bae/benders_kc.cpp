@@ -2774,7 +2774,7 @@ int main(int argc, const char* argv[]){
 	bool use_result_export = true;		// True if you want to export the results
 	float max_iter = 100;				// Security
 	float max_time_s = 3600;
-	float p_few = 0.15;					// Probabilitie for SelectFew heuristique
+	float p_few = 1/52;					// Probabilitie for SelectFew heuristique
 	string validation_status;
 	// Read instances randomized parameters
 	float read_instance_rd_lb = 0.4;	// The production plan will be between lb% and ub% of the cumulative demand
@@ -4230,13 +4230,12 @@ int main(int argc, const char* argv[]){
 				// KC All
 				approx_coeff = float(tau)/100;
 
-				benders_sol_KCA = KC_benders_Main(inst, approx_coeff, KC_Method::KC, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few); // First bool is to use HOG, the other is to use the KC random K method
+				benders_sol_KCA = KC_benders_Main(inst, approx_coeff, KC_Method::KC, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, 1); // First bool is to use HOG, the other is to use the KC random K method
 				cout << "\nKCA----done (Obj :" << benders_sol_KCA.obj_value << ")" <<endl;
 
 				//KC Few
-				benders_sol_KCF = KC_benders_Main(inst, approx_coeff, KC_Method::KC, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, 1);
+				benders_sol_KCF = KC_benders_Main(inst, approx_coeff, KC_Method::KC, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
 				cout << "\nKCF----done (Obj :" << benders_sol_KCF.obj_value << ")" <<endl;
-
 
 				// KCRDK (random K)
 				benders_sol_KCRDK = KC_benders_Main(inst, approx_coeff, KC_Method::RDK, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
