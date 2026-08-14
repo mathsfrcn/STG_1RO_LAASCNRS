@@ -622,7 +622,7 @@ float objective_value(Solution sol, vector<float> Dt){
 	return obj;
 }
 
-MonteCarlo_Result run_monte_carlo(const Solution& sol, int num_scenarios) {
+MonteCarlo_Result run_monte_carlo(const Solution& sol, int num_scenarios = 10000) {
     vector<float> simulated_costs(num_scenarios);
     float sum_costs = 0.0;
     float worst_cost = -1.0;
@@ -633,33 +633,33 @@ MonteCarlo_Result run_monte_carlo(const Solution& sol, int num_scenarios) {
     for(int k = 0; k < num_scenarios; k++) {
         vector<float> Dt_random(sol.inst.T, 0.0);
         float budget_consomme = 0.0;
-        float current_cumul = 0.0;
         
+        // On génère la déviation directement sur la demande cumulée
         for(int t = 0; t < sol.inst.T; t++) {
             float variation = 0.0;
             
-            // 1. Tirage de la variation sur la demande marginale si budget local disponible
             if(sol.inst.deltat[t] > 0) {
                 float max_var = sol.inst.deltat[t];
                 
-                // 2. Limitation stricte au budget global Gamma
+                // Sécurité stricte du budget global Gamma
                 if(budget_consomme + max_var > sol.inst.Gamma) {
                     max_var = sol.inst.Gamma - budget_consomme;
-                    if(max_var < 0) max_var = 0;
+                    if(max_var < 0) max_var = 0; // Sécurité
                 }
                 
                 std::uniform_real_distribution<float> dist(-max_var, max_var);
                 variation = dist(rng);
+                
                 budget_consomme += abs(variation);
             }
             
-            // 3. Application de la variation sur la demande marginale nominale
-            float marginal_demand = sol.inst.dt[t] + variation;
-            if(marginal_demand < 0) marginal_demand = 0; // Sécurité : pas de demande négative
+            // Application de la variation sur la base nominale CUMULEE
+            Dt_random[t] = sol.inst.Dt[t] + variation;
             
-            // 4. Reconstruction de la demande cumulée (croissance garantie)
-            current_cumul += marginal_demand;
-            Dt_random[t] = current_cumul;
+            // Sécurité physique : la demande cumulée ne peut pas reculer dans le temps
+            if(t > 0 && Dt_random[t] < Dt_random[t-1]) {
+                Dt_random[t] = Dt_random[t-1];
+            }
         }
         
         // Évaluation du plan de production
@@ -669,14 +669,12 @@ MonteCarlo_Result run_monte_carlo(const Solution& sol, int num_scenarios) {
         if(cost > worst_cost) worst_cost = cost;
     }
     
-    // Stats (TCL)
+    // Statistiques et TCL
     float mean = sum_costs / num_scenarios;
     float variance = 0.0;
-    
     for(int k = 0; k < num_scenarios; k++) {
         variance += pow(simulated_costs[k] - mean, 2);
     }
-
     variance /= num_scenarios;
     float std_dev = sqrt(variance);
     
