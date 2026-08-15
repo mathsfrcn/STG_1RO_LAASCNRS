@@ -622,7 +622,7 @@ float objective_value(Solution sol, vector<float> Dt){
 	return obj;
 }
 
-MonteCarlo_Result run_monte_carlo(const Solution& sol, int num_scenarios = 10000) {
+MonteCarlo_Result run_monte_carlo(const Solution& sol, int num_scenarios) {
     vector<float> simulated_costs(num_scenarios);
     float sum_costs = 0.0;
     float worst_cost = -1.0;
@@ -634,17 +634,17 @@ MonteCarlo_Result run_monte_carlo(const Solution& sol, int num_scenarios = 10000
         vector<float> Dt_random(sol.inst.T, 0.0);
         float budget_consomme = 0.0;
         
-        // On génère la déviation directement sur la demande cumulée
+        // The deviation is generated directly based on the cumulative demand.
         for(int t = 0; t < sol.inst.T; t++) {
             float variation = 0.0;
             
             if(sol.inst.deltat[t] > 0) {
                 float max_var = sol.inst.deltat[t];
                 
-                // Sécurité stricte du budget global Gamma
+                // Gamma safety
                 if(budget_consomme + max_var > sol.inst.Gamma) {
                     max_var = sol.inst.Gamma - budget_consomme;
-                    if(max_var < 0) max_var = 0; // Sécurité
+                    if(max_var < 0) max_var = 0;
                 }
                 
                 std::uniform_real_distribution<float> dist(-max_var, max_var);
@@ -653,23 +653,23 @@ MonteCarlo_Result run_monte_carlo(const Solution& sol, int num_scenarios = 10000
                 budget_consomme += abs(variation);
             }
             
-            // Application de la variation sur la base nominale CUMULEE
+            // Application of the variation based on the CUMULATIVE nominal base
             Dt_random[t] = sol.inst.Dt[t] + variation;
             
-            // Sécurité physique : la demande cumulée ne peut pas reculer dans le temps
+            // Physique safety
             if(t > 0 && Dt_random[t] < Dt_random[t-1]) {
                 Dt_random[t] = Dt_random[t-1];
             }
         }
         
-        // Évaluation du plan de production
+        // Evaluation of the production plan
         float cost = objective_value(sol, Dt_random);
         simulated_costs[k] = cost;
         sum_costs += cost;
         if(cost > worst_cost) worst_cost = cost;
     }
     
-    // Statistiques et TCL
+    // Statistics (LGN/TCL)
     float mean = sum_costs / num_scenarios;
     float variance = 0.0;
     for(int k = 0; k < num_scenarios; k++) {
@@ -839,18 +839,10 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 			for(int i = 0; i <= j; i++){
 				if(j <= i+sol.inst.deltat[t-1]){
 					if(pi_value[t-1][i] + costs[t][i][j][0] > tmp){
-						// if(j== 0){
-						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][0]<<endl;
-						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][1]<<endl;
-						// }
 						tmp = pi_value[t-1][i]+costs[t][i][j][0];
 					}
 
 					if(pi_value[t-1][i] + costs[t][i][j][1] > tmp){
-						// if(j== 0){
-						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][0]<<endl;
-						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][1]<<endl;
-						// }
 						tmp = pi_value[t-1][i]+costs[t][i][j][1];
 					}
 				}
@@ -1016,18 +1008,10 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_RDK(Solution sol, f
 			for(int i = 0; i <= j; i++){
 				if(j <= i+sol.inst.deltat[t-1]){
 					if(pi_value[t-1][i] + costs[t][i][j][0] > tmp){
-						// if(j== 0){
-						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][0]<<endl;
-						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][1]<<endl;
-						// }
 						tmp = pi_value[t-1][i]+costs[t][i][j][0];
 					}
 
 					if(pi_value[t-1][i] + costs[t][i][j][1] > tmp){
-						// if(j== 0){
-						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][0]<<endl;
-						// 	cout<<"=============="<<t<<" "<<pi_value[t-1][i]<<" "<<costs[t][i][j][1]<<endl;
-						// }
 						tmp = pi_value[t-1][i]+costs[t][i][j][1];
 					} 
 				}
@@ -1079,8 +1063,8 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_RDK(Solution sol, f
 		}
 	}
 	
-	if(!candidates_path.empty()){	// On mélange les chemins candidats pour en sélectionner aléatoirement dans l'ensemble relaxé
-		if(!optimal_paths.empty()){	// On supprime le chemin sélectionné pour éviter les doublons
+	if(!candidates_path.empty()){	// Candidate paths are mixed in order to randomly select some from the relaxed set.
+		if(!optimal_paths.empty()){	// The selected path is removed to avoid duplicates.
 			candidates_path.erase(
 				std::remove(candidates_path.begin(), candidates_path.end(), optimal_paths[0]), candidates_path.end()
 			);
@@ -1193,14 +1177,14 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_RDKL(Solution sol, 
 	vector<Path> selected_paths;
 	auto rng = std::default_random_engine(std::random_device{}());
 
-	for(int i = 0; i < sol.inst.Gamma+1; i++){						// We extract optimal paths
+	for(int i = 0; i < sol.inst.Gamma+1; i++){									// We extract optimal paths
 		if(abs(pi_value[sol.inst.T][i] - ub_cost) < eps){
 			extract_paths_dfs(sol.inst.T, i, pi_value, costs, sol, current_path_buffer, optimal_paths, limit_number_paths, eps);
 		}
 	}
 
 	if(!optimal_paths.empty()){
-		std::shuffle(std::begin(optimal_paths), std::end(optimal_paths), rng); // We choose N random optimal paths
+		std::shuffle(std::begin(optimal_paths), std::end(optimal_paths), rng); 	// We choose N random optimal paths
 
 		int paths_to_take = std::min((int)optimal_paths.size(), nb_path_to_select);
 		for(int i = 0; i < paths_to_take; i++){
@@ -1208,7 +1192,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_RDKL(Solution sol, 
 		}
 	}
 
-	if(selected_paths.size() < nb_path_to_select){	// If we dont have enough paths, we complete by random sub-optimal paths
+	if(selected_paths.size() < nb_path_to_select){								// If we dont have enough paths, we complete by random sub-optimal paths
 		for(int i = 0; i < sol.inst.Gamma+1; i++){
 			if(pi_value[sol.inst.T][i] >= sub_OPT && abs(pi_value[sol.inst.T][i] - ub_cost) >= eps){
 				extract_paths_dfs(sol.inst.T, i, pi_value, costs, sol, current_path_buffer, candidates_path, limit_number_paths, eps);
@@ -1313,7 +1297,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_Unique(Solution sol
     for(int i = 0; i < sol.inst.Gamma+1; i++){
         if(abs(pi_value[sol.inst.T][i] - ub_cost) < eps){
             current_j = i;
-            break; // We stop when we have the first scenario
+            break; 									// We stop when we have the first scenario
         }
     }
 
@@ -1534,10 +1518,10 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_OG(Solution sol, fl
 		sub_OPT = (1-approx_coeff)*ub_cost+ub_cost;
 	}
 	
-	vector<Path> candidates_path;	// Store the worst-case scenarios
-	Path current_path_buffer; 		// Use for recursion
+	vector<Path> candidates_path;				// Store the worst-case scenarios
+	Path current_path_buffer; 					// Use for recursion
 	vector<Path> optimal_paths;
-	vector<Path> selected_paths;	// Scenarios we push up to the master
+	vector<Path> selected_paths;				// Scenarios we push up to the master
 
 	for(int i = 0; i < sol.inst.Gamma+1; i++){	// Optimal scenarios
 		if(abs(pi_value[sol.inst.T][i] - ub_cost) < eps){
@@ -1545,7 +1529,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_OG(Solution sol, fl
 		}
 	}
 
-	if(!optimal_paths.empty()){	// We take the first optimal path we check
+	if(!optimal_paths.empty()){					// We take the first optimal path we check
 		selected_paths.push_back(optimal_paths[0]);
 	}
 
@@ -1555,7 +1539,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_OG(Solution sol, fl
 		}
 	}
 
-	if(!optimal_paths.empty()){ // We delete the first we took
+	if(!optimal_paths.empty()){ 				// We delete the first we took
 		candidates_path.erase(
 			std::remove(candidates_path.begin(), candidates_path.end(), optimal_paths[0]), candidates_path.end()
 		);
@@ -1710,10 +1694,10 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_OGL(Solution sol, f
 		sub_OPT = (1-approx_coeff)*ub_cost+ub_cost;
 	}
 	
-	vector<Path> candidates_path;	// Store the worst-case scenarios
-	Path current_path_buffer; 		// Use for recursion
+	vector<Path> candidates_path;				// Store the worst-case scenarios
+	Path current_path_buffer; 					// Use for recursion
 	vector<Path> optimal_paths;
-	vector<Path> selected_paths;	// Scenarios we push up to the master
+	vector<Path> selected_paths;				// Scenarios we push up to the master
 
 	for(int i = 0; i < sol.inst.Gamma+1; i++){	// Optimal scenarios
 		if(abs(pi_value[sol.inst.T][i] - ub_cost) < eps){
@@ -2314,9 +2298,9 @@ Solution_ADV BA_benders_Subproblem(Solution sol){
 
 	//retrieve uncertainty from pi var (where constraints are tights)
 
-	cout<<"======================LONGEST PATH : "<<pisol[sol.inst.T+1][0]<<endl;
+	cout<<"====================== LONGEST PATH: "<<pisol[sol.inst.T+1][0]<<endl;
 	float previous_val = pisol[sol.inst.T+1][0];
-	//=================DANGEROUS, WORKS ONLY IF GAMMA IS FULLY USED, SHOULD CHANGE THIS====================
+	//================= DANGEROUS, WORKS ONLY IF GAMMA IS FULLY USED, SHOULD CHANGE THIS ====================
 	int previous_budget = sol.inst.Gamma;
 
 	vector<int> offset;
@@ -2460,7 +2444,6 @@ Solution_ADV BA_benders_Subproblem_DP(Solution sol, float eps){
 	// t = T+1
 	pi_subopt_bool[sol.inst.T+1][0] = true;
 	for(int i = 0; i < sol.inst.Gamma+1; i++){
-		// cout << i << " " << pi_value[sol.inst.T][i] << " " << sub_OPT << endl;
 		if(abs(pi_value[sol.inst.T][i] - pi_value[sol.inst.T+1][0]) < eps){
 			arcbool[sol.inst.T+1][i][0][0] = 1;
 			arcbool[sol.inst.T+1][i][0][1] = 1;
@@ -2471,7 +2454,7 @@ Solution_ADV BA_benders_Subproblem_DP(Solution sol, float eps){
 	for(int t=sol.inst.T; t > 0; t--){
 		for(int j = 0; j < sol.inst.Gamma+1; j++){
 			for(int i = 0; i <= j; i++){
-				if(pi_subopt_bool[t][j] and j <= i+sol.inst.deltat[t-1] and (t != 1 or i == 0)){ //last and is specific for first layer of the graph
+				if(pi_subopt_bool[t][j] and j <= i+sol.inst.deltat[t-1] and (t != 1 or i == 0)){ // last and is specific for first layer of the graph
 					if(abs(pi_value[t][j] - (pi_value[t-1][i]+costs[t][i][j][0])) < eps){
 						arcbool[t][i][j][0] = 1;
 						pi_subopt_bool[t-1][i] = true;
@@ -2549,10 +2532,10 @@ Benders_Result BA_benders_Main(Instance inst, float eps, int max_iter, int max_t
 	vector<vector<float> > scenarios;
 	scenarios.resize(0);
 
-	scenarios.push_back(inst.Dt);	// Initialization with the nominal scenario
+	scenarios.push_back(inst.Dt);						// Initialization with the nominal scenario
 
 	auto start_m = high_resolution_clock::now();
-	sol = BA_benders_Master(inst, scenarios);	// Proposal for an initial plan X (initial lower bound)
+	sol = BA_benders_Master(inst, scenarios);			// Proposal for an initial plan X (initial lower bound)
 	auto stop_m = high_resolution_clock::now();
 	total_time_master += duration_cast<microseconds>(stop_m - start_m).count() * 1e-6;
 
@@ -3094,14 +3077,69 @@ int main(int argc, const char* argv[]){
 
 	if(use_monte_carlo){
 		int num_scenarios = 10000;
-		MonteCarlo_Result mc_robuste = run_monte_carlo(benders_sol_KCF.final_solution, num_scenarios);
+
+		// ==================== BA ====================
+		MonteCarlo_Result mc_robuste = run_monte_carlo(benders_sol_BA.final_solution, num_scenarios);
+		cout << "\n--- Monte Carlo evaluation of the BA plan on " << num_scenarios 				  << " demands ---" << endl;
+		cout << "Expected average cost                 : " 	<< mc_robuste.mean_cost 								<< endl;
+		cout << "Standard deviation                    : " 	<< mc_robuste.std_dev 									<< endl;
+		cout << "CI (95%)                              : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
+		cout << "Worst case simulated                  : " 	<< mc_robuste.worst_case_simulated 						<< endl;
+		cout << "Theoretical worst-case cost (Benders) : " 	<< benders_sol_BA.obj_value 							<< endl;
 		
-		cout << "\n--- Evaluation Monte Carlo du plan KCF sur " << num_scenarios << " demandes ---" << endl;
-		cout << "Cout moyen espéré : " << mc_robuste.mean_cost << endl;
-		cout << "Ecart-type : " << mc_robuste.std_dev << endl;
-		cout << "Intervalle (95%) : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper << "]" << endl;
-		cout << "Pire cas simulé : " << mc_robuste.worst_case_simulated << endl;
-		cout << "Cout pire cas théorique (Benders) : " << benders_sol_KCF.obj_value << endl;
+		// ==================== BAEA ====================
+		MonteCarlo_Result mc_robuste = run_monte_carlo(benders_sol_KCA.final_solution, num_scenarios);
+		cout << "\n--- Monte Carlo evaluation of the BAEA plan on " << num_scenarios 			  << " demands ---" << endl;
+		cout << "Expected average cost                 : " 	<< mc_robuste.mean_cost 								<< endl;
+		cout << "Standard deviation                    : " 	<< mc_robuste.std_dev 									<< endl;
+		cout << "CI (95%)                              : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
+		cout << "Worst case simulated                  : " 	<< mc_robuste.worst_case_simulated 						<< endl;
+		cout << "Theoretical worst-case cost (Benders) : " 	<< benders_sol_KCA.obj_value 							<< endl;
+
+		// ==================== BAEF ====================
+		MonteCarlo_Result mc_robuste = run_monte_carlo(benders_sol_KCF.final_solution, num_scenarios);
+		cout << "\n--- Monte Carlo evaluation of the BAEF plan on " << num_scenarios			  << " demands ---" << endl;
+		cout << "Expected average cost                 : " 	<< mc_robuste.mean_cost 								<< endl;
+		cout << "Standard deviation                    : " 	<< mc_robuste.std_dev 									<< endl;
+		cout << "CI (95%)                              : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
+		cout << "Worst case simulated                  : " 	<< mc_robuste.worst_case_simulated 						<< endl;
+		cout << "Theoretical worst-case cost (Benders) : " 	<< benders_sol_KCF.obj_value 							<< endl;
+	
+		// ==================== KCU ====================
+		MonteCarlo_Result mc_robuste = run_monte_carlo(benders_sol_KCU.final_solution, num_scenarios);
+		cout << "\n--- Monte Carlo evaluation of the KCU plan on " << num_scenarios 			  << " demands ---" << endl;
+		cout << "Expected average cost                 : " 	<< mc_robuste.mean_cost 								<< endl;
+		cout << "Standard deviation                    : " 	<< mc_robuste.std_dev	 								<< endl;
+		cout << "CI (95%)                              : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
+		cout << "Worst case simulated                  : " 	<< mc_robuste.worst_case_simulated 						<< endl;
+		cout << "Theoretical worst-case cost (Benders) : " 	<< benders_sol_KCU.obj_value 							<< endl;
+
+		// ==================== KCUD ====================
+		MonteCarlo_Result mc_robuste = run_monte_carlo(benders_sol_KCUD.final_solution, num_scenarios);
+		cout << "\n--- Monte Carlo evaluation of the KCUD plan on " << num_scenarios 			  << " demands ---" << endl;
+		cout << "Expected average cost                 : " 	<< mc_robuste.mean_cost 								<< endl;
+		cout << "Standard deviation                    : " 	<< mc_robuste.std_dev 									<< endl;
+		cout << "CI (95%)                              : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
+		cout << "Worst case simulated                  : " 	<< mc_robuste.worst_case_simulated 						<< endl;
+		cout << "Theoretical worst-case cost (Benders) : " 	<< benders_sol_KCUD.obj_value 							<< endl;
+
+		// ==================== KCRDKL ====================
+		MonteCarlo_Result mc_robuste = run_monte_carlo(benders_sol_KCRDKL.final_solution, num_scenarios);
+		cout << "\n--- Monte Carlo evaluation of the KCRDKL plan on " << num_scenarios 			  << " demands ---" << endl;
+		cout << "Expected average cost                 : " 	<< mc_robuste.mean_cost 								<< endl;
+		cout << "Standard deviation                    : " 	<< mc_robuste.std_dev 									<< endl;
+		cout << "CI (95%)                              : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
+		cout << "Worst case simulated                  : " 	<< mc_robuste.worst_case_simulated 						<< endl;
+		cout << "Theoretical worst-case cost (Benders) : " 	<< benders_sol_KCRDKL.obj_value 						<< endl;
+
+		// ==================== KCOGL ====================
+		MonteCarlo_Result mc_robuste = run_monte_carlo(benders_sol_KCOGL.final_solution, num_scenarios);
+		cout << "\n--- Monte Carlo evaluation of the KCOGL plan on " << num_scenarios 			  << " demands ---" << endl;
+		cout << "Expected average cost                 : " 	<< mc_robuste.mean_cost 								<< endl;
+		cout << "Standard deviation                    : " 	<< mc_robuste.std_dev 									<< endl;
+		cout << "CI (95%)                              : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
+		cout << "Worst case simulated                  : " 	<< mc_robuste.worst_case_simulated 						<< endl;
+		cout << "Theoretical worst-case cost (Benders) : " 	<< benders_sol_KCOGL.obj_value	 						<< endl;
 	}
 
 
