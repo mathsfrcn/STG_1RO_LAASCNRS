@@ -10,8 +10,8 @@ df <- df %>%
     nb_path = nb_path_to_select,
     Benders_BA_master         = time_master_BA,
     Benders_BA_subproblem     = time_subproblem_BA,
-    Benders_BAEA_master         = time_master_KCA,
-    Benders_BAEA_subproblem     = time_subproblem_KCA,
+    #Benders_BAEA_master         = time_master_KCA,
+    #Benders_BAEA_subproblem     = time_subproblem_KCA,
     Benders_BAEF_master         = time_master_KCF,
     Benders_BAEF_subproblem     = time_subproblem_KCF,
     #Benders_KCRDK_master      = time_master_KCRDK,
@@ -24,8 +24,8 @@ df <- df %>%
     Benders_KCUD_subproblem   = time_subproblem_KCUD,
     #Benders_OG_master        = time_master_KCHOG,
     #Benders_OG_subproblem    = time_subproblem_KCHOG,
-    Benders_OGL_master        = time_master_KCHOGL,
-    Benders_OGL_subproblem    = time_subproblem_KCHOGL
+    Benders_KCOGL_master        = time_master_KCHOGL,
+    Benders_KCOGL_subproblem    = time_subproblem_KCHOGL
   )
 
 df_long <- df %>%
@@ -47,7 +47,7 @@ df_summary <- df %>%
     #ratio_KCRDK = Benders_KCRDK_master / (Benders_KCRDK_master + Benders_KCRDK_subproblem),
     ratio_KCRDKL = Benders_KCRDKL_master / (Benders_KCRDKL_master + Benders_KCRDKL_subproblem),
     #ratio_OG = Benders_OG_master / (Benders_OG_master + Benders_OG_subproblem),
-    ratio_OGL = Benders_OGL_master / (Benders_OGL_master + Benders_OGL_subproblem)
+    ratio_KCOGL = Benders_KCOGL_master / (Benders_KCOGL_master + Benders_KCOGL_subproblem)
   )
 
 cat("Average proportion of time spent in the Master:\n")
