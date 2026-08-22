@@ -3076,10 +3076,11 @@ int main(int argc, const char* argv[]){
 	}
 
 	if(use_monte_carlo){
+		MonteCarlo_Result mc_robuste;
 		int num_scenarios = 10000;
 
 		// ==================== BA ====================
-		MonteCarlo_Result mc_robuste = run_monte_carlo(benders_sol_BA.final_solution, num_scenarios);
+		mc_robuste = run_monte_carlo(benders_sol_BA.final_solution, num_scenarios);
 		cout << "\n--- Monte Carlo evaluation of the BA plan on " << num_scenarios 				  << " demands ---" << endl;
 		cout << "Expected average cost                 : " 	<< mc_robuste.mean_cost 								<< endl;
 		cout << "Standard deviation                    : " 	<< mc_robuste.std_dev 									<< endl;
@@ -3088,7 +3089,7 @@ int main(int argc, const char* argv[]){
 		cout << "Theoretical worst-case cost (Benders) : " 	<< benders_sol_BA.obj_value 							<< endl;
 		
 		// ==================== BAEA ====================
-		MonteCarlo_Result mc_robuste = run_monte_carlo(benders_sol_KCA.final_solution, num_scenarios);
+		mc_robuste = run_monte_carlo(benders_sol_KCA.final_solution, num_scenarios);
 		cout << "\n--- Monte Carlo evaluation of the BAEA plan on " << num_scenarios 			  << " demands ---" << endl;
 		cout << "Expected average cost                 : " 	<< mc_robuste.mean_cost 								<< endl;
 		cout << "Standard deviation                    : " 	<< mc_robuste.std_dev 									<< endl;
@@ -3097,7 +3098,7 @@ int main(int argc, const char* argv[]){
 		cout << "Theoretical worst-case cost (Benders) : " 	<< benders_sol_KCA.obj_value 							<< endl;
 
 		// ==================== BAEF ====================
-		MonteCarlo_Result mc_robuste = run_monte_carlo(benders_sol_KCF.final_solution, num_scenarios);
+		mc_robuste = run_monte_carlo(benders_sol_KCF.final_solution, num_scenarios);
 		cout << "\n--- Monte Carlo evaluation of the BAEF plan on " << num_scenarios			  << " demands ---" << endl;
 		cout << "Expected average cost                 : " 	<< mc_robuste.mean_cost 								<< endl;
 		cout << "Standard deviation                    : " 	<< mc_robuste.std_dev 									<< endl;
@@ -3106,7 +3107,7 @@ int main(int argc, const char* argv[]){
 		cout << "Theoretical worst-case cost (Benders) : " 	<< benders_sol_KCF.obj_value 							<< endl;
 	
 		// ==================== KCU ====================
-		MonteCarlo_Result mc_robuste = run_monte_carlo(benders_sol_KCU.final_solution, num_scenarios);
+		mc_robuste = run_monte_carlo(benders_sol_KCU.final_solution, num_scenarios);
 		cout << "\n--- Monte Carlo evaluation of the KCU plan on " << num_scenarios 			  << " demands ---" << endl;
 		cout << "Expected average cost                 : " 	<< mc_robuste.mean_cost 								<< endl;
 		cout << "Standard deviation                    : " 	<< mc_robuste.std_dev	 								<< endl;
@@ -3115,7 +3116,7 @@ int main(int argc, const char* argv[]){
 		cout << "Theoretical worst-case cost (Benders) : " 	<< benders_sol_KCU.obj_value 							<< endl;
 
 		// ==================== KCUD ====================
-		MonteCarlo_Result mc_robuste = run_monte_carlo(benders_sol_KCUD.final_solution, num_scenarios);
+		mc_robuste = run_monte_carlo(benders_sol_KCUD.final_solution, num_scenarios);
 		cout << "\n--- Monte Carlo evaluation of the KCUD plan on " << num_scenarios 			  << " demands ---" << endl;
 		cout << "Expected average cost                 : " 	<< mc_robuste.mean_cost 								<< endl;
 		cout << "Standard deviation                    : " 	<< mc_robuste.std_dev 									<< endl;
@@ -3124,7 +3125,7 @@ int main(int argc, const char* argv[]){
 		cout << "Theoretical worst-case cost (Benders) : " 	<< benders_sol_KCUD.obj_value 							<< endl;
 
 		// ==================== KCRDKL ====================
-		MonteCarlo_Result mc_robuste = run_monte_carlo(benders_sol_KCRDKL.final_solution, num_scenarios);
+		mc_robuste = run_monte_carlo(benders_sol_KCRDKL.final_solution, num_scenarios);
 		cout << "\n--- Monte Carlo evaluation of the KCRDKL plan on " << num_scenarios 			  << " demands ---" << endl;
 		cout << "Expected average cost                 : " 	<< mc_robuste.mean_cost 								<< endl;
 		cout << "Standard deviation                    : " 	<< mc_robuste.std_dev 									<< endl;
@@ -3133,7 +3134,7 @@ int main(int argc, const char* argv[]){
 		cout << "Theoretical worst-case cost (Benders) : " 	<< benders_sol_KCRDKL.obj_value 						<< endl;
 
 		// ==================== KCOGL ====================
-		MonteCarlo_Result mc_robuste = run_monte_carlo(benders_sol_KCOGL.final_solution, num_scenarios);
+		mc_robuste = run_monte_carlo(benders_sol_KCOGL.final_solution, num_scenarios);
 		cout << "\n--- Monte Carlo evaluation of the KCOGL plan on " << num_scenarios 			  << " demands ---" << endl;
 		cout << "Expected average cost                 : " 	<< mc_robuste.mean_cost 								<< endl;
 		cout << "Standard deviation                    : " 	<< mc_robuste.std_dev 									<< endl;
