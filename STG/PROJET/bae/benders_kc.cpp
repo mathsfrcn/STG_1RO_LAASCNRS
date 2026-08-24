@@ -18,6 +18,7 @@
 #include <sstream>
 #include <iostream>
 #include <filesystem>
+#include <queue>
 
 using namespace std;
 using namespace std::chrono;
@@ -97,6 +98,20 @@ struct MonteCarlo_Result{
 	float worst_case_simulated;
 };
 
+
+// Structure for A* exploration in the budget graph
+struct BFSNode {
+    float potential_cost;
+    float actual_cost;    // Cumulative cost
+    int t;
+    int j;
+    vector<float> scenario;
+
+    bool operator<(const BFSNode& other) const {
+        return potential_cost < other.potential_cost; 
+    }
+};
+
 // =========================================== Calculate the Manhattan distance for the orthogonality heuristic
 
 int calculate_L1_distance(const Path& pathA, const Path& pathB){
@@ -141,7 +156,7 @@ void extract_paths_dfs(
         return;
     }
 
-    // We are trying to figure out where we came from, its like : what was the budget i? to arrive at j at step t
+    // We are trying to figure out where we came from, its like: what was the budget i? to arrive at j at step t
     for(int i = 0; i <= j; i++){
         if(j <= i + sol.inst.deltat[t-1] && (t != 1 || i == 0)){
             if((j-i) <= sol.inst.dt[t-1]){
@@ -216,7 +231,7 @@ void export_budget_graph_json(
                     
                     if(!first_arc) output << ",\n";
 
-                    float cost = (t == sol.inst.T+1) ? 0 : costs[t][i][j][type];
+                    float cost = (t == sol.inst.T+1) ? 0: costs[t][i][j][type];
                     int is_worst = arcbool[t][i][j][type];
                     
                     output << "    {\"source\": \"" << t-1 << "_" << i << "\", \"target\": \"" << t << "_" << j 
@@ -252,7 +267,7 @@ void display_vector_int(vector<int> v){
 }
 
 string BoolToString(bool b){
-  return b ? "1" : "0";
+  return b ? "1": "0";
 }
 
 // =========================================== Instance related code
@@ -460,7 +475,7 @@ Instance read_instance_randomized(string filename, int budget, float read_instan
 			float proportion = inst.dt[t] / inst.Dt[inst.T-1];				// We calculate the share of demande in périod t relative to total demand
 			inst.deltat[t] = ceil((inst.Gamma * adv_margin) * proportion);	// This portion of the total budget is associated with period t
 
-			if(inst.deltat[t] > inst.Dt[t]){								// Security : we cannot cancel more requests than there are
+			if(inst.deltat[t] > inst.Dt[t]){								// Security: we cannot cancel more requests than there are
 				inst.deltat[t] = inst.Dt[t];
 			}
 		}
@@ -522,7 +537,7 @@ vector<vector<vector<vector<float> > > > budget_graph_cost(Solution sol){
 		}
 	}
 
-	// cout<<"nominal scenario cost :"<<endl;
+	// cout<<"nominal scenario cost:"<<endl;
 	// for(int t = 1; t<sol.inst.T+2;t++){
 	// 	cout<<costs[t][0][0][0]<<" ";
 	// }
@@ -1914,13 +1929,13 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, KC_Method meth
 		
 		// display_vector_float(new_sol.Xt);
 
-		//cout<<"new sol value KC_benders_main : " << new_sol.obj_val << endl;
+		//cout<<"new sol value KC_benders_main: " << new_sol.obj_val << endl;
 
 		//cout<<"============ "<< new_sol.obj_val << " " << sol.obj_val<<endl;
 		
 		//cout << sol.obj_val << endl;
 		
-		// cout<<"worst case : ";
+		// cout<<"worst case: ";
 		// display_vector_float(sol_adv.Dt);
 		
 		cout << "Iteration " << i << " - Master Obj (LB): " << sol.obj_val << " | Subproblem Cost (UB): " << ub_cost << endl;
@@ -2050,336 +2065,168 @@ Solution BA_benders_Master(Instance inst, vector<vector<float> > scenarios){
 	return sol;
 }
 
-Solution BA_benders_Master_Integer(Instance inst, vector<vector<float> > scenarios){
-	Solution sol;
-	sol.inst = inst;
+vector<Solution_ADV> BAO_benders_Subproblem_TopN(Solution sol, float eps, int nb_path_to_select = 5){
+    vector<vector<float> > pi_value; 
+    vector<vector<vector<vector<float> > > > costs = budget_graph_cost(sol);
 
-	IloEnv env;
-	IloModel model(env);
+    pi_value.resize(sol.inst.T+2);
+    for(int t = 0; t < sol.inst.T+2; t++){
+        pi_value[t].resize(sol.inst.Gamma+1, -1e9); 
+    }
 
-	// Setup cost
-	int cP = 2;
+    // Dynamic prog. for longest path
 
-	// Vars
-	IloNumVar z(env, -IloInfinity, IloInfinity);
-	z.setName("z");
-	IloNumVarArray  X(env, inst.T);
-	IloNumVarArray y(env, inst.T);
-	IloArray<IloNumVarArray> s(env,scenarios.size());
-	IloArray<IloNumVarArray> B(env,scenarios.size());
-	IloArray<IloNumVarArray> I(env,scenarios.size());
-	for(int o = 0; o < scenarios.size(); o++){
-		s[o] = IloNumVarArray(env, inst.T);
-		B[o] = IloNumVarArray(env, inst.T);
-		I[o] = IloNumVarArray(env, inst.T);
-		for(int t = 0; t < inst.T; t++){
-			char name[80];
-			s[o][t] = IloNumVar(env);
-			sprintf(name,"s_%d_%d",o,t);
-			s[o][t].setName(name);
+    float tmp;
+    pi_value[0][0] = 0;
+    for(int t = 1; t < sol.inst.T+1; t++){
+        for(int j = 0; j < sol.inst.Gamma+1; j++){
+            tmp = pi_value[t-1][j] + costs[t][j][j][0]; 
+            for(int i = 0; i <= j; i++){
+                if(j <= i+sol.inst.deltat[t-1]){
+                    if(pi_value[t-1][i] + costs[t][i][j][0] > tmp) tmp = pi_value[t-1][i]+costs[t][i][j][0];
+                    if(pi_value[t-1][i] + costs[t][i][j][1] > tmp) tmp = pi_value[t-1][i]+costs[t][i][j][1];
+                }
+            }
 
-			B[o][t] = IloNumVar(env);
-			sprintf(name,"B_%d_%d",o,t);
-			B[o][t].setName(name);
-	
-			I[o][t] = IloNumVar(env);
-			sprintf(name,"I_%d_%d",o,t);
-			I[o][t].setName(name);
+            pi_value[t][j] = tmp;
+        }
+    }
 
-			X[t] = IloNumVar(env, 0, IloInfinity,  IloNumVar::Float);
-			sprintf(name,"X_%d",t);
-			X[t].setName(name);
+    tmp = pi_value[sol.inst.T][0];
+    for(int i = 0; i < sol.inst.Gamma+1; i++){
+        if(pi_value[sol.inst.T][i] > tmp){
+            tmp = pi_value[sol.inst.T][i];
+        }
+    }
+    
+	pi_value[sol.inst.T+1][0] = tmp;
 
-			y[t] = IloNumVar(env, 0, 1,  IloNumVar::Int);
-			sprintf(name,"y_%d",t);
-			y[t].setName(name);
-		}
-	}
+	// ========================== Now the backtrack with A* & TopN
 
-	// Consts
-	for(int t = 1; t < inst.T+1; t++){
-		model.add(X[t-1] < inst.X[t-1]);
-	}
+    vector<Solution_ADV> pool;
+    priority_queue<BFSNode> pq;
+    vector<float> empty_scenario(sol.inst.T, 0.0);
+    
+    // Initialization from (T+1, 0)
+    pq.push({pi_value[sol.inst.T+1][0], 0.0f, sol.inst.T+1, 0, empty_scenario});
 
-	for(int t = 0; t < inst.T; t++){
-		for(int o = 0; o < scenarios.size(); o++){
-			model.add(B[o][t] - I[o][t] == scenarios[o][t] - X[t]); // (2)
-			IloExpr expr(env);
-			for(int i = 0; i <= t; i++){
-				expr += s[o][i];
-			}
+    // We stop when we have N scenarios
+    while(!pq.empty() && pool.size() < nb_path_to_select){
+        BFSNode current = pq.top();
+        pq.pop();
 
-			model.add(expr == scenarios[o][t]-B[o][t]);				// (3)
-		}
-	}
+        int t = current.t;
+        int j = current.j;
 
-	for(int o = 0; o < scenarios.size(); o++){
-		IloExpr expr(env);
-		for(int t = 0; t < inst.T; t++){
-			expr += (inst.cI*I[o][t] + inst.cB*B[o][t] - inst.bP*s[o][t]+cP*y[t]);
-		}
-		
-		model.add(z >= expr);
-	}
+        // We t = 0, the path is complete
+        if(t == 0){
+            Solution_ADV adv;
+            adv.Dt = current.scenario;
+            pool.push_back(adv);
+            continue; 
+        }
 
-	// Constraints for y............
-	float M = inst.Dt[inst.T-1] + inst.Gamma;
-	model.add(X[1] <= y[1]*M);
+        // Transition depuis le puits
+        if(t == sol.inst.T + 1){
+            for(int i = 0; i < sol.inst.Gamma+1; i++){
+                if(pi_value[sol.inst.T][i] > -1e8){ 
+                    float new_act = current.actual_cost;
+                    float new_pot = new_act + pi_value[sol.inst.T][i];
+                    pq.push({new_pot, new_act, sol.inst.T, i, current.scenario});
+                }
+            }
+        } else {
+            for(int i = 0; i <= j; i++){
+                if(j <= i+sol.inst.deltat[t-1] && (t != 1 || i == 0)){
+                    
+                    // Arc 0
+                    float cost0 = costs[t][i][j][0];
+                    float act0 = current.actual_cost + cost0;
+                    float pot0 = act0 + pi_value[t-1][i];
+                    vector<float> scen0 = current.scenario;
+                    scen0[t-1] = sol.inst.Dt[t-1] - (j-i);
+                    pq.push({pot0, act0, t-1, i, scen0});
 
-	for(int t = 1; t < inst.T; t++){
-		model.add(X[t]-X[t-1] <= y[t]*M);
-	}
+                    // Arc 1
+                    float cost1 = costs[t][i][j][1];
+                    float act1 = current.actual_cost + cost1;
+                    float pot1 = act1 + pi_value[t-1][i];
+                    vector<float> scen1 = current.scenario;
+                    scen1[t-1] = sol.inst.Dt[t-1] + (j-i);
+                    pq.push({pot1, act1, t-1, i, scen1});
+                }
+            }
+        }
+    }
 
-	// Objective value
-	model.add(IloMinimize(env, z));
-
-	// Solve
-	IloCplex cplex(model);
-	cplex.setParam(IloCplex::Param::MIP::Display, 0);
-	cplex.setOut(env.getNullStream());
-    if(!cplex.solve()){
-    	env.error() << "Failed to optimize LP." << endl;
-    	throw(-1);
-	}
-
-	vector<float> Xt;
-	Xt.resize(inst.T);
-	for(int t = 0; t < inst.T; t++){
-		Xt[t] = cplex.getValue(X[t]);
-	}
-
-	sol.Xt = Xt;
-	sol.xt = cumulToStandard(sol.Xt);
-	sol.obj_val = cplex.getObjValue();
-
-	// for(int o = 0; o<scenarios.size();o++){
-	// 	for(int t = 0; t<inst.T; t++){
-	// 		cout<<cplex.getValue(B[o][t])<<" "<<cplex.getValue(I[o][t])<<" "<<scenarios[o][t]<<" "<<cplex.getValue(X[t])<<" "<<cplex.getValue(s[o][t])<<endl;
-	// 	}
-	// }
-
-	// float debug = 0;
-	// for(int o = 0; o<scenarios.size();o++){
-	// 	for(int t = 0; t<inst.T; t++){
-	// 		//debug += inst.cI*cplex.getValue(I[o][t]) + inst.cB*cplex.getValue(B[o][t]) - inst.bP*cplex.getValue(s[o][t]);
-	// 		debug += - inst.bP*cplex.getValue(s[o][t]);
-	// 	}
-	// }
-	// cout<<"solution cost (cplex issue ?): "<<debug<<endl;
-
-	env.end();
-	
-	return sol;
+    return pool;
 }
 
+Benders_Result BAO_benders_Main(Instance inst, float eps, int max_iter, int max_time_s, int nb_path_to_select){
+    auto start = chrono::high_resolution_clock::now();
+    Solution sol;
+    float total_time_master = 0.0;
+    float total_time_subproblem = 0.0;
+    bool stopCriterion = false;
+    float proc_time;
+    int i = 1;
+    vector<vector<float> > scenarios;
+    
+    // Initialization
+    scenarios.push_back(inst.Dt);
 
-// Solve subproblem using CPLEX: NOT USED, probably not working
-Solution_ADV BA_benders_Subproblem(Solution sol){
-	Solution_ADV sol_adv;
+    auto start_m = chrono::high_resolution_clock::now();
+    sol = BA_benders_Master(inst, scenarios);
+    auto stop_m = chrono::high_resolution_clock::now();
+    total_time_master += chrono::duration_cast<chrono::microseconds>(stop_m - start_m).count() * 1e-6;
 
-	IloEnv env;
-	IloModel model(env);
+    while(!stopCriterion){
+        auto start_s = chrono::high_resolution_clock::now();
+        vector<Solution_ADV> adv_scenarios = BAO_benders_Subproblem_TopN(sol, eps, nb_path_to_select);
+        auto stop_s = chrono::high_resolution_clock::now();
+        total_time_subproblem += chrono::duration_cast<chrono::microseconds>(stop_s - start_s).count() * 1e-6;
 
-	//used to retrieve relevant pi after the solve
-	vector<vector<bool> > pibool;
-	pibool.resize(sol.inst.T+2);
+        // UB assessed based on the absolute worst-case scenario
+        float upper_bound_cost = objective_value(sol, adv_scenarios[0].Dt);
 
-	//vars
-	IloArray<IloNumVarArray> pi(env,sol.inst.T+2);
-	for(int t = 0; t<sol.inst.T+2;t++){
-		//for t = 0 and t = T+1 only one variable in the array
-		pi[t] = IloNumVarArray(env, sol.inst.Gamma+1);
-		pibool[t].resize(sol.inst.Gamma+1);
-		for(int i = 0; i<sol.inst.Gamma+1; i++){
-			char name[80];
-			pi[t][i] = IloNumVar(env, -IloInfinity, IloInfinity);
-			sprintf(name,"pi_%d_%d",t,i);
-			pi[t][i].setName(name);
-		}
-	}
+        if(upper_bound_cost <= sol.obj_val + eps){
+            stopCriterion = true;
+            break;
+        }
 
-	//csts
-	//for t in 1...T-1
-	for(int t = 1; t<sol.inst.T;t++){
-		for(int i = 0; i<sol.inst.Gamma+1; i++){
-			for(int j = i; j<sol.inst.Gamma+1; j++){
-				//the arc is in the graph =>
-				if(j<=i+sol.inst.deltat[t]){
-					IloExpr expr(env);
-					if(t==1) {
-						expr = pi[0][0];
-						pibool[0][0] = true;
-					}
-					else{ expr = pi[t-1][i];}
-					model.add(pi[t][j] - expr >= sol.inst.cI*(sol.Xt[t]- (sol.inst.Dt[t] - (j-i))));
-					model.add(pi[t][j] - expr >= sol.inst.cB*(sol.inst.Dt[t] + (j-i) - sol.Xt[t]));
-					pibool[t][j] = true;
-				}
-				
-			}
-		}
-	}
-	//for t = T
-	int t = sol.inst.T;
-	for(int i = 0; i<sol.inst.Gamma+1; i++){
-		for(int j = i; j<sol.inst.Gamma+1; j++){
-			if(j<=i+sol.inst.deltat[t]){
-				model.add(pi[t][j] - pi[t-1][i] >= sol.inst.cI*(sol.Xt[t]- (sol.inst.Dt[t] - (j-i))) - sol.inst.bP*(sol.inst.Dt[t] - (j-i)));
-				model.add(pi[t][j] - pi[t-1][i] >= sol.inst.cB*(sol.inst.Dt[t] + (j-i) - sol.Xt[t]) - sol.inst.bP*sol.Xt[t]);
-				pibool[t][j] = true;
-			}
-		}
-	}
+        // We add the N pool paths
+        for(const auto& adv : adv_scenarios){
+            scenarios.push_back(adv.Dt);
+        }
 
+        auto start_m2 = chrono::high_resolution_clock::now();
+        sol = BA_benders_Master(inst, scenarios);
+        auto stop_m2 = chrono::high_resolution_clock::now();
+        total_time_master += chrono::duration_cast<chrono::microseconds>(stop_m2 - start_m2).count() * 1e-6;
 
-	for(int i = 0; i<sol.inst.Gamma+1; i++){
-		if(pibool[t][i]) model.add(pi[sol.inst.T+1][0] - pi[sol.inst.T][i] >= 0);
-	}
-	// model.add(pi[sol.inst.T][0]-pi[0][0]>= 0);
-	model.add(pi[0][0]==0);
-	pibool[0][0] = true;
-	pibool[sol.inst.T+1][0] = true;
+        auto current_time = chrono::high_resolution_clock::now();
+        long long elapsed_s = chrono::duration_cast<chrono::seconds>(current_time - start).count();
 
-	//obj
+        if(elapsed_s >= max_time_s){
+            cout << "TIMEOUT: benders stop." << endl;
+            break;
+        }
 
-	//model.add(IloMinimize(env, pi[sol.inst.T][0]));
+        if(i >= max_iter){ //[cite: 1]
+            cout << "MAXITER: benders stop." << endl;
+            break;
+        }
 
-	IloExpr expr(env);
-	for(int t = 0; t<sol.inst.T+2;t++){
-		//for t = 0 and t = T+1 only one variable in the array
-		for(int i = 0; i<sol.inst.Gamma+1; i++){
-			if(pibool[t][i]){
-				expr += pi[t][i];
-			}
-		}
-	}
+        i++;
+        cout << "Iteration " << i << " - Master Obj (LB): " << sol.obj_val << " | Subproblem Cost (UB): " << upper_bound_cost << endl;
+    }
 
-	model.add(IloMinimize(env, expr)); //bon objectif pour etre sur que les potentiels collent leur borne
-
-	IloCplex cplex(model);
-	//cplex.exportModel ("lpex1.lp");
-	cplex.setParam(IloCplex::Param::MIP::Display, 1);
-	cplex.setOut(env.getNullStream());
-    if ( !cplex.solve() ) {
-    	env.error() << "Failed to optimize LP." << endl;
-    	throw(-1);
-	}
-
-	//retrieve value for pi var
-	vector<vector<float> > pisol;
-	pisol.resize(sol.inst.T+2);
-	for(int t = 0; t<sol.inst.T+2;t++){
-		//for t = 0 and t = T+1 only one variable in the array
-		pisol[t].resize(sol.inst.Gamma+1);
-		for(int i = 0; i<sol.inst.Gamma+1; i++){
-			if(pibool[t][i]){
-				pisol[t][i] = cplex.getValue(pi[t][i]);
-				// cout<<t<<" "<<i<<" "<<pisol[t][i]<<endl;
-			}
-		}
-	}
-
-	// string buff;
-	// for(int i = sol.inst.Gamma; i>=0; i--){
-	// 	//for t = 0 and t = T+1 only one variable in the array
-	// 	buff = ' ';
-	// 	for(int t = 0; t<sol.inst.T+2;t++){
-	// 		if(pibool[t][i]){
-	// 			buff+= ' ' + to_string(pisol[t][i]);
-	// 		}
-	// 	}
-	// 	cout<<buff<<endl;
-	// }
-
-
-
-	// pisol[0][0] = cplex.getValue(pi[0][0]);
-	// pisol[sol.inst.T][0] = cplex.getValue(pi[sol.inst.T][0]);
-
-	//retrieve uncertainty from pi var (where constraints are tights)
-
-	cout<<"====================== LONGEST PATH: "<<pisol[sol.inst.T+1][0]<<endl;
-	float previous_val = pisol[sol.inst.T+1][0];
-	//================= DANGEROUS, WORKS ONLY IF GAMMA IS FULLY USED, SHOULD CHANGE THIS ====================
-	int previous_budget = sol.inst.Gamma;
-
-	vector<int> offset;
-	offset.resize(sol.inst.T);
-
-	for(int t = sol.inst.T; t>=1; t--){
-		for(int i=previous_budget; i>=0; i--){
-
-			if(t == sol.inst.T){
-				if( pisol[t][previous_budget] - pisol[t-1][i] == sol.inst.cI*(sol.Xt[t]- (sol.inst.Dt[t] - (previous_budget-i))) - sol.inst.bP*(sol.inst.Dt[t] - (previous_budget-i))) { //worse for deltat negative
-					offset[t-1] = -(previous_budget - i);
-					// cout<<"tight constraint found for t = "<<t<<" from " <<previous_budget<< " to "<<i<<endl;
-					previous_budget = i;
-					break;
-					
-				}
-				else if(pisol[t][previous_budget] - pisol[t-1][i] == sol.inst.cB*(sol.inst.Dt[t] + (previous_budget-i) - sol.Xt[t]) - sol.inst.bP*sol.Xt[t]) { //worse for deltat negative
-					offset[t-1] = (previous_budget - i);
-					// cout<<"tight constraint found for t = "<<t<<" from " <<previous_budget<< " to "<<i<<endl;
-					previous_budget = i;
-					break;
-				}
-			}
-			else if (t == 1) {
-				if( pisol[t][previous_budget] - pisol[0][0] == sol.inst.cI*(sol.Xt[t]- (sol.inst.Dt[t] - (previous_budget-i)))){ //worse for deltat negative
-					offset[t-1] = -(previous_budget - i);
-					// cout<<"tight constraint found for t = "<<t<<" from " <<previous_budget<< " to "<<i<<endl;
-					previous_budget = i;
-					break;
-					
-				}
-				else if(pisol[t][previous_budget] - pisol[0][0] == sol.inst.cB*(sol.inst.Dt[t] + (previous_budget-i) - sol.Xt[t])) { //worse for deltat negative
-					offset[t-1] = (previous_budget - i);
-					// cout<<"tight constraint found for t = "<<t<<" from " <<previous_budget<< " to "<<i<<endl;
-					previous_budget = i;
-					break;
-					
-				}
-			}
-			//generic case
-			else{
-				if( pisol[t][previous_budget] - pisol[t-1][i] == sol.inst.cI*(sol.Xt[t]- (sol.inst.Dt[t] - (previous_budget-i)))){ //worse for deltat negative
-					offset[t-1] = -(previous_budget - i);
-					// cout<<"tight constraint found for t = "<<t<<" from " <<previous_budget<< " to "<<i<<endl;
-					previous_budget = i;
-					break;
-				}
-				else if(pisol[t][previous_budget] - pisol[t-1][i] == sol.inst.cB*(sol.inst.Dt[t] + (previous_budget-i) - sol.Xt[t])) { //worse for deltat negative
-					offset[t-1] = (previous_budget - i);
-					// cout<<"tight constraint found for t = "<<t<<" from " <<previous_budget<< " to "<<i<<endl;
-					previous_budget = i;
-					break;
-					
-				}
-			
-			}
-		}
-
-	}
-
-	// cout<<"maxindex :";
-	// display_vector_int(maxindex);
-
-	vector<float> Dt;
-	Dt.resize(sol.inst.T);
-	for(int t = 0; t<sol.inst.T; t++){
-		Dt[t] = sol.inst.Dt[t] + offset[t];
-	}
-
-	env.end();
-
-	// cout<<"hope this work : "<<endl;
-	// display_vector_int(offset);
-	// display_vector_float(Dt);
-
-	sol_adv.Dt = Dt;
-	return sol_adv;
+    auto stop = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
+    proc_time = duration.count() * 1e-6;
+    
+    return {i, proc_time, total_time_master, total_time_subproblem, sol.obj_val};
 }
-
 
 // Solve subproblem with dynamic prog
 Solution_ADV BA_benders_Subproblem_DP(Solution sol, float eps){
@@ -2479,7 +2326,7 @@ Solution_ADV BA_benders_Subproblem_DP(Solution sol, float eps){
 
 	// cout<<"new sol (with Graph LP): ";
 	// display_vector_float(test.Xt);
-	// cout<<"new sol value : "<<test.obj_val<<endl;
+	// cout<<"new sol value: "<<test.obj_val<<endl;
 
 	// cout << "================= END TEST ==================" << endl;
 
@@ -2611,6 +2458,7 @@ vector<string> allfile;
 
 int main(int argc, const char* argv[]){
 	Benders_Result benders_sol_BA;
+	Benders_Result benders_sol_BAO;
 	Benders_Result benders_sol_KCA;
 	Benders_Result benders_sol_KCF;
 	Benders_Result benders_sol_KCRDK;
@@ -2636,7 +2484,7 @@ int main(int argc, const char* argv[]){
 	// Read instances randomized parameters
 	float read_instance_rd_lb = 0.4;	// The production plan will be between lb% and ub% of the cumulative demand
 	float read_instance_rd_ub = 0.8;
-	float adv_margin = 2.0;				// Margin allowed to the opponent in the calculation of deltats : adv_margin*Gamma (=1 : no marge, =2 : a lot of)
+	float adv_margin = 2.0;				// Margin allowed to the opponent in the calculation of deltats: adv_margin*Gamma (=1: no marge, =2: a lot of)
 	// Création of the folder architecture
 	auto t = std::time(nullptr);
 	auto tm = *std::localtime(&t);
@@ -2659,6 +2507,7 @@ int main(int argc, const char* argv[]){
 		cout << "Recording of results in: " << folder_path << endl;
 	}
 
+	ostringstream oss_BA_BAO;
 	ostringstream oss_BA_KCF;
 	ostringstream oss_BA_KCRDK;
 	ostringstream oss_BA_KCRDKL;
@@ -2670,6 +2519,7 @@ int main(int argc, const char* argv[]){
 	ostringstream oss_validation;
 	ostringstream oss_time_m_s;
 	ostringstream oss_stats;
+	oss_BA_BAO		<< folder_path << experience_name << "_BA_BAO.csv";
 	oss_BA_KCF 	   	<< folder_path << experience_name << "_BA_KCF.csv";
 	oss_BA_KCRDK    << folder_path << experience_name << "_BA_KCRDK.csv";
 	oss_BA_KCRDKL   << folder_path << experience_name << "_BA_KCRDKL.csv";
@@ -2681,6 +2531,7 @@ int main(int argc, const char* argv[]){
 	oss_validation  << folder_path << experience_name << "_validation.txt";
 	oss_time_m_s    << folder_path << experience_name << "_time_m_s.csv";
 	oss_stats		<< folder_path << experience_name << "_stats.csv";
+	ofstream output_BA_BAO(oss_BA_BAO.str());
 	ofstream output_BA_KCF(oss_BA_KCF.str());
 	ofstream output_BA_KCRDK(oss_BA_KCRDK.str());
 	ofstream output_BA_KCRDKL(oss_BA_KCRDKL.str());
@@ -2697,7 +2548,7 @@ int main(int argc, const char* argv[]){
 		output_validation.open(oss_validation.str());
 		output_validation << "Fichier 			| Gamma 	| tau 	| 	Validation\n";
 		output_validation << "------------------------------------------------------------\n";
-		output_time_m_s << "Gamma, tau, nb_path_to_select, limit_number_paths, time_master_BA, time_subproblem_BA, time_master_KCA, time_subproblem_KCA, time_master_KCF, time_subproblem_KCF, time_master_KCRDK, time_subproblem_KCRDK, time_master_KCRDKL, time_subproblem_KCRDKL, time_master_KCU, time_subproblem_KCU, time_master_KCUD, time_subproblem_KCUD, time_master_KCOG, time_subproblem_KCOG, time_master_KCOGL, time_subproblem_KCOGL\n";
+		output_time_m_s << "Gamma, tau, nb_path_to_select, limit_number_paths, time_master_BA, time_subproblem_BA, time_master_BAO, time_subproblem_BAO, time_master_KCA, time_subproblem_KCA, time_master_KCF, time_subproblem_KCF, time_master_KCRDK, time_subproblem_KCRDK, time_master_KCRDKL, time_subproblem_KCRDKL, time_master_KCU, time_subproblem_KCU, time_master_KCUD, time_subproblem_KCUD, time_master_KCOG, time_subproblem_KCOG, time_master_KCOGL, time_subproblem_KCOGL\n";
 	}
 
 	vector<string> file_list;
@@ -2753,45 +2604,49 @@ int main(int argc, const char* argv[]){
 
 						// BA		
 						benders_sol_BA = BA_benders_Main(inst, eps, max_iter, max_time_s);
-						cout << "\nBA-----done (Obj :" << benders_sol_BA.obj_value << ")" << endl;
+						cout << "\nBA-----done (Obj:" << benders_sol_BA.obj_value << ")" << endl;
 					
+						// BAO
+						benders_sol_BAO = BAO_benders_Main(inst, eps, max_iter, max_time_s, nb_path_to_select);
+						cout << "\nBAO----done (Obj:" << benders_sol_BAO.obj_value << ")" << endl;
+
 						// KC
 						approx_coeff = float(tau)/100;
 
 						// KC All (BAEA)
 						benders_sol_KCA = KC_benders_Main(inst, approx_coeff, KC_Method::KC, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, 1); // First bool is to use HOG, the other is to use the KC random K method
-						cout << "\nKCA----done (Obj :" << benders_sol_KCA.obj_value << ")" <<endl;
+						cout << "\nKCA----done (Obj:" << benders_sol_KCA.obj_value << ")" <<endl;
 
 						// KC Few (BAEF)
 						benders_sol_KCF = KC_benders_Main(inst, approx_coeff, KC_Method::KC, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
-						cout << "\nKCF----done (Obj :" << benders_sol_KCF.obj_value << ")" <<endl;
+						cout << "\nKCF----done (Obj:" << benders_sol_KCF.obj_value << ")" <<endl;
 
 						// KCRDK (RanDom K)
 						benders_sol_KCRDK = KC_benders_Main(inst, approx_coeff, KC_Method::RDK, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
-						cout << "\nKCRDK--done (Obj :" << benders_sol_KCRDK.obj_value << ")" <<endl;
+						cout << "\nKCRDK--done (Obj:" << benders_sol_KCRDK.obj_value << ")" <<endl;
 
 						// KCRDKL (KCRDK Lexicographical)
 						benders_sol_KCRDKL = KC_benders_Main(inst, approx_coeff, KC_Method::RDKL, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
-						cout << "\nKCRDKL-done (Obj :" << benders_sol_KCRDKL.obj_value << ")" <<endl;
+						cout << "\nKCRDKL-done (Obj:" << benders_sol_KCRDKL.obj_value << ")" <<endl;
 						
 						// KCU	(KC Unique)
 						benders_sol_KCU = KC_benders_Main(inst, approx_coeff, KC_Method::Unique, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few); //KCU_benders_Main(inst, eps, max_iter, max_time_s);
-						cout << "\nKCU----done (Obj :" << benders_sol_KCU.obj_value << ")" << endl;
+						cout << "\nKCU----done (Obj:" << benders_sol_KCU.obj_value << ")" << endl;
 
 						// KCUD (KC with two optimal paths)
 						benders_sol_KCUD = KC_benders_Main(inst, approx_coeff, KC_Method::UniqueDual, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
-						cout << "\nKCUD---done (Obj :" << benders_sol_KCUD.obj_value << ")" << endl;
+						cout << "\nKCUD---done (Obj:" << benders_sol_KCUD.obj_value << ")" << endl;
 
 						// KCOG
 						benders_sol_KCOG = KC_benders_Main(inst, approx_coeff, KC_Method::HOG, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
-						cout << "\nKCOG---done (Obj :" << benders_sol_KCOG.obj_value << ")"<< endl;
+						cout << "\nKCOG---done (Obj:" << benders_sol_KCOG.obj_value << ")"<< endl;
 
 						// KCOGL (OG Lexicographical)
 						benders_sol_KCOGL = KC_benders_Main(inst, approx_coeff, KC_Method::HOGL, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
-						cout << "\nKCOGL--done (Obj :" << benders_sol_KCOGL.obj_value << ")"<< endl;
+						cout << "\nKCOGL--done (Obj:" << benders_sol_KCOGL.obj_value << ")"<< endl;
 
 						// Quality control of the solution
-						if(abs(benders_sol_BA.obj_value - benders_sol_KCA.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCF.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCRDK.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCRDKL.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCU.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCUD.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCOG.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCOGL.obj_value) > eps){
+						if(abs(benders_sol_BA.obj_value - benders_sol_BAO.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCA.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCF.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCRDK.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCRDKL.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCU.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCUD.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCOG.obj_value) > eps || abs(benders_sol_BA.obj_value - benders_sol_KCOGL.obj_value) > eps){
 							cout << "\nDegraded quality" << endl;
 							validation_status = "Degraded quality";
 						} else{
@@ -2804,6 +2659,27 @@ int main(int argc, const char* argv[]){
 							// Validation file
 							output_validation << filename << " | " << Gamma << " | " << tau << " | " << nb_path_to_select << " | " << limit_number_paths << " | " << validation_status << endl;
 						
+							// BA with BAO
+							output_BA_BAO	<< "BA," 
+											<< Gamma << "," 
+											<< tau << ","
+											<< nb_path_to_select << ","
+											<< limit_number_paths << ","
+											<< benders_sol_BA.iter << "," 
+											<< benders_sol_BA.time << ","
+											<< benders_sol_BA.time_master << ","
+											<< benders_sol_BA.time_subproblem << endl;
+							
+							output_BA_BAO 	<< "BAO," 
+											<< Gamma << "," 
+											<< tau << ","
+											<< nb_path_to_select << ","
+											<< limit_number_paths << ","
+											<< benders_sol_BAO.iter << "," 
+											<< benders_sol_BAO.time << ","
+											<< benders_sol_BAO.time_master << ","
+											<< benders_sol_BAO.time_subproblem << endl;
+
 							// BA with KC standard 
 							output_BA_KCF 	<< "BA," 
 											<< Gamma << "," 
@@ -2979,6 +2855,8 @@ int main(int argc, const char* argv[]){
 											<< limit_number_paths 					<< ","
 											<< benders_sol_BA.time_master 			<< ","
 											<< benders_sol_BA.time_subproblem 		<< ","
+											<< benders_sol_BAO.time_master 			<< ","
+											<< benders_sol_BAO.time_subproblem 		<< ","
 											<< benders_sol_KCA.time_master 			<< ","
 											<< benders_sol_KCA.time_subproblem 		<< ","
 											<< benders_sol_KCF.time_master 			<< ","
@@ -3004,6 +2882,14 @@ int main(int argc, const char* argv[]){
 											<< limit_number_paths << ","
 											<< benders_sol_BA.time << ","
 											<< benders_sol_BA.iter << endl;
+
+							output_stats	<< "BAO,"
+											<< Gamma << ","
+											<< tau << ","
+											<< nb_path_to_select << ","
+											<< limit_number_paths << ","
+											<< benders_sol_BAO.time << ","
+											<< benders_sol_BAO.iter << endl;
 
 							output_stats 	<< "KCA,"
 											<< Gamma << ","
@@ -3082,69 +2968,79 @@ int main(int argc, const char* argv[]){
 		// ==================== BA ====================
 		mc_robuste = run_monte_carlo(benders_sol_BA.final_solution, num_scenarios);
 		cout << "\n--- Monte Carlo evaluation of the BA plan on " << num_scenarios 				  << " demands ---" << endl;
-		cout << "Expected average cost                 : " 	<< mc_robuste.mean_cost 								<< endl;
-		cout << "Standard deviation                    : " 	<< mc_robuste.std_dev 									<< endl;
-		cout << "CI (95%)                              : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
-		cout << "Worst case simulated                  : " 	<< mc_robuste.worst_case_simulated 						<< endl;
-		cout << "Theoretical worst-case cost (Benders) : " 	<< benders_sol_BA.obj_value 							<< endl;
+		cout << "Expected average cost                : " 	<< mc_robuste.mean_cost 								<< endl;
+		cout << "Standard deviation                   : " 	<< mc_robuste.std_dev 									<< endl;
+		cout << "CI (95%)                             : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
+		cout << "Worst case simulated                 : " 	<< mc_robuste.worst_case_simulated 						<< endl;
+		cout << "Theoretical worst-case cost (Benders): " 	<< benders_sol_BA.obj_value 							<< endl;
+
+		// ==================== BAO====================
+		mc_robuste = run_monte_carlo(benders_sol_BAO.final_solution, num_scenarios);
+		cout << "\n--- Monte Carlo evaluation of the BAO plan on " << num_scenarios 				  << " demands ---" << endl;
+		cout << "Expected average cost                : " 	<< mc_robuste.mean_cost 								<< endl;
+		cout << "Standard deviation                   : " 	<< mc_robuste.std_dev 									<< endl;
+		cout << "CI (95%)                             : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
+		cout << "Worst case simulated                 : " 	<< mc_robuste.worst_case_simulated 						<< endl;
+		cout << "Theoretical worst-case cost (Benders): " 	<< benders_sol_BA.obj_value 							<< endl;
 		
 		// ==================== BAEA ====================
 		mc_robuste = run_monte_carlo(benders_sol_KCA.final_solution, num_scenarios);
 		cout << "\n--- Monte Carlo evaluation of the BAEA plan on " << num_scenarios 			  << " demands ---" << endl;
-		cout << "Expected average cost                 : " 	<< mc_robuste.mean_cost 								<< endl;
-		cout << "Standard deviation                    : " 	<< mc_robuste.std_dev 									<< endl;
-		cout << "CI (95%)                              : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
-		cout << "Worst case simulated                  : " 	<< mc_robuste.worst_case_simulated 						<< endl;
-		cout << "Theoretical worst-case cost (Benders) : " 	<< benders_sol_KCA.obj_value 							<< endl;
+		cout << "Expected average cost                : " 	<< mc_robuste.mean_cost 								<< endl;
+		cout << "Standard deviation                   : " 	<< mc_robuste.std_dev 									<< endl;
+		cout << "CI (95%)                             : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
+		cout << "Worst case simulated                 : " 	<< mc_robuste.worst_case_simulated 						<< endl;
+		cout << "Theoretical worst-case cost (Benders): " 	<< benders_sol_KCA.obj_value 							<< endl;
 
 		// ==================== BAEF ====================
 		mc_robuste = run_monte_carlo(benders_sol_KCF.final_solution, num_scenarios);
 		cout << "\n--- Monte Carlo evaluation of the BAEF plan on " << num_scenarios			  << " demands ---" << endl;
-		cout << "Expected average cost                 : " 	<< mc_robuste.mean_cost 								<< endl;
-		cout << "Standard deviation                    : " 	<< mc_robuste.std_dev 									<< endl;
-		cout << "CI (95%)                              : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
-		cout << "Worst case simulated                  : " 	<< mc_robuste.worst_case_simulated 						<< endl;
-		cout << "Theoretical worst-case cost (Benders) : " 	<< benders_sol_KCF.obj_value 							<< endl;
+		cout << "Expected average cost                : " 	<< mc_robuste.mean_cost 								<< endl;
+		cout << "Standard deviation                   : " 	<< mc_robuste.std_dev 									<< endl;
+		cout << "CI (95%)                             : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
+		cout << "Worst case simulated                 : " 	<< mc_robuste.worst_case_simulated 						<< endl;
+		cout << "Theoretical worst-case cost (Benders): " 	<< benders_sol_KCF.obj_value 							<< endl;
 	
 		// ==================== KCU ====================
 		mc_robuste = run_monte_carlo(benders_sol_KCU.final_solution, num_scenarios);
 		cout << "\n--- Monte Carlo evaluation of the KCU plan on " << num_scenarios 			  << " demands ---" << endl;
-		cout << "Expected average cost                 : " 	<< mc_robuste.mean_cost 								<< endl;
-		cout << "Standard deviation                    : " 	<< mc_robuste.std_dev	 								<< endl;
-		cout << "CI (95%)                              : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
-		cout << "Worst case simulated                  : " 	<< mc_robuste.worst_case_simulated 						<< endl;
-		cout << "Theoretical worst-case cost (Benders) : " 	<< benders_sol_KCU.obj_value 							<< endl;
+		cout << "Expected average cost                : " 	<< mc_robuste.mean_cost 								<< endl;
+		cout << "Standard deviation                   : " 	<< mc_robuste.std_dev	 								<< endl;
+		cout << "CI (95%)                             : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
+		cout << "Worst case simulated                 : " 	<< mc_robuste.worst_case_simulated 						<< endl;
+		cout << "Theoretical worst-case cost (Benders): " 	<< benders_sol_KCU.obj_value 							<< endl;
 
 		// ==================== KCUD ====================
 		mc_robuste = run_monte_carlo(benders_sol_KCUD.final_solution, num_scenarios);
 		cout << "\n--- Monte Carlo evaluation of the KCUD plan on " << num_scenarios 			  << " demands ---" << endl;
-		cout << "Expected average cost                 : " 	<< mc_robuste.mean_cost 								<< endl;
-		cout << "Standard deviation                    : " 	<< mc_robuste.std_dev 									<< endl;
-		cout << "CI (95%)                              : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
-		cout << "Worst case simulated                  : " 	<< mc_robuste.worst_case_simulated 						<< endl;
-		cout << "Theoretical worst-case cost (Benders) : " 	<< benders_sol_KCUD.obj_value 							<< endl;
+		cout << "Expected average cost                : " 	<< mc_robuste.mean_cost 								<< endl;
+		cout << "Standard deviation                   : " 	<< mc_robuste.std_dev 									<< endl;
+		cout << "CI (95%)                             : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
+		cout << "Worst case simulated                 : " 	<< mc_robuste.worst_case_simulated 						<< endl;
+		cout << "Theoretical worst-case cost (Benders): " 	<< benders_sol_KCUD.obj_value 							<< endl;
 
 		// ==================== KCRDKL ====================
 		mc_robuste = run_monte_carlo(benders_sol_KCRDKL.final_solution, num_scenarios);
 		cout << "\n--- Monte Carlo evaluation of the KCRDKL plan on " << num_scenarios 			  << " demands ---" << endl;
-		cout << "Expected average cost                 : " 	<< mc_robuste.mean_cost 								<< endl;
-		cout << "Standard deviation                    : " 	<< mc_robuste.std_dev 									<< endl;
-		cout << "CI (95%)                              : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
-		cout << "Worst case simulated                  : " 	<< mc_robuste.worst_case_simulated 						<< endl;
-		cout << "Theoretical worst-case cost (Benders) : " 	<< benders_sol_KCRDKL.obj_value 						<< endl;
+		cout << "Expected average cost                : " 	<< mc_robuste.mean_cost 								<< endl;
+		cout << "Standard deviation                   : " 	<< mc_robuste.std_dev 									<< endl;
+		cout << "CI (95%)                             : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
+		cout << "Worst case simulated                 : " 	<< mc_robuste.worst_case_simulated 						<< endl;
+		cout << "Theoretical worst-case cost (Benders): " 	<< benders_sol_KCRDKL.obj_value 						<< endl;
 
 		// ==================== KCOGL ====================
 		mc_robuste = run_monte_carlo(benders_sol_KCOGL.final_solution, num_scenarios);
 		cout << "\n--- Monte Carlo evaluation of the KCOGL plan on " << num_scenarios 			  << " demands ---" << endl;
-		cout << "Expected average cost                 : " 	<< mc_robuste.mean_cost 								<< endl;
-		cout << "Standard deviation                    : " 	<< mc_robuste.std_dev 									<< endl;
-		cout << "CI (95%)                              : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
-		cout << "Worst case simulated                  : " 	<< mc_robuste.worst_case_simulated 						<< endl;
-		cout << "Theoretical worst-case cost (Benders) : " 	<< benders_sol_KCOGL.obj_value	 						<< endl;
+		cout << "Expected average cost                : " 	<< mc_robuste.mean_cost 								<< endl;
+		cout << "Standard deviation                   : " 	<< mc_robuste.std_dev 									<< endl;
+		cout << "CI (95%)                             : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
+		cout << "Worst case simulated                 : " 	<< mc_robuste.worst_case_simulated 						<< endl;
+		cout << "Theoretical worst-case cost (Benders): " 	<< benders_sol_KCOGL.obj_value	 						<< endl;
 	}
 
 
 	if(use_result_export){
+		output_BA_BAO.close();
 		output_BA_KCF.close();
 		output_BA_KCRDK.close();
 		output_BA_KCRDKL.close();

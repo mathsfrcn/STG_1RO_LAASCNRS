@@ -1,0 +1,329 @@
+Solution BA_benders_Master_Integer(Instance inst, vector<vector<float> > scenarios){
+	Solution sol;
+	sol.inst = inst;
+
+	IloEnv env;
+	IloModel model(env);
+
+	// Setup cost
+	int cP = 2;
+
+	// Vars
+	IloNumVar z(env, -IloInfinity, IloInfinity);
+	z.setName("z");
+	IloNumVarArray  X(env, inst.T);
+	IloNumVarArray y(env, inst.T);
+	IloArray<IloNumVarArray> s(env,scenarios.size());
+	IloArray<IloNumVarArray> B(env,scenarios.size());
+	IloArray<IloNumVarArray> I(env,scenarios.size());
+	for(int o = 0; o < scenarios.size(); o++){
+		s[o] = IloNumVarArray(env, inst.T);
+		B[o] = IloNumVarArray(env, inst.T);
+		I[o] = IloNumVarArray(env, inst.T);
+		for(int t = 0; t < inst.T; t++){
+			char name[80];
+			s[o][t] = IloNumVar(env);
+			sprintf(name,"s_%d_%d",o,t);
+			s[o][t].setName(name);
+
+			B[o][t] = IloNumVar(env);
+			sprintf(name,"B_%d_%d",o,t);
+			B[o][t].setName(name);
+	
+			I[o][t] = IloNumVar(env);
+			sprintf(name,"I_%d_%d",o,t);
+			I[o][t].setName(name);
+
+			X[t] = IloNumVar(env, 0, IloInfinity,  IloNumVar::Float);
+			sprintf(name,"X_%d",t);
+			X[t].setName(name);
+
+			y[t] = IloNumVar(env, 0, 1,  IloNumVar::Int);
+			sprintf(name,"y_%d",t);
+			y[t].setName(name);
+		}
+	}
+
+	// Consts
+	for(int t = 1; t < inst.T+1; t++){
+		model.add(X[t-1] < inst.X[t-1]);
+	}
+
+	for(int t = 0; t < inst.T; t++){
+		for(int o = 0; o < scenarios.size(); o++){
+			model.add(B[o][t] - I[o][t] == scenarios[o][t] - X[t]); // (2)
+			IloExpr expr(env);
+			for(int i = 0; i <= t; i++){
+				expr += s[o][i];
+			}
+
+			model.add(expr == scenarios[o][t]-B[o][t]);				// (3)
+		}
+	}
+
+	for(int o = 0; o < scenarios.size(); o++){
+		IloExpr expr(env);
+		for(int t = 0; t < inst.T; t++){
+			expr += (inst.cI*I[o][t] + inst.cB*B[o][t] - inst.bP*s[o][t]+cP*y[t]);
+		}
+		
+		model.add(z >= expr);
+	}
+
+	// Constraints for y............
+	float M = inst.Dt[inst.T-1] + inst.Gamma;
+	model.add(X[1] <= y[1]*M);
+
+	for(int t = 1; t < inst.T; t++){
+		model.add(X[t]-X[t-1] <= y[t]*M);
+	}
+
+	// Objective value
+	model.add(IloMinimize(env, z));
+
+	// Solve
+	IloCplex cplex(model);
+	cplex.setParam(IloCplex::Param::MIP::Display, 0);
+	cplex.setOut(env.getNullStream());
+    if(!cplex.solve()){
+    	env.error() << "Failed to optimize LP." << endl;
+    	throw(-1);
+	}
+
+	vector<float> Xt;
+	Xt.resize(inst.T);
+	for(int t = 0; t < inst.T; t++){
+		Xt[t] = cplex.getValue(X[t]);
+	}
+
+	sol.Xt = Xt;
+	sol.xt = cumulToStandard(sol.Xt);
+	sol.obj_val = cplex.getObjValue();
+
+	// for(int o = 0; o<scenarios.size();o++){
+	// 	for(int t = 0; t<inst.T; t++){
+	// 		cout<<cplex.getValue(B[o][t])<<" "<<cplex.getValue(I[o][t])<<" "<<scenarios[o][t]<<" "<<cplex.getValue(X[t])<<" "<<cplex.getValue(s[o][t])<<endl;
+	// 	}
+	// }
+
+	// float debug = 0;
+	// for(int o = 0; o<scenarios.size();o++){
+	// 	for(int t = 0; t<inst.T; t++){
+	// 		//debug += inst.cI*cplex.getValue(I[o][t]) + inst.cB*cplex.getValue(B[o][t]) - inst.bP*cplex.getValue(s[o][t]);
+	// 		debug += - inst.bP*cplex.getValue(s[o][t]);
+	// 	}
+	// }
+	// cout<<"solution cost (cplex issue ?): "<<debug<<endl;
+
+	env.end();
+	
+	return sol;
+}
+
+
+// Solve subproblem using CPLEX: NOT USED, probably not working
+Solution_ADV BA_benders_Subproblem(Solution sol){
+	Solution_ADV sol_adv;
+
+	IloEnv env;
+	IloModel model(env);
+
+	//used to retrieve relevant pi after the solve
+	vector<vector<bool> > pibool;
+	pibool.resize(sol.inst.T+2);
+
+	//vars
+	IloArray<IloNumVarArray> pi(env,sol.inst.T+2);
+	for(int t = 0; t<sol.inst.T+2;t++){
+		//for t = 0 and t = T+1 only one variable in the array
+		pi[t] = IloNumVarArray(env, sol.inst.Gamma+1);
+		pibool[t].resize(sol.inst.Gamma+1);
+		for(int i = 0; i<sol.inst.Gamma+1; i++){
+			char name[80];
+			pi[t][i] = IloNumVar(env, -IloInfinity, IloInfinity);
+			sprintf(name,"pi_%d_%d",t,i);
+			pi[t][i].setName(name);
+		}
+	}
+
+	//csts
+	//for t in 1...T-1
+	for(int t = 1; t<sol.inst.T;t++){
+		for(int i = 0; i<sol.inst.Gamma+1; i++){
+			for(int j = i; j<sol.inst.Gamma+1; j++){
+				//the arc is in the graph =>
+				if(j<=i+sol.inst.deltat[t]){
+					IloExpr expr(env);
+					if(t==1) {
+						expr = pi[0][0];
+						pibool[0][0] = true;
+					}
+					else{ expr = pi[t-1][i];}
+					model.add(pi[t][j] - expr >= sol.inst.cI*(sol.Xt[t]- (sol.inst.Dt[t] - (j-i))));
+					model.add(pi[t][j] - expr >= sol.inst.cB*(sol.inst.Dt[t] + (j-i) - sol.Xt[t]));
+					pibool[t][j] = true;
+				}
+				
+			}
+		}
+	}
+	//for t = T
+	int t = sol.inst.T;
+	for(int i = 0; i<sol.inst.Gamma+1; i++){
+		for(int j = i; j<sol.inst.Gamma+1; j++){
+			if(j<=i+sol.inst.deltat[t]){
+				model.add(pi[t][j] - pi[t-1][i] >= sol.inst.cI*(sol.Xt[t]- (sol.inst.Dt[t] - (j-i))) - sol.inst.bP*(sol.inst.Dt[t] - (j-i)));
+				model.add(pi[t][j] - pi[t-1][i] >= sol.inst.cB*(sol.inst.Dt[t] + (j-i) - sol.Xt[t]) - sol.inst.bP*sol.Xt[t]);
+				pibool[t][j] = true;
+			}
+		}
+	}
+
+
+	for(int i = 0; i<sol.inst.Gamma+1; i++){
+		if(pibool[t][i]) model.add(pi[sol.inst.T+1][0] - pi[sol.inst.T][i] >= 0);
+	}
+	// model.add(pi[sol.inst.T][0]-pi[0][0]>= 0);
+	model.add(pi[0][0]==0);
+	pibool[0][0] = true;
+	pibool[sol.inst.T+1][0] = true;
+
+	//obj
+
+	//model.add(IloMinimize(env, pi[sol.inst.T][0]));
+
+	IloExpr expr(env);
+	for(int t = 0; t<sol.inst.T+2;t++){
+		//for t = 0 and t = T+1 only one variable in the array
+		for(int i = 0; i<sol.inst.Gamma+1; i++){
+			if(pibool[t][i]){
+				expr += pi[t][i];
+			}
+		}
+	}
+
+	model.add(IloMinimize(env, expr)); //bon objectif pour etre sur que les potentiels collent leur borne
+
+	IloCplex cplex(model);
+	//cplex.exportModel ("lpex1.lp");
+	cplex.setParam(IloCplex::Param::MIP::Display, 1);
+	cplex.setOut(env.getNullStream());
+    if ( !cplex.solve() ) {
+    	env.error() << "Failed to optimize LP." << endl;
+    	throw(-1);
+	}
+
+	//retrieve value for pi var
+	vector<vector<float> > pisol;
+	pisol.resize(sol.inst.T+2);
+	for(int t = 0; t<sol.inst.T+2;t++){
+		//for t = 0 and t = T+1 only one variable in the array
+		pisol[t].resize(sol.inst.Gamma+1);
+		for(int i = 0; i<sol.inst.Gamma+1; i++){
+			if(pibool[t][i]){
+				pisol[t][i] = cplex.getValue(pi[t][i]);
+				// cout<<t<<" "<<i<<" "<<pisol[t][i]<<endl;
+			}
+		}
+	}
+
+	// string buff;
+	// for(int i = sol.inst.Gamma; i>=0; i--){
+	// 	//for t = 0 and t = T+1 only one variable in the array
+	// 	buff = ' ';
+	// 	for(int t = 0; t<sol.inst.T+2;t++){
+	// 		if(pibool[t][i]){
+	// 			buff+= ' ' + to_string(pisol[t][i]);
+	// 		}
+	// 	}
+	// 	cout<<buff<<endl;
+	// }
+
+
+
+	// pisol[0][0] = cplex.getValue(pi[0][0]);
+	// pisol[sol.inst.T][0] = cplex.getValue(pi[sol.inst.T][0]);
+
+	//retrieve uncertainty from pi var (where constraints are tights)
+
+	cout<<"====================== LONGEST PATH: "<<pisol[sol.inst.T+1][0]<<endl;
+	float previous_val = pisol[sol.inst.T+1][0];
+	//================= DANGEROUS, WORKS ONLY IF GAMMA IS FULLY USED, SHOULD CHANGE THIS ====================
+	int previous_budget = sol.inst.Gamma;
+
+	vector<int> offset;
+	offset.resize(sol.inst.T);
+
+	for(int t = sol.inst.T; t>=1; t--){
+		for(int i=previous_budget; i>=0; i--){
+
+			if(t == sol.inst.T){
+				if( pisol[t][previous_budget] - pisol[t-1][i] == sol.inst.cI*(sol.Xt[t]- (sol.inst.Dt[t] - (previous_budget-i))) - sol.inst.bP*(sol.inst.Dt[t] - (previous_budget-i))) { //worse for deltat negative
+					offset[t-1] = -(previous_budget - i);
+					// cout<<"tight constraint found for t = "<<t<<" from " <<previous_budget<< " to "<<i<<endl;
+					previous_budget = i;
+					break;
+					
+				}
+				else if(pisol[t][previous_budget] - pisol[t-1][i] == sol.inst.cB*(sol.inst.Dt[t] + (previous_budget-i) - sol.Xt[t]) - sol.inst.bP*sol.Xt[t]) { //worse for deltat negative
+					offset[t-1] = (previous_budget - i);
+					// cout<<"tight constraint found for t = "<<t<<" from " <<previous_budget<< " to "<<i<<endl;
+					previous_budget = i;
+					break;
+				}
+			}
+			else if (t == 1) {
+				if( pisol[t][previous_budget] - pisol[0][0] == sol.inst.cI*(sol.Xt[t]- (sol.inst.Dt[t] - (previous_budget-i)))){ //worse for deltat negative
+					offset[t-1] = -(previous_budget - i);
+					// cout<<"tight constraint found for t = "<<t<<" from " <<previous_budget<< " to "<<i<<endl;
+					previous_budget = i;
+					break;
+					
+				}
+				else if(pisol[t][previous_budget] - pisol[0][0] == sol.inst.cB*(sol.inst.Dt[t] + (previous_budget-i) - sol.Xt[t])) { //worse for deltat negative
+					offset[t-1] = (previous_budget - i);
+					// cout<<"tight constraint found for t = "<<t<<" from " <<previous_budget<< " to "<<i<<endl;
+					previous_budget = i;
+					break;
+					
+				}
+			}
+			//generic case
+			else{
+				if( pisol[t][previous_budget] - pisol[t-1][i] == sol.inst.cI*(sol.Xt[t]- (sol.inst.Dt[t] - (previous_budget-i)))){ //worse for deltat negative
+					offset[t-1] = -(previous_budget - i);
+					// cout<<"tight constraint found for t = "<<t<<" from " <<previous_budget<< " to "<<i<<endl;
+					previous_budget = i;
+					break;
+				}
+				else if(pisol[t][previous_budget] - pisol[t-1][i] == sol.inst.cB*(sol.inst.Dt[t] + (previous_budget-i) - sol.Xt[t])) { //worse for deltat negative
+					offset[t-1] = (previous_budget - i);
+					// cout<<"tight constraint found for t = "<<t<<" from " <<previous_budget<< " to "<<i<<endl;
+					previous_budget = i;
+					break;
+					
+				}
+			
+			}
+		}
+
+	}
+
+	// cout<<"maxindex :";
+	// display_vector_int(maxindex);
+
+	vector<float> Dt;
+	Dt.resize(sol.inst.T);
+	for(int t = 0; t<sol.inst.T; t++){
+		Dt[t] = sol.inst.Dt[t] + offset[t];
+	}
+
+	env.end();
+
+	// cout<<"hope this work : "<<endl;
+	// display_vector_int(offset);
+	// display_vector_float(Dt);
+
+	sol_adv.Dt = Dt;
+	return sol_adv;
+}
