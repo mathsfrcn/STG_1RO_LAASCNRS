@@ -2,24 +2,30 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 
-df <- test
+df <- datas
 
 df <- df %>%
   rename(
+    limit_dfs = limit_number_paths,
+    nb_path = nb_path_to_select,
     Benders_BA_master         = time_master_BA,
     Benders_BA_subproblem     = time_subproblem_BA,
-    Benders_KC_master         = time_master_KC,
-    Benders_KC_subproblem     = time_subproblem_KC,
-    Benders_KCRDK_master      = time_master_KCRDK,
-    Benders_KCRDK_subproblem  = time_subproblem_KCRDK,
-    Benders_KCRDKOPT_master   = time_master_KCRDKOPT,
-    Benders_KCRDKOPT_subproblem = time_subproblem_KCRDKOPT,
+    #Benders_BAEA_master         = time_master_KCA,
+    #Benders_BAEA_subproblem     = time_subproblem_KCA,
+    Benders_BAEF_master         = time_master_KCF,
+    Benders_BAEF_subproblem     = time_subproblem_KCF,
+    #Benders_KCRDK_master      = time_master_KCRDK,
+    #Benders_KCRDK_subproblem  = time_subproblem_KCRDK,
+    Benders_KCRDKL_master   = time_master_KCRDKL,
+    Benders_KCRDKL_subproblem = time_subproblem_KCRDKL,
     Benders_KCU_master        = time_master_KCU,
     Benders_KCU_subproblem    = time_subproblem_KCU,
     Benders_KCUD_master       = time_master_KCUD,
     Benders_KCUD_subproblem   = time_subproblem_KCUD,
-    Benders_HOG_master        = time_master_KCHOG,
-    Benders_HOG_subproblem    = time_subproblem_KCHOG
+    #Benders_OG_master        = time_master_KCHOG,
+    #Benders_OG_subproblem    = time_subproblem_KCHOG,
+    Benders_KCOGL_master        = time_master_KCHOGL,
+    Benders_KCOGL_subproblem    = time_subproblem_KCHOGL
   )
 
 df_long <- df %>%
@@ -33,13 +39,15 @@ df_long <- df %>%
 # Proportion of time spent in each
 df_summary <- df %>%
   mutate(
-    ratio_Benders = Benders_BA_master / (Benders_BA_master + Benders_BA_subproblem),
-    ratio_KC = Benders_KC_master / (Benders_KC_master + Benders_KC_subproblem),
+    ratio_BA = Benders_BA_master / (Benders_BA_master + Benders_BA_subproblem),
+    ratio_BAEA = Benders_BAEA_master / (Benders_BAEA_master + Benders_BAEA_subproblem),
+    ratio_BAEF = Benders_BAEF_master / (Benders_BAEF_master + Benders_BAEF_subproblem),
     ratio_KCU = Benders_KCU_master / (Benders_KCU_master + Benders_KCU_subproblem),
     ratio_KCUD = Benders_KCUD_master / (Benders_KCUD_master + Benders_KCUD_subproblem),
-    ratio_KCRDK = Benders_KCRDK_master / (Benders_KCRDK_master + Benders_KCRDK_subproblem),
-    ratio_KCRDKOPT = Benders_KCRDKOPT_master / (Benders_KCRDKOPT_master + Benders_KCRDKOPT_subproblem),
-    ratio_HOG = Benders_HOG_master / (Benders_HOG_master + Benders_HOG_subproblem)
+    #ratio_KCRDK = Benders_KCRDK_master / (Benders_KCRDK_master + Benders_KCRDK_subproblem),
+    ratio_KCRDKL = Benders_KCRDKL_master / (Benders_KCRDKL_master + Benders_KCRDKL_subproblem),
+    #ratio_OG = Benders_OG_master / (Benders_OG_master + Benders_OG_subproblem),
+    ratio_KCOGL = Benders_KCOGL_master / (Benders_KCOGL_master + Benders_KCOGL_subproblem)
   )
 
 cat("Average proportion of time spent in the Master:\n")
@@ -76,7 +84,7 @@ p3 <- ggplot(df_long, aes(x = tau, y = Time, color = Component)) +
        color = "Component")
 
 # Fig.04. Interaction between Gamma and Tau
-df_long$tau_group <- cut(df_long$tau, breaks = 3, labels = c("Tau Faible", "Tau Moyen", "Tau Élevé"))
+df_long$tau_group <- cut(df_long$tau, breaks = 3, labels = c("Low tau", "Medium tau", "High tau"))
 
 df_ranking <- df_long %>%
   group_by(Gamma, tau_group, Method) %>%
@@ -105,9 +113,59 @@ p4 <- ggplot(df_long, aes(x = Gamma, y = Time, fill = Component)) +
   facet_grid(tau_group ~ Method) +
   theme_minimal() +
   labs(
-    title = expression("Time allocation: Interaction between " * Gamma * " et " * tau),
+    title = expression("Time allocation relative to " * Gamma),
     x = expression(Gamma),
     y = "Cumulative mean time (seconds)"
+  ) +
+  theme(legend.position = "bottom")
+
+# Fig.05. Temps cumulé par rapport à nb_path (Aires empilées)
+p5 <- ggplot(df_long, aes(x = nb_path, y = Time, fill = Component)) +
+  geom_area(position = "stack", stat = "summary", fun = mean, alpha = 0.8) +
+  facet_wrap(~ Method) +
+  theme_minimal() +
+  labs(
+    title = "Cumulative time by nb_path",
+    x = "Number of paths (nb_path)",
+    y = "Cumulative average time (s)"
+  ) +
+  theme(legend.position = "bottom")
+
+# Fig.06. Temps cumulé par rapport à limit_dfs (Aires empilées)
+p6 <- ggplot(df_long, aes(x = limit_dfs, y = Time, fill = Component)) +
+  geom_area(position = "stack", stat = "summary", fun = mean, alpha = 0.8) +
+  facet_wrap(~ Method) +
+  theme_minimal() +
+  labs(
+    title = "Cumulative time by limit_dfs",
+    x = "DFS limit (limit_dfs)",
+    y = "Cumulative average time (s)"
+  ) +
+  theme(legend.position = "bottom")
+
+# Fig.07. Évolution lissée selon nb_path (Courbes séparées pour voir les croisements)
+p7 <- ggplot(df_long, aes(x = nb_path, y = Time, color = Component)) +
+  geom_smooth(method = "loess", se = FALSE, linewidth = 1.2) +
+  facet_wrap(~ Method) +
+  theme_bw() +
+  labs(
+    title = "Smoothed trend based on nb_path",
+    x = "Number of paths (nb_path)",
+    y = "Mean time (s)",
+    color = "Component"
+  ) +
+  theme(legend.position = "bottom")
+
+# Fig.08. Évolution lissée selon limit_dfs (Courbes séparées)
+p8 <- ggplot(df_long, aes(x = limit_dfs, y = Time, color = Component)) +
+  geom_smooth(method = "loess", se = FALSE, linewidth = 1.2) +
+  facet_wrap(~ Method) +
+  theme_bw() +
+  labs(
+    title = "Smoothed trend based on limit_dfs",
+    x = "DFS limit (limit_dfs)",
+    y = "Mean time (s)",
+    color = "Component"
   ) +
   theme(legend.position = "bottom")
 
@@ -116,3 +174,7 @@ print(p1)
 print(p2)
 print(p3)
 print(p4)
+print(p5)
+print(p6)
+print(p7)
+print(p8)

@@ -6,7 +6,7 @@ from pathlib import Path
 def generate_summary(file_path):
     path_in = Path(file_path)
     
-    df = pd.read_csv(path_in, sep=',', names=['method', 'gamma', 'tau', 'time', 'iter'])
+    df = pd.read_csv(path_in, sep=',', names=['method', 'gamma', 'tau', 'nb_path_to_take', 'limit_dfs', 'time', 'iter'])
     df.columns = df.columns.str.strip()
 
     gamma_values: list[int] = [1, 11, 21, 31, 41, 51, 61, 61, 81, 91, 101]

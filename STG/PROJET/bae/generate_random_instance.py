@@ -59,7 +59,16 @@ def generate_random_instance(file_path: str, nb_periods: int, nb_items: int, mar
         f.write(" ".join(map(str, X)) + "\n")
 
 def main(outdir: str, nb_instances: int, nb_periods: int, nb_items: int, margin_settings: int, demand_prob: float, use_periodicity: bool, start_in_period: bool, timespan_period: int, read_instance_rd_lb: float, read_instance_rd_ub: float):
-    if (not outdir or (nb_instances <= 0) or (nb_periods <= 0) or (nb_items <= 0) or not (0 < demand_prob <= 1) and (0 < timespan_period < nb_periods)):
+    if (not outdir
+            or (type(use_periodicity) is not bool)
+            or (type(start_in_period)  is not bool)
+            or (nb_instances <= 0) 
+            or (nb_periods <= 0) 
+            or (nb_items <= 0)
+            or (margin_settings <= 0)
+            or not (0 < read_instance_rd_lb < read_instance_rd_ub < 1)
+            or not (0 < demand_prob <= 1)
+            or not (0 < timespan_period < nb_periods)):
         print("Error: Invalid configuration")
     else:
         file_list: list[str] = [f for f in listdir(outdir) if isfile(join(outdir, f))]
@@ -81,15 +90,15 @@ def main(outdir: str, nb_instances: int, nb_periods: int, nb_items: int, margin_
 ##############################
 
 outdir = "toy_instances"
-use_periodicity     = False
-start_in_period     = True
-timespan_period     = 13     # ]0, nb_periods[
-nb_instances        = 20
-nb_periods          = 52
-nb_items            = 20
-margin_settings     = 10    # Costs will be between 10.00 and 10.99
-demand_prob         = 0.7
-read_instance_rd_lb = 0.4   # The production plan will be between lb% and ub% of the cumulative demand
-read_instance_rd_ub = 0.8
+use_periodicity: bool      = True
+start_in_period: bool      = True
+timespan_period: int       = 13     # ]0, nb_periods[
+nb_instances: int          = 50
+nb_periods: int            = 52
+nb_items: int              = 20
+margin_settings: int       = 10    # Costs will be between 10.00 and 10.99
+demand_prob: float         = 0.7
+read_instance_rd_lb: float = 0.4   # The production plan will be between lb% and ub% of the cumulative demand
+read_instance_rd_ub: float = 0.8
 
 main(outdir, nb_instances, nb_periods, nb_items, margin_settings, demand_prob, use_periodicity, start_in_period, timespan_period, read_instance_rd_lb, read_instance_rd_ub)

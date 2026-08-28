@@ -1,5 +1,0 @@
-nb_item, gamma, nb_axe_ortho, test_ok, nb_period, demand_prob, eps, variable_bP
-10, 5, 8, 1, 10, 0.5, 1, 0
-20, 12, 15, 1, 10, 0.5, 1, 0
-20, 12, 15, 0, 20, 0.5, 1, 0
-20, 10, 15, 1, 20, 0.5, 0.1, 0

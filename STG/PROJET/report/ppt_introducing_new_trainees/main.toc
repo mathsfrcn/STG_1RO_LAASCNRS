@@ -1,7 +1,0 @@
-\babel@toc {french}{}\relax 
-\beamer@sectionintoc {1}{Présentation du Sujet}{3}{0}{1}
-\beamer@sectionintoc {2}{L'Algorithme de Benders Adverse et sa Variante}{5}{0}{2}
-\beamer@sectionintoc {3}{Limites et Heuristiques Envisagées}{6}{0}{3}
-\beamer@sectionintoc {4}{Résultats Obtenus}{7}{0}{4}
-\beamer@sectionintoc {5}{Perspectives}{8}{0}{5}
-\beamer@subsectionintoc {7}{1}{Lot-sizing problem}{13}{0}{5}
