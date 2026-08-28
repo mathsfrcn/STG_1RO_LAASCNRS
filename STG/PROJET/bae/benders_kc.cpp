@@ -2225,7 +2225,7 @@ Benders_Result BAO_benders_Main(Instance inst, float eps, int max_iter, int max_
     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     proc_time = duration.count() * 1e-6;
     
-    return {i, proc_time, total_time_master, total_time_subproblem, sol.obj_val};
+    return {i, proc_time, total_time_master, total_time_subproblem, sol.obj_val, sol};
 }
 
 // Solve subproblem with dynamic prog
@@ -2981,7 +2981,7 @@ int main(int argc, const char* argv[]){
 		cout << "Standard deviation                   : " 	<< mc_robuste.std_dev 									<< endl;
 		cout << "CI (95%)                             : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
 		cout << "Worst case simulated                 : " 	<< mc_robuste.worst_case_simulated 						<< endl;
-		cout << "Theoretical worst-case cost (Benders): " 	<< benders_sol_BA.obj_value 							<< endl;
+		cout << "Theoretical worst-case cost (Benders): " 	<< benders_sol_BAO.obj_value 							<< endl;
 		
 		// ==================== BAEA ====================
 		mc_robuste = run_monte_carlo(benders_sol_KCA.final_solution, num_scenarios);
