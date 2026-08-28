@@ -1,2 +1,0 @@
-Gamma, tau, nb_path_to_select, limit_number_paths, time_master_BA, time_subproblem_BA, time_master_KCA, time_subproblem_KCA, time_master_KCF, time_subproblem_KCF, time_master_KCRDK, time_subproblem_KCRDK, time_master_KCRDKL, time_subproblem_KCRDKL, time_master_KCU, time_subproblem_KCU, time_master_KCUD, time_subproblem_KCUD, time_master_KCOG, time_subproblem_KCOG, time_master_KCOGL, time_subproblem_KCOGL
-20,90,2,600,0.193657,0.065169,0.072338,0.011406,0.092601,0.01826,0.020739,0.016758,0.017774,0.019047,0.015481,0.015864,0.019792,0.013013,0.015012,0.017697,0.014892,0.015013
