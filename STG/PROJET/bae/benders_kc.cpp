@@ -2110,11 +2110,16 @@ vector<Solution_ADV> BAO_benders_Subproblem_TopN(Solution sol, float eps, int nb
     // Initialization from (T+1, 0)
     pq.push({pi_value[sol.inst.T+1][0], 0.0f, sol.inst.T+1, 0, empty_scenario});
 
+	int expansions = 0;
+    int max_expansions = 15000;
+
     // We stop when we have N scenarios
-    while(!pq.empty() && pool.size() < nb_path_to_select){
+    while(!pq.empty() && pool.size() < nb_path_to_select && expansions < max_expansions){
         BFSNode current = pq.top();
         pq.pop();
 
+		expansions++;
+		
         int t = current.t;
         int j = current.j;
 
@@ -2401,7 +2406,7 @@ Benders_Result BA_benders_Main(Instance inst, float eps, int max_iter, int max_t
 
 		scenarios.push_back(sol_adv.Dt);
 
-		display_vector_float(sol_adv.Dt);
+		//display_vector_float(sol_adv.Dt);
 
 		auto start_m2 = high_resolution_clock::now();
 		sol = BA_benders_Master(inst, scenarios);

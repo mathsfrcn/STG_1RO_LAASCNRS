@@ -2225,7 +2225,7 @@ Benders_Result BAO_benders_Main(Instance inst, float eps, int max_iter, int max_
     auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     proc_time = duration.count() * 1e-6;
     
-    return {i, proc_time, total_time_master, total_time_subproblem, sol.obj_val};
+    return {i, proc_time, total_time_master, total_time_subproblem, sol.obj_val, sol};
 }
 
 // Solve subproblem with dynamic prog
@@ -2401,7 +2401,7 @@ Benders_Result BA_benders_Main(Instance inst, float eps, int max_iter, int max_t
 
 		scenarios.push_back(sol_adv.Dt);
 
-		display_vector_float(sol_adv.Dt);
+		//display_vector_float(sol_adv.Dt);
 
 		auto start_m2 = high_resolution_clock::now();
 		sol = BA_benders_Master(inst, scenarios);
