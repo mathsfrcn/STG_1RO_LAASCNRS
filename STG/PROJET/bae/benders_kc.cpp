@@ -1180,10 +1180,10 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_RDKL(Solution sol, 
 
 	float sub_OPT;
 
-	if(ub_cost>=0){
-		sub_OPT = approx_coeff*ub_cost;
+	if(ub_cost >= 0){
+		sub_OPT = approx_coeff * ub_cost;
 	} else{
-		sub_OPT = (1-approx_coeff)*ub_cost+ub_cost;
+		sub_OPT = (1-approx_coeff) * ub_cost + ub_cost;
 	}
 
 	vector<Path> candidates_path;
@@ -2065,18 +2065,19 @@ Solution BA_benders_Master(Instance inst, vector<vector<float> > scenarios){
 	return sol;
 }
 
-vector<Solution_ADV> BAO_benders_Subproblem_TopN(Solution sol, float eps, int nb_path_to_select = 5){
-    vector<vector<float> > pi_value; 
-    vector<vector<vector<vector<float> > > > costs = budget_graph_cost(sol);
+// BAO
+vector<Solution_ADV> BAO_benders_Subproblem_DFS(Solution sol, float approx_coeff, int nb_path_to_select, float eps){
+	vector<vector<float> > pi_value;
+	vector<vector<vector<vector<float> > > > costs = budget_graph_cost(sol);
 
-    pi_value.resize(sol.inst.T+2);
-    for(int t = 0; t < sol.inst.T+2; t++){
-        pi_value[t].resize(sol.inst.Gamma+1, -1e9); 
-    }
+	pi_value.resize(sol.inst.T+2);
+	for(int t = 0; t < sol.inst.T+2; t++){
+		pi_value[t].resize(sol.inst.Gamma+1, -1e9);
+	}
+	
+	// Dynamic prog. for longest path
 
-    // Dynamic prog. for longest path
-
-    float tmp;
+	float tmp;
     pi_value[0][0] = 0;
     for(int t = 1; t < sol.inst.T+1; t++){
         for(int j = 0; j < sol.inst.Gamma+1; j++){
@@ -2087,82 +2088,76 @@ vector<Solution_ADV> BAO_benders_Subproblem_TopN(Solution sol, float eps, int nb
                     if(pi_value[t-1][i] + costs[t][i][j][1] > tmp) tmp = pi_value[t-1][i]+costs[t][i][j][1];
                 }
             }
-
             pi_value[t][j] = tmp;
         }
     }
 
-    tmp = pi_value[sol.inst.T][0];
+    float ub_cost = pi_value[sol.inst.T][0];
     for(int i = 0; i < sol.inst.Gamma+1; i++){
-        if(pi_value[sol.inst.T][i] > tmp){
-            tmp = pi_value[sol.inst.T][i];
-        }
-    }
-    
-	pi_value[sol.inst.T+1][0] = tmp;
-
-	// ========================== Now the backtrack with A* & TopN
-
-    vector<Solution_ADV> pool;
-    priority_queue<BFSNode> pq;
-    vector<float> empty_scenario(sol.inst.T, 0.0);
-    
-    // Initialization from (T+1, 0)
-    pq.push({pi_value[sol.inst.T+1][0], 0.0f, sol.inst.T+1, 0, empty_scenario});
-
-    // We stop when we have N scenarios
-    while(!pq.empty() && pool.size() < nb_path_to_select){
-        BFSNode current = pq.top();
-        pq.pop();
-
-        int t = current.t;
-        int j = current.j;
-
-        // We t = 0, the path is complete
-        if(t == 0){
-            Solution_ADV adv;
-            adv.Dt = current.scenario;
-            pool.push_back(adv);
-            continue; 
-        }
-
-        // Transition depuis le puits
-        if(t == sol.inst.T + 1){
-            for(int i = 0; i < sol.inst.Gamma+1; i++){
-                if(pi_value[sol.inst.T][i] > -1e8){ 
-                    float new_act = current.actual_cost;
-                    float new_pot = new_act + pi_value[sol.inst.T][i];
-                    pq.push({new_pot, new_act, sol.inst.T, i, current.scenario});
-                }
-            }
-        } else {
-            for(int i = 0; i <= j; i++){
-                if(j <= i+sol.inst.deltat[t-1] && (t != 1 || i == 0)){
-                    
-                    // Arc 0
-                    float cost0 = costs[t][i][j][0];
-                    float act0 = current.actual_cost + cost0;
-                    float pot0 = act0 + pi_value[t-1][i];
-                    vector<float> scen0 = current.scenario;
-                    scen0[t-1] = sol.inst.Dt[t-1] - (j-i);
-                    pq.push({pot0, act0, t-1, i, scen0});
-
-                    // Arc 1
-                    float cost1 = costs[t][i][j][1];
-                    float act1 = current.actual_cost + cost1;
-                    float pot1 = act1 + pi_value[t-1][i];
-                    vector<float> scen1 = current.scenario;
-                    scen1[t-1] = sol.inst.Dt[t-1] + (j-i);
-                    pq.push({pot1, act1, t-1, i, scen1});
-                }
-            }
+        if(pi_value[sol.inst.T][i] > ub_cost){
+            ub_cost = pi_value[sol.inst.T][i];
         }
     }
 
-    return pool;
+    pi_value[sol.inst.T+1][0] = ub_cost;
+	
+	// ========================== Now the backtrack
+	
+	vector<Path> collected_paths;
+	Path current_path_buffer;
+
+	for(int i = 0; i < sol.inst.Gamma+1; i++){
+		if(abs(pi_value[sol.inst.T][i] - ub_cost) < eps){
+			extract_paths_dfs(sol.inst.T, i, pi_value, costs, sol, current_path_buffer, collected_paths, nb_path_to_select, eps);
+			if(collected_paths.size() >= nb_path_to_select) break;
+		}
+	}
+	
+	if(collected_paths.size() < nb_path_to_select){
+		float sub_OPT;
+		if(ub_cost >= 0){
+			sub_OPT = approx_coeff * ub_cost;
+		} else{
+			sub_OPT = (1-approx_coeff) * ub_cost + ub_cost;
+		}
+
+		for(int i = 0; i < sol.inst.Gamma+1; i++){
+			if(pi_value[sol.inst.T][i] >= sub_OPT && abs(pi_value[sol.inst.T][i] - ub_cost) >= eps){
+				extract_paths_dfs(sol.inst.T, i, pi_value, costs, sol, current_path_buffer, collected_paths, nb_path_to_select, eps);
+				if(collected_paths.size() >= nb_path_to_select) break;
+			}
+		}
+	}
+	
+	
+
+	vector<Solution_ADV> adv_scenarios;
+
+	for(size_t p = 0; p < collected_paths.size(); p++){
+		Solution_ADV adv;
+		adv.Dt.resize(sol.inst.T, 0.0);
+
+		for(size_t a = 0; a < collected_paths[p].size(); a++){
+			Arc_Decision arc = collected_paths[p][a];
+			int t = arc.t;
+			int i = arc.i;
+			int j = arc.j;
+
+			if(arc.type == 0){
+				adv.Dt[t-1] = sol.inst.Dt[t-1] - (j-i);
+			} else {
+				adv.Dt[t-1] = sol.inst.Dt[t-1] + (j-i);
+			}
+		}
+		
+		adv_scenarios.push_back(adv);
+	}
+
+	
+	return adv_scenarios;
 }
 
-Benders_Result BAO_benders_Main(Instance inst, float eps, int max_iter, int max_time_s, int nb_path_to_select){
+Benders_Result BAO_benders_Main(Instance inst, float approx_coeff, int nb_path_to_select, float eps, int max_iter, int max_time_s){
     auto start = chrono::high_resolution_clock::now();
     Solution sol;
     float total_time_master = 0.0;
@@ -2172,7 +2167,6 @@ Benders_Result BAO_benders_Main(Instance inst, float eps, int max_iter, int max_
     int i = 1;
     vector<vector<float> > scenarios;
     
-    // Initialization
     scenarios.push_back(inst.Dt);
 
     auto start_m = chrono::high_resolution_clock::now();
@@ -2182,11 +2176,10 @@ Benders_Result BAO_benders_Main(Instance inst, float eps, int max_iter, int max_
 
     while(!stopCriterion){
         auto start_s = chrono::high_resolution_clock::now();
-        vector<Solution_ADV> adv_scenarios = BAO_benders_Subproblem_TopN(sol, eps, nb_path_to_select);
+        vector<Solution_ADV> adv_scenarios = BAO_benders_Subproblem_DFS(sol, eps, nb_path_to_select, approx_coeff);
         auto stop_s = chrono::high_resolution_clock::now();
         total_time_subproblem += chrono::duration_cast<chrono::microseconds>(stop_s - start_s).count() * 1e-6;
 
-        // UB assessed based on the absolute worst-case scenario
         float upper_bound_cost = objective_value(sol, adv_scenarios[0].Dt);
 
         if(upper_bound_cost <= sol.obj_val + eps){
@@ -2194,13 +2187,12 @@ Benders_Result BAO_benders_Main(Instance inst, float eps, int max_iter, int max_
             break;
         }
 
-        // We add the N pool paths
         for(const auto& adv : adv_scenarios){
             scenarios.push_back(adv.Dt);
         }
 
         auto start_m2 = chrono::high_resolution_clock::now();
-        sol = BA_benders_Master(inst, scenarios);
+        sol = BA_benders_Master(inst, scenarios); //[cite: 2]
         auto stop_m2 = chrono::high_resolution_clock::now();
         total_time_master += chrono::duration_cast<chrono::microseconds>(stop_m2 - start_m2).count() * 1e-6;
 
@@ -2212,7 +2204,7 @@ Benders_Result BAO_benders_Main(Instance inst, float eps, int max_iter, int max_
             break;
         }
 
-        if(i >= max_iter){ //[cite: 1]
+        if(i >= max_iter){
             cout << "MAXITER: benders stop." << endl;
             break;
         }
@@ -2228,7 +2220,7 @@ Benders_Result BAO_benders_Main(Instance inst, float eps, int max_iter, int max_
     return {i, proc_time, total_time_master, total_time_subproblem, sol.obj_val, sol};
 }
 
-// Solve subproblem with dynamic prog
+// BA
 Solution_ADV BA_benders_Subproblem_DP(Solution sol, float eps){
 	Solution_ADV sol_adv;
 	vector<vector<vector<vector<int> > > > arcbool; // Bool flag to arcs within the worsts scenarios
@@ -2401,7 +2393,7 @@ Benders_Result BA_benders_Main(Instance inst, float eps, int max_iter, int max_t
 
 		scenarios.push_back(sol_adv.Dt);
 
-		display_vector_float(sol_adv.Dt);
+		//display_vector_float(sol_adv.Dt);
 
 		auto start_m2 = high_resolution_clock::now();
 		sol = BA_benders_Master(inst, scenarios);
@@ -2470,13 +2462,13 @@ int main(int argc, const char* argv[]){
 	// Output parameters
 	float approx_coeff;
 	// Monte Carlo parameter
-	bool use_monte_carlo = true;
+	bool use_monte_carlo = false;
 	// Simulation parameters
 	int limit_number_paths = 600;		// Used for the DFS algo
 	int nb_path_to_select = 2;			// Number of paths the subprobleme give to the master at each iteration (it's the upperbound like the max of the parameter and the number found)
 	float eps = 1e-1;
 	bool use_graph_export = false;		// To be corrected before use
-	bool use_result_export = false;		// True if you want to export the results
+	bool use_result_export = true;		// True if you want to export the results
 	float max_iter = 100;				// Security
 	float max_time_s = 3600;
 	float p_few = 1/52;					// Probabilitie for SelectFew heuristique
@@ -2587,10 +2579,11 @@ int main(int argc, const char* argv[]){
 			filename = "hand_benders_instances/parsed_instances/" + file_list[i];
 		}
 
-		//for(int Gamma = 1; Gamma < 110; Gamma += 20){
-		int Gamma = 20;
+		for(int Gamma = 1; Gamma < 110; Gamma += 20){
+			//int Gamma = 101;
 			//for(int tau = 80; tau < 101; tau += 10){
-			int tau = 90;
+				int tau = 90;
+				approx_coeff = float(tau)/100;
 				//for(int nb_path_to_select = 1; nb_path_to_select < 12; nb_path_to_select += 2){
 					//for(int limit_number_paths = 100; limit_number_paths < 1001; limit_number_paths += 100){
 						if(toy_instances){
@@ -2607,12 +2600,9 @@ int main(int argc, const char* argv[]){
 						cout << "\nBA-----done (Obj:" << benders_sol_BA.obj_value << ")" << endl;
 					
 						// BAO
-						benders_sol_BAO = BAO_benders_Main(inst, eps, max_iter, max_time_s, nb_path_to_select);
+						benders_sol_BAO = BAO_benders_Main(inst, approx_coeff, nb_path_to_select, eps, max_iter, max_time_s);
 						cout << "\nBAO----done (Obj:" << benders_sol_BAO.obj_value << ")" << endl;
-
-						// KC
-						approx_coeff = float(tau)/100;
-
+						
 						// KC All (BAEA)
 						benders_sol_KCA = KC_benders_Main(inst, approx_coeff, KC_Method::KC, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, 1); // First bool is to use HOG, the other is to use the KC random K method
 						cout << "\nKCA----done (Obj:" << benders_sol_KCA.obj_value << ")" <<endl;
@@ -2958,7 +2948,7 @@ int main(int argc, const char* argv[]){
 					//}	// limit_dfs
 				//}		// number_path_to_take
 			//}			// tau
-		//}
+		}
 	}
 
 	if(use_monte_carlo){
