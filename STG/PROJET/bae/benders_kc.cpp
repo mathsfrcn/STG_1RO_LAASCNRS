@@ -516,17 +516,13 @@ vector<vector<vector<vector<float> > > > budget_graph_cost(Solution sol){
 				if(j <= i+sol.inst.deltat[t-1] and j >= i){
 					if(t < sol.inst.T){
 						costs[t][i][j][0] = sol.inst.cI*(sol.Xt[t-1]- (sol.inst.Dt[t-1] - (j-i)));	// Cost of Inventory
-						//cout << "t<sol.inst.T------costs[t][i][j][0] = " << sol.inst.cI*(sol.Xt[t-1]- (sol.inst.Dt[t-1] - (j-i))) << "\n";
-
+						
 						costs[t][i][j][1] = sol.inst.cB*(sol.inst.Dt[t-1] + (j-i) - sol.Xt[t-1]);	// Cost of Backorders
-						//cout << "t<sol.inst.T------costs[t][i][j][1] =" << sol.inst.cB*(sol.inst.Dt[t-1] + (j-i) - sol.Xt[t-1]) << "\n";
 					} else if(t == sol.inst.T){						
 						costs[t][i][j][0] = sol.inst.cI*(sol.Xt[t-1]- (sol.inst.Dt[t-1] - (j-i))) - sol.inst.bP*(sol.inst.Dt[t-1] - (j-i));
-						//cout << "t==sol.inst.T----------costs[t][i][j][0] =" << sol.inst.cI*(sol.Xt[t-1]- (sol.inst.Dt[t-1] - (j-i)))- sol.inst.bP*(sol.inst.Dt[t-1] - (j-i)) << "\n";
-
+						
 						costs[t][i][j][1] = sol.inst.cB*(sol.inst.Dt[t-1] + (j-i) - sol.Xt[t-1]) - sol.inst.bP*sol.Xt[t-1];
-						//cout << "t==sol.inst.T----------costs[t][i][j][1] =" << sol.inst.cB*(sol.inst.Dt[t-1] + (j-i) - sol.Xt[t-1]) - sol.inst.bP*sol.Xt[t-1] << "\n";
-					}
+						}
 				}
 			}
 
@@ -628,7 +624,6 @@ float objective_value(Solution sol, vector<float> Dt){
 	//cout<<"============= obj_value: "<<endl;
 	float obj = 0;
 	for(int i = 0; i < sol.inst.T; i++){
-		//cout<<sol.inst.cI*(sol.Xt[i]-Dt[i])<<" "<<sol.inst.cB*(Dt[i]-sol.Xt[i]) - sol.inst.bP*min(Dt[i],sol.Xt[i])<<endl;
 		obj += max(sol.inst.cI*(sol.Xt[i] - Dt[i]), sol.inst.cB*(Dt[i] - sol.Xt[i]));
 	}
 
@@ -875,7 +870,6 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem(Solution sol, float
 	}
 
 	pi_value[sol.inst.T+1][0] = tmp;
-	// cout << "Longest path: " << pi_value[sol.inst.T+1][0] << endl;
 	
 	// Its the value of the longest path (i.e. the obj_value for the Adv)
 	ub_cost = pi_value[sol.inst.T+1][0];
@@ -1016,7 +1010,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_RDK(Solution sol, f
 	// Dynamic prog. for longest path
 
 	float tmp;
-	pi_value[0][0] = 0;	// Start at period 0 cost 0
+	pi_value[0][0] = 0;									// Start at period 0 cost 0
 	for(int t = 1; t < sol.inst.T+1; t++){
 		for(int j = 0; j < sol.inst.Gamma+1; j++){
 			tmp = pi_value[t-1][j] + costs[t][j][j][0];	// It's the value of the dual problem that will store the value of the longest path from the start to t, having consumed j units of budget
@@ -1068,7 +1062,7 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_RDK(Solution sol, f
 		}
 	}
 
-	if(!optimal_paths.empty()){		// Optimal convergence
+	if(!optimal_paths.empty()){					// Optimal convergence
 		selected_paths.push_back(optimal_paths[0]);
 	}
 
@@ -2046,20 +2040,6 @@ Solution BA_benders_Master(Instance inst, vector<vector<float> > scenarios){
 	sol.xt = cumulToStandard(sol.Xt);
 	sol.obj_val = cplex.getObjValue();
 
-	// for(int o = 0; o<scenarios.size();o++){
-	// 	for(int t = 0; t<inst.T; t++){
-	// 		cout<<cplex.getValue(B[o][t])<<" "<<cplex.getValue(I[o][t])<<" "<<scenarios[o][t]<<" "<<cplex.getValue(X[t])<<" "<<cplex.getValue(s[o][t])<<endl;
-	// 	}
-	// }
-
-	// float debug = 0;
-	// for(int o = 0; o<scenarios.size();o++){
-	// 	for(int t = 0; t<inst.T; t++){
-	// 		//debug += inst.cI*cplex.getValue(I[o][t]) + inst.cB*cplex.getValue(B[o][t]) - inst.bP*cplex.getValue(s[o][t]);
-	// 		debug += - inst.bP*cplex.getValue(s[o][t]);
-	// 	}
-	// }
-	// cout<<"solution cost (cplex issue ?): "<<debug<<endl;
 	env.end();
 
 	return sol;
@@ -2394,6 +2374,7 @@ Benders_Result BA_benders_Main(Instance inst, float eps, int max_iter, int max_t
 		scenarios.push_back(sol_adv.Dt);
 
 		//display_vector_float(sol_adv.Dt);
+		//display_vector_float(sol_adv.Dt);
 
 		auto start_m2 = high_resolution_clock::now();
 		sol = BA_benders_Master(inst, scenarios);
@@ -2476,7 +2457,7 @@ int main(int argc, const char* argv[]){
 	// Read instances randomized parameters
 	float read_instance_rd_lb = 0.4;	// The production plan will be between lb% and ub% of the cumulative demand
 	float read_instance_rd_ub = 0.8;
-	float adv_margin = 2.0;				// Margin allowed to the opponent in the calculation of deltats: adv_margin*Gamma (=1: no marge, =2: a lot of)
+	float adv_margin          = 2.0;	// Margin allowed to the opponent in the calculation of deltats: adv_margin*Gamma (=1: no marge, =2: a lot of)
 	// Création of the folder architecture
 	auto t = std::time(nullptr);
 	auto tm = *std::localtime(&t);
@@ -2966,7 +2947,7 @@ int main(int argc, const char* argv[]){
 
 		// ==================== BAO====================
 		mc_robuste = run_monte_carlo(benders_sol_BAO.final_solution, num_scenarios);
-		cout << "\n--- Monte Carlo evaluation of the BAO plan on " << num_scenarios 				  << " demands ---" << endl;
+		cout << "\n--- Monte Carlo evaluation of the BAO plan on " << num_scenarios 		      << " demands ---" << endl;
 		cout << "Expected average cost                : " 	<< mc_robuste.mean_cost 								<< endl;
 		cout << "Standard deviation                   : " 	<< mc_robuste.std_dev 									<< endl;
 		cout << "CI (95%)                             : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
