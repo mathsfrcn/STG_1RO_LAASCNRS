@@ -1,0 +1,31 @@
+Fichier 			| Gamma 	| tau 	| 	Validation
+------------------------------------------------------------
+toy_instances/toy_instance_9.txt | 1 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_9.txt | 21 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_9.txt | 41 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_9.txt | 61 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_9.txt | 81 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_9.txt | 101 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_2.txt | 1 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_2.txt | 21 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_2.txt | 41 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_2.txt | 61 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_2.txt | 81 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_2.txt | 101 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_6.txt | 1 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_6.txt | 21 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_6.txt | 41 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_6.txt | 61 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_6.txt | 81 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_6.txt | 101 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_3.txt | 1 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_3.txt | 21 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_3.txt | 41 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_3.txt | 61 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_3.txt | 81 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_3.txt | 101 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_5.txt | 1 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_5.txt | 21 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_5.txt | 41 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_5.txt | 61 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_5.txt | 81 | 90 | 2 | 600 | Valid quality
