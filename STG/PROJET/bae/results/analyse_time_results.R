@@ -10,22 +10,26 @@ df <- df %>%
     nb_path = nb_path_to_select,
     Benders_BA_master         = time_master_BA,
     Benders_BA_subproblem     = time_subproblem_BA,
-    #Benders_BAEA_master         = time_master_KCA,
-    #Benders_BAEA_subproblem     = time_subproblem_KCA,
-    Benders_BAEF_master         = time_master_KCF,
-    Benders_BAEF_subproblem     = time_subproblem_KCF,
-    #Benders_KCRDK_master      = time_master_KCRDK,
-    #Benders_KCRDK_subproblem  = time_subproblem_KCRDK,
-    Benders_KCRDKL_master   = time_master_KCRDKL,
+    #Benders_BAEA_master      = time_master_KCA,
+    #Benders_BAEA_subproblem  = time_subproblem_KCA,
+    Benders_BAEF_master       = time_master_KCF,
+    Benders_BAEF_subproblem   = time_subproblem_KCF,
+    Benders_BAN_master        = time_master_BAN,
+    Benders_BAN_subproblem    = time_subproblem_BAN,
+    Benders_BAUD_master       = time_master_BAUD,
+    Benders_BAUD_subproblem   = time_subproblem_BAUD,
+    #Benders_KCRDK_master     = time_master_KCRDK,
+    #Benders_KCRDK_subproblem = time_subproblem_KCRDK,
+    Benders_KCRDKL_master     = time_master_KCRDKL,
     Benders_KCRDKL_subproblem = time_subproblem_KCRDKL,
     Benders_KCU_master        = time_master_KCU,
     Benders_KCU_subproblem    = time_subproblem_KCU,
     Benders_KCUD_master       = time_master_KCUD,
     Benders_KCUD_subproblem   = time_subproblem_KCUD,
-    #Benders_OG_master        = time_master_KCHOG,
-    #Benders_OG_subproblem    = time_subproblem_KCHOG,
-    Benders_KCOGL_master        = time_master_KCHOGL,
-    Benders_KCOGL_subproblem    = time_subproblem_KCHOGL
+    #Benders_OG_master        = time_master_KCOG,
+    #Benders_OG_subproblem    = time_subproblem_KCOG,
+    Benders_KCOGL_master        = time_master_KCOGL,
+    Benders_KCOGL_subproblem    = time_subproblem_KCOGL
   )
 
 df_long <- df %>%
@@ -39,15 +43,17 @@ df_long <- df %>%
 # Proportion of time spent in each
 df_summary <- df %>%
   mutate(
-    ratio_BA = Benders_BA_master / (Benders_BA_master + Benders_BA_subproblem),
-    ratio_BAEA = Benders_BAEA_master / (Benders_BAEA_master + Benders_BAEA_subproblem),
-    ratio_BAEF = Benders_BAEF_master / (Benders_BAEF_master + Benders_BAEF_subproblem),
-    ratio_KCU = Benders_KCU_master / (Benders_KCU_master + Benders_KCU_subproblem),
-    ratio_KCUD = Benders_KCUD_master / (Benders_KCUD_master + Benders_KCUD_subproblem),
-    #ratio_KCRDK = Benders_KCRDK_master / (Benders_KCRDK_master + Benders_KCRDK_subproblem),
+    ratio_BA     = Benders_BA_master     / (Benders_BA_master     + Benders_BA_subproblem),
+    #ratio_BAEA   = Benders_BAEA_master   / (Benders_BAEA_master   + Benders_BAEA_subproblem),
+    ratio_BAEF   = Benders_BAEF_master   / (Benders_BAEF_master   + Benders_BAEF_subproblem),
+    ratio_BAN    = Benders_BAN_master    / (Benders_BAN_master    + Benders_BAN_subproblem),
+    ratio_BAUD   = Benders_BAUD_master   / (Benders_BAUD_master   + Benders_BAUD_subproblem),
+    ratio_KCU    = Benders_KCU_master    / (Benders_KCU_master    + Benders_KCU_subproblem),
+    ratio_KCUD   = Benders_KCUD_master   / (Benders_KCUD_master   + Benders_KCUD_subproblem),
+    #ratio_KCRDK  = Benders_KCRDK_master  / (Benders_KCRDK_master  + Benders_KCRDK_subproblem),
     ratio_KCRDKL = Benders_KCRDKL_master / (Benders_KCRDKL_master + Benders_KCRDKL_subproblem),
-    #ratio_OG = Benders_OG_master / (Benders_OG_master + Benders_OG_subproblem),
-    ratio_KCOGL = Benders_KCOGL_master / (Benders_KCOGL_master + Benders_KCOGL_subproblem)
+    #ratio_OG     = Benders_OG_master     / (Benders_OG_master     + Benders_OG_subproblem),
+    ratio_KCOGL  = Benders_KCOGL_master  / (Benders_KCOGL_master  + Benders_KCOGL_subproblem)
   )
 
 cat("Average proportion of time spent in the Master:\n")
