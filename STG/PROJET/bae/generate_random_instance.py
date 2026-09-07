@@ -13,7 +13,7 @@ def generate_random_instance(file_path: str, nb_periods: int, nb_items: int, mar
         dt_matrix = np.zeros((nb_items, nb_periods), dtype=int)
         
         if use_periodicity:
-            if start_in_period: # If you want to start during a period of activity
+            if start_in_period:                             # If you want to start during a period of activity
                 demand_periodicity: float = demand_prob
             else:
                 demand_periodicity: float = 1-demand_prob
@@ -96,7 +96,7 @@ timespan_period: int       = 13     # ]0, nb_periods[
 nb_instances: int          = 10
 nb_periods: int            = 52
 nb_items: int              = 20
-margin_settings: int       = 10    # Costs will be between 10.00 and 10.99
+margin_settings: int       = 10    # Costs will be in [x, x+10[
 demand_prob: float         = 0.7
 read_instance_rd_lb: float = 0.4   # The production plan will be between lb% and ub% of the cumulative demand
 read_instance_rd_ub: float = 0.8
