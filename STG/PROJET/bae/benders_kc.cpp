@@ -33,13 +33,13 @@ struct Instance{
 	vector<float> Dt;
 	vector<float> dt;
 	vector<float> X;
-	vector<bool> Y;
 };
 
 struct Solution{
 	Instance inst;
 	vector<float> Xt;
 	vector<float> xt;
+	vector<int> Yt, 
 	float obj_val;
 };
 
@@ -49,7 +49,6 @@ struct Instance_ADV{
 	vector<float> deltat;
 	vector<float> Xt;
 	vector<float> xt;
-	vector<bool> Y;
 };
 
 struct Solution_ADV{
@@ -499,11 +498,11 @@ vector<vector<vector<vector<float> > > > budget_graph_cost(Solution sol){
 				costs[t][i][j].resize(2);
 				if(j <= i+sol.inst.deltat[t-1] and j >= i){
 					if(t < sol.inst.T){
-						costs[t][i][j][0] = sol.inst.cI*(sol.Xt[t-1]-(sol.inst.Dt[t-1]-(j-i))) + sol.inst.cP*sol.inst.Y[t];	// Cost of Inventory
-						costs[t][i][j][1] = sol.inst.cB*(sol.inst.Dt[t-1]+(j-i)-sol.Xt[t-1]) + sol.inst.cP*sol.inst.Y[t];	// Cost of Backorders
+						costs[t][i][j][0] = sol.inst.cI*(sol.Xt[t-1]-(sol.inst.Dt[t-1]-(j-i))) + sol.inst.cP*sol.Yt[t-1];	// Cost of Inventory
+						costs[t][i][j][1] = sol.inst.cB*(sol.inst.Dt[t-1]+(j-i)-sol.Xt[t-1]) + sol.inst.cP*sol.Yt[t-1];	// Cost of Backorders
 					} else if(t == sol.inst.T){						
-						costs[t][i][j][0] = sol.inst.cI*(sol.Xt[t-1]-(sol.inst.Dt[t-1]-(j-i))) - sol.inst.bP*(sol.inst.Dt[t-1]-(j-i)) + sol.inst.cP*sol.inst.Y[t];
-						costs[t][i][j][1] = sol.inst.cB*(sol.inst.Dt[t-1]+(j-i)-sol.Xt[t-1]) - sol.inst.bP*sol.Xt[t-1] + sol.inst.cP*sol.inst.Y[t];
+						costs[t][i][j][0] = sol.inst.cI*(sol.Xt[t-1]-(sol.inst.Dt[t-1]-(j-i))) - sol.inst.bP*(sol.inst.Dt[t-1]-(j-i)) + sol.inst.cP*sol.Yt[t-1];
+						costs[t][i][j][1] = sol.inst.cB*(sol.inst.Dt[t-1]+(j-i)-sol.Xt[t-1]) - sol.inst.bP*sol.Xt[t-1] + sol.inst.cP*sol.Yt[t-1];
 					}
 				}
 			}
@@ -676,119 +675,123 @@ MonteCarlo_Result run_monte_carlo(const Solution& sol, int num_scenarios) {
 
 // Master problem for KC Benders Decomposition
 Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > > arcsol){
-	Solution sol;
-	IloEnv env;
-	IloModel model(env);
-	vector<vector<int> > pibool;	// Used to retrieve relevant pi after the solve
-	pibool.resize(inst.T+2);
+    Solution sol;
+    IloEnv env;
+    IloModel model(env);
+    vector<vector<int> > pibool;    // Used to retrieve relevant pi after the solve
+    pibool.resize(inst.T+2);
+    IloArray<IloNumVarArray> pi(env, inst.T+2);
 
-	IloArray<IloNumVarArray> y(env, inst.T+2);
-	IloArray<IloNumVarArray> pi(env, inst.T+2);
+    for(int t = 0; t < inst.T+2; t++){
+        pi[t] = IloNumVarArray(env, inst.Gamma+1);
+        pibool[t].resize(inst.Gamma+1);
+        for(int i = 0; i < inst.Gamma+1; i++){
+            char name[80];
+            pi[t][i] = IloNumVar(env, -IloInfinity, IloInfinity);
+            sprintf(name,"pi_%d_%d",t,i);
+            pi[t][i].setName(name);
+        }
+    }
+
+    IloNumVarArray X(env, inst.T);
+
+    for(int t = 0; t < inst.T; t++){
+        X[t] = IloNumVar(env, 0, IloInfinity, IloNumVar::Float);
+        char name[80];
+        sprintf(name,"X_%d",t);
+        X[t].setName(name);
+    }
+
+    IloBoolVarArray Y(env, inst.T);
 	
-	for(int t = 0; t < inst.T+2; t++){
-		pi[t] = IloNumVarArray(env, inst.Gamma+1);
-		pibool[t].resize(inst.Gamma+1);
-		for(int i = 0; i < inst.Gamma+1; i++){
-			char name[80];
-			pi[t][i] = IloNumVar(env, -IloInfinity, IloInfinity);
-			sprintf(name,"pi_%d_%d",t,i);
-			pi[t][i].setName(name);
-		}
+    for(int t = 0; t < inst.T; t++){
+        char name[80];
+        sprintf(name, "y_%d", t);
+        Y[t].setName(name);
+    }
 
-		char name[80];
-		sprintf(name, "y_%d", t);
-		y[t].setName(name);
-	}
+    for(int t = 1; t < inst.T+1; t++){    		// Cumulative production limits
+        model.add(X[t-1] <= inst.X[t-1]);
+    }
 
-	IloNumVarArray X(env, inst.T);
-	
-	for(int t = 0; t < inst.T; t++){
-		X[t] = IloNumVar(env);
-		char name[80];
-		sprintf(name,"X_%d",t);
-		X[t].setName(name);
-	}
+    for(int t = 1; t < inst.T; t++){    		// Cumulative production limits
+        model.add(X[t] >= X[t-1]);
+    }
 
-	float M = inst.Dt[inst.T-1] + inst.Gamma;	// T ou T-1 ?
+    for(int t = 1; t < inst.T; t++){			// Ctr 6 & 7
+        for(int i = 0; i < inst.Gamma+1; i++){
+            for(int j = i; j < inst.Gamma+1; j++){
+                if(j <= i+inst.deltat[t-1] and (arcsol[t][i][j][0] or arcsol[t][i][j][1])){
+                    IloExpr expr(env);
+                    if(t == 1) {
+                        expr = pi[0][0];
+                        pibool[0][0] = 1;
+                    } else{
+                        expr = pi[t-1][i];
+                    }
 
-	model.add(X[0] <= M*y[0]);
+                    model.add(pi[t][j] - expr >= inst.cI*(X[t-1]-(inst.Dt[t-1]-(j-i))) + inst.cP*Y[t-1]); 
+                    model.add(pi[t][j] - expr >= inst.cB*(inst.Dt[t-1]+(j-i)-X[t-1]) + inst.cP*Y[t-1]); 
+                    pibool[t][j] = 1;
+                    expr.end();
+                }
+            }
+        }
+    }
 
-	for(int t
-	)
+    int t_end = inst.T;
+    for(int i = 0; i < inst.Gamma+1; i++){			// Ctr 8 & 9
+        for(int j = i; j < inst.Gamma+1; j++){
+            if(j <= i+inst.deltat[t_end-1] and (arcsol[t_end][i][j][0] or arcsol[t_end][i][j][1])){
+                model.add(pi[t_end][j] - pi[t_end-1][i] >= inst.cI*(X[t_end-1]-(inst.Dt[t_end-1]-(j-i))) + inst.cP*Y[t_end-1] - inst.bP*(inst.Dt[t_end-1]-(j-i)));
+                model.add(pi[t_end][j] - pi[t_end-1][i] >= inst.cB*(inst.Dt[t_end-1]+(j-i)-X[t_end-1]) + inst.cP*Y[t_end-1] - inst.bP*X[t_end-1]);                    
+                pibool[t_end][j] = 1;
+            }
+        }
+    }
 
+    for(int i = 0; i < inst.Gamma+1; i++){        	// Ctr 10  
+        if(pibool[t_end][i] == 1){
+            model.add(pi[t_end+1][0] - pi[t_end][i] >= 0);
+        }
+    }
+    
+    float M = inst.Dt[inst.T-1] + inst.Gamma;
+    
+    for(int t = 1; t < inst.T; t++){ 				// Ctr 11
+        model.add(X[t] - X[t-1] <= M*Y[t]);
+    }
 
+	model.add(X[0] <= M*Y[0]); 						// Ctr 12
+    model.add(pi[0][0]==0);      					// Ctr 13                      
+    pibool[0][0] = 1;
+    pibool[inst.T+1][0] = 1;
 
-	for(int t = 1; t < inst.T+1; t++){	// Upper bound of cumulative production
-		model.add(X[t-1] <= inst.X[t-1]);
-	}
+    model.add(IloMinimize(env, pi[inst.T+1][0]));    // Objectif
 
-	for(int t = 1; t < inst.T; t++){	// Lower bound of cumulative production
-    	model.add(X[t] >= X[t-1]);
-	}
-
-	for(int t = 1; t < inst.T; t++){
-		for(int i = 0; i < inst.Gamma+1; i++){
-			for(int j = i; j < inst.Gamma+1; j++){
-				if(j <= i+inst.deltat[t-1] and (arcsol[t][i][j][0] or arcsol[t][i][j][1])){
-					IloExpr expr(env);
-					if(t == 1) {
-						expr = pi[0][0];
-						pibool[0][0] = 1;
-					} else{
-						expr = pi[t-1][i];
-					}
-
-					model.add(pi[t][j] - expr >= inst.cI*(X[t-1] - (inst.Dt[t-1] - (j-i))));
-					model.add(pi[t][j] - expr >= inst.cB*(inst.Dt[t-1] + (j-i) - X[t-1]));
-					pibool[t][j] = 1;
-				}
-			}
-		}
-	}
-
-	int t = inst.T;
-
-	for(int i = 0; i < inst.Gamma+1; i++){
-		for(int j = i; j < inst.Gamma+1; j++){
-			if(j <= i+inst.deltat[t-1] and (arcsol[t][i][j][0] or arcsol[t][i][j][1])){
-				model.add(pi[t][j] - pi[t-1][i] >= inst.cI * (X[t-1]-(inst.Dt[t-1]-(j-i))) - inst.bP * (inst.Dt[t-1]-(j-i)));
-				model.add(pi[t][j] - pi[t-1][i] >= inst.cB * (inst.Dt[t-1]+(j-i)-X[t-1]) - inst.bP * X[t-1]);
-				pibool[t][j] = 1;
-			}
-		}
-	}
-
-	for(int i = 0; i < inst.Gamma+1; i++){	// Modeling the arcs of the last (T -> T+1) layer
-		if(pibool[t][i] == 1){
-			model.add(pi[t+1][0] - pi[t][i] >= 0);
-		}
-	}
-	
-	model.add(pi[0][0]==0);
-	pibool[0][0] = 1;
-	pibool[inst.T+1][0] = 1;
-	model.add(IloMinimize(env, pi[inst.T+1][0]));	// Objective Value
-
-	IloCplex cplex(model);
-	cplex.setParam(IloCplex::Param::MIP::Display, 0);
-	cplex.setOut(env.getNullStream());
+    IloCplex cplex(model);
+    cplex.setParam(IloCplex::Param::MIP::Display, 0);
+    cplex.setOut(env.getNullStream());
 
     if(!cplex.solve()){
-    	env.error() << "Error: Failed to optimize LP." << endl;
-    	throw(-1);
-	}
+        env.error() << "Error: Failed to optimize LP" << endl;
+        throw(-1);
+    }
 
-	sol.obj_val = cplex.getValue(pi[inst.T+1][0]);
-	sol.Xt.resize(inst.T);
+    sol.obj_val = cplex.getValue(pi[inst.T+1][0]);
 
-	for(int t = 0; t < inst.T; t++){
-		sol.Xt[t] = cplex.getValue(X[t]);
-	}
+    sol.Xt.resize(inst.T);
+	sol.Yt.resize(inst.T);
 
-	sol.inst = inst;
-	env.end();
+    for(int t = 0; t < inst.T; t++){
+        sol.Xt[t] = cplex.getValue(X[t]);
+		sol.Yt[t] = round(cplex.getValue(Y[t]));
+    }
 
-	return sol;
+    sol.inst = inst;
+    env.end();
+
+    return sol;
 }
 
 // KC Few && KC All
@@ -1889,17 +1892,16 @@ Solution BA_benders_Master(Instance inst, vector<vector<float> > scenarios){
 	IloArray<IloNumVarArray> I(env, scenarios.size());
 	IloBoolVarArray y(env, inst.T);
 
-	for(int t = 0, t < inst.T; t++){			// Boolean variables to force the production cost
+	for(int t = 0; t < inst.T; t++){			// Boolean variables to force the production cost
 		char name[80];
 		sprintf (name, "y_%d", t);
-		y[t].setName(name);
+		Y[t].setName(name);
 	}
 
 	for(int o = 0; o < scenarios.size(); o++){	// Variables for each scenario
 		s[o] = IloNumVarArray(env, inst.T);
 		B[o] = IloNumVarArray(env, inst.T);
 		I[o] = IloNumVarArray(env, inst.T);
-		P[o] = IloNumVarArray(env, inst.T);
 		for(int t = 0; t < inst.T; t++){
 			char name[80];
 			s[o][t] = IloNumVar(env);
@@ -1943,19 +1945,19 @@ Solution BA_benders_Master(Instance inst, vector<vector<float> > scenarios){
 	float M = inst.Dt[inst.T-1] + inst.Gamma;
 
 	for(int t = 1; t < inst.T; t++){
-		model.add(X[t] - X[t-1] <= M * y[t]);						// Ctr 4
+		model.add(X[t] - X[t-1] <= M * Y[t]);						// Ctr 4
 	}
 
-	model.add(X[0] <= M*y[0]);										// Ctr 5
+	model.add(X[0] <= M*Y[0]);										// Ctr 5
 
 	for(int o = 0; o < scenarios.size(); o++){
 		IloExpr expr(env);
 		for(int t = 0; t < inst.T; t++){
-			expr += (inst.cI*I[o][t] + inst.cB*B[o][t] + inst.cP*y[t] - inst.bP*s[o][t]);
+			expr += (inst.cI*I[o][t] + inst.cB*B[o][t] + inst.cP*Y[t] - inst.bP*s[o][t]);
 		}
 
 		model.add(z >= expr);
-		exp.end();
+		expr.end();
 	}
 
 	model.add(IloMinimize(env, z));	// Objective value
@@ -1969,14 +1971,16 @@ Solution BA_benders_Master(Instance inst, vector<vector<float> > scenarios){
     	throw(-1);
 	}
 
-	vector<float> Xt;
-	Xt.resize(inst.T);
+	//vector<float> Xt;
+	sol.Xt.resize(inst.T);
+	sol.Yt.resize(inst.T);
 
 	for(int t = 0; t < inst.T; t++){
-		Xt[t] = cplex.getValue(X[t]);
+		sol.Xt[t] = cplex.getValue(X[t]);
+		sol.Yt[t] = round(cplex.getValue(Y[t]));
 	}
 
-	sol.Xt = Xt;
+	//sol.Xt = Xt;
 	sol.xt = cumulToStandard(sol.Xt);
 	sol.obj_val = cplex.getObjValue();
 	env.end();
