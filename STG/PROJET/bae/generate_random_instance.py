@@ -42,10 +42,11 @@ def generate_random_instance(file_path: str, nb_periods: int, nb_items: int, mar
         Dt = np.cumsum(dt)
 
         # Costs
-        cB: int = int(random.uniform(0, 10) + margin_settings)
-        cI: int = int(random.uniform(0, 10) + margin_settings)
-        bP: int = int(random.uniform(0, 10) + margin_settings)
-        f.write(f"{cB} {cI} {bP}\n")
+        cI: int = int(random.uniform(1, 10) + margin_settings)
+        cB: int = int(random.uniform(cI/2, (3*cI)/2))
+        cP: int = int(random.uniform(cI/2, (3*cI)/2))
+        bP: int = int(random.uniform(cI/2, (3*cI)/2))
+        f.write(f"{cI} {cB} {cP} {bP}\n")
 
         X = np.zeros(nb_periods, dtype=int)
         for t in range(nb_periods):
