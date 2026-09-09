@@ -1,0 +1,11 @@
+Fichier 			| Gamma 	| tau 	| 	Validation
+------------------------------------------------------------
+toy_instances/toy_instance_2.txt | 1 | 90 | 1 | 600 | Degraded quality
+toy_instances/toy_instance_2.txt | 1 | 90 | 3 | 600 | Degraded quality
+toy_instances/toy_instance_2.txt | 1 | 90 | 5 | 600 | Degraded quality
+toy_instances/toy_instance_2.txt | 1 | 90 | 7 | 600 | Degraded quality
+toy_instances/toy_instance_2.txt | 1 | 90 | 9 | 600 | Degraded quality
+toy_instances/toy_instance_2.txt | 1 | 90 | 11 | 600 | Degraded quality
+toy_instances/toy_instance_2.txt | 21 | 90 | 1 | 600 | Degraded quality
+toy_instances/toy_instance_2.txt | 21 | 90 | 3 | 600 | Degraded quality
+toy_instances/toy_instance_2.txt | 21 | 90 | 5 | 600 | Degraded quality
