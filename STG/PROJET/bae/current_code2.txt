@@ -33,13 +33,13 @@ struct Instance{
 	vector<float> Dt;
 	vector<float> dt;
 	vector<float> X;
-	vector<bool> Y;
 };
 
 struct Solution{
 	Instance inst;
 	vector<float> Xt;
 	vector<float> xt;
+	vector<int> Yt; 
 	float obj_val;
 };
 
@@ -49,7 +49,6 @@ struct Instance_ADV{
 	vector<float> deltat;
 	vector<float> Xt;
 	vector<float> xt;
-	vector<bool> Y;
 };
 
 struct Solution_ADV{
@@ -312,7 +311,7 @@ Instance read_instance_psplib(string filename, int budget){
 	inst.Dt = standardToCumul(inst.dt);
 	inst.cI = 3; 	// Stock cost
 	inst.cB = 6;	// Backorder cost
-	inst.cP = 3		// Production cost
+	inst.cP = 3;	// Production cost
 	inst.bP = 10; 	// Selling price
 	inst.Gamma = budget;
 	inst.deltat.resize(inst.T);
@@ -414,7 +413,6 @@ Instance read_instance_py(string filename, int budget, float adv_margin){
     }
 
     inst.X.resize(inst.T);								// Read X
-	inst.Y.resize(inst.T);
 
     for(int t = 0; t < inst.T; t++){
         file >> inst.X[t];
@@ -499,11 +497,11 @@ vector<vector<vector<vector<float> > > > budget_graph_cost(Solution sol){
 				costs[t][i][j].resize(2);
 				if(j <= i+sol.inst.deltat[t-1] and j >= i){
 					if(t < sol.inst.T){
-						costs[t][i][j][0] = sol.inst.cI*(sol.Xt[t-1]-(sol.inst.Dt[t-1]-(j-i))) + sol.inst.cP*sol.inst.Y[t];	// Cost of Inventory
-						costs[t][i][j][1] = sol.inst.cB*(sol.inst.Dt[t-1]+(j-i)-sol.Xt[t-1]) + sol.inst.cP*sol.inst.Y[t];	// Cost of Backorders
+						costs[t][i][j][0] = sol.inst.cI*(sol.Xt[t-1]-(sol.inst.Dt[t-1]-(j-i))) + sol.inst.cP*sol.Yt[t-1];	// Cost of Inventory
+						costs[t][i][j][1] = sol.inst.cB*(sol.inst.Dt[t-1]+(j-i)-sol.Xt[t-1]) + sol.inst.cP*sol.Yt[t-1];	// Cost of Backorders
 					} else if(t == sol.inst.T){						
-						costs[t][i][j][0] = sol.inst.cI*(sol.Xt[t-1]-(sol.inst.Dt[t-1]-(j-i))) - sol.inst.bP*(sol.inst.Dt[t-1]-(j-i)) + sol.inst.cP*sol.inst.Y[t];
-						costs[t][i][j][1] = sol.inst.cB*(sol.inst.Dt[t-1]+(j-i)-sol.Xt[t-1]) - sol.inst.bP*sol.Xt[t-1] + sol.inst.cP*sol.inst.Y[t];
+						costs[t][i][j][0] = sol.inst.cI*(sol.Xt[t-1]-(sol.inst.Dt[t-1]-(j-i))) - sol.inst.bP*(sol.inst.Dt[t-1]-(j-i)) + sol.inst.cP*sol.Yt[t-1];
+						costs[t][i][j][1] = sol.inst.cB*(sol.inst.Dt[t-1]+(j-i)-sol.Xt[t-1]) - sol.inst.bP*sol.Xt[t-1] + sol.inst.cP*sol.Yt[t-1];
 					}
 				}
 			}
@@ -600,7 +598,7 @@ float objective_value(Solution sol, vector<float> Dt){
 	float obj = 0;
 
 	for(int t = 0; t < sol.inst.T; t++){
-		obj += max(sol.inst.cI*(sol.Xt[t] - Dt[t]), sol.inst.cB*(Dt[t] - sol.Xt[t]));
+		obj += max(sol.inst.cI*(sol.Xt[t]-Dt[t]), sol.inst.cB*(Dt[t]-sol.Xt[t])) + sol.inst.cP*sol.Yt[t];
 	}
 
 	obj -=  sol.inst.bP*min(Dt[sol.inst.T-1], sol.Xt[sol.inst.T-1]); 
@@ -714,7 +712,7 @@ Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > >
     for(int t = 1; t < inst.T+1; t++){    		// Cumulative production limits
         model.add(X[t-1] <= inst.X[t-1]);
     }
-	
+
     for(int t = 1; t < inst.T; t++){    		// Cumulative production limits
         model.add(X[t] >= X[t-1]);
     }
@@ -780,10 +778,13 @@ Solution KC_benders_Master(Instance inst, vector<vector<vector<vector<int> > > >
     }
 
     sol.obj_val = cplex.getValue(pi[inst.T+1][0]);
+
     sol.Xt.resize(inst.T);
+	sol.Yt.resize(inst.T);
 
     for(int t = 0; t < inst.T; t++){
         sol.Xt[t] = cplex.getValue(X[t]);
+		sol.Yt[t] = round(cplex.getValue(Y[t]));
     }
 
     sol.inst = inst;
@@ -1888,19 +1889,18 @@ Solution BA_benders_Master(Instance inst, vector<vector<float> > scenarios){
 	IloArray<IloNumVarArray> s(env, scenarios.size());
 	IloArray<IloNumVarArray> B(env, scenarios.size());
 	IloArray<IloNumVarArray> I(env, scenarios.size());
-	IloBoolVarArray y(env, inst.T);
+	IloBoolVarArray Y(env, inst.T);
 
-	for(int t = 0, t < inst.T; t++){			// Boolean variables to force the production cost
+	for(int t = 0; t < inst.T; t++){			// Boolean variables to force the production cost
 		char name[80];
 		sprintf (name, "y_%d", t);
-		y[t].setName(name);
+		Y[t].setName(name);
 	}
 
 	for(int o = 0; o < scenarios.size(); o++){	// Variables for each scenario
 		s[o] = IloNumVarArray(env, inst.T);
 		B[o] = IloNumVarArray(env, inst.T);
 		I[o] = IloNumVarArray(env, inst.T);
-		P[o] = IloNumVarArray(env, inst.T);
 		for(int t = 0; t < inst.T; t++){
 			char name[80];
 			s[o][t] = IloNumVar(env);
@@ -1944,19 +1944,19 @@ Solution BA_benders_Master(Instance inst, vector<vector<float> > scenarios){
 	float M = inst.Dt[inst.T-1] + inst.Gamma;
 
 	for(int t = 1; t < inst.T; t++){
-		model.add(X[t] - X[t-1] <= M * y[t]);						// Ctr 4
+		model.add(X[t] - X[t-1] <= M * Y[t]);						// Ctr 4
 	}
 
-	model.add(X[0] <= M*y[0]);										// Ctr 5
+	model.add(X[0] <= M*Y[0]);										// Ctr 5
 
 	for(int o = 0; o < scenarios.size(); o++){
 		IloExpr expr(env);
 		for(int t = 0; t < inst.T; t++){
-			expr += (inst.cI*I[o][t] + inst.cB*B[o][t] + inst.cP*y[t] - inst.bP*s[o][t]);
+			expr += (inst.cI*I[o][t] + inst.cB*B[o][t] + inst.cP*Y[t] - inst.bP*s[o][t]);
 		}
 
 		model.add(z >= expr);
-		exp.end();
+		expr.end();
 	}
 
 	model.add(IloMinimize(env, z));	// Objective value
@@ -1972,9 +1972,11 @@ Solution BA_benders_Master(Instance inst, vector<vector<float> > scenarios){
 
 	vector<float> Xt;
 	Xt.resize(inst.T);
+	sol.Yt.resize(inst.T);
 
 	for(int t = 0; t < inst.T; t++){
 		Xt[t] = cplex.getValue(X[t]);
+		sol.Yt[t] = round(cplex.getValue(Y[t]));
 	}
 
 	sol.Xt = Xt;
@@ -2532,7 +2534,7 @@ int main(int argc, const char* argv[]){
 	string filename;
 
 	ostringstream oss_exp;
-	oss_exp << "/result_" << put_time(&tm, "%Y-%m-%d_%H%M") << "_n=" << nb_path_to_select << "_l=" << limit_number_paths << "_pfew=" << p_few << "_advmargin=" << adv_margin;
+	oss_exp << "/result_" << put_time(&tm, "%Y-%m-%d_%H%M") << "_n=" << nb_path_to_select << "_l=" << limit_number_paths << "_advmargin=" << adv_margin;
 	std::string experience_name = oss_exp.str();
 	ostringstream oss_folder;
 	oss_folder << "./results" << experience_name;
@@ -2630,7 +2632,7 @@ int main(int argc, const char* argv[]){
 			//for(int tau = 80; tau < 101; tau += 10){
 				int tau = 90;
 				approx_coeff = float(tau)/100;
-				for(int nb_path_to_select = 1; nb_path_to_select < 12; nb_path_to_select += 2){
+				//for(int nb_path_to_select = 1; nb_path_to_select < 12; nb_path_to_select += 2){
 					//for(int limit_number_paths = 100; limit_number_paths < 1001; limit_number_paths += 100){
 						if(toy_instances){
 							inst = read_instance_py(filename, Gamma, adv_margin);
@@ -3031,7 +3033,7 @@ int main(int argc, const char* argv[]){
 											<< benders_sol_KCOGL.iter << endl;
 						}
 					//}	// limit_dfs
-				}		// number_path_to_take
+				//}		// number_path_to_take
 			//}			// tau
 		}
 	}

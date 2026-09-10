@@ -2335,7 +2335,7 @@ Solution_ADV BA_benders_Subproblem_DP(Solution sol, float eps){
 		}
 	}
 
-	for(int t=sol.inst.T; t > 0; t--){
+	for(int t = sol.inst.T; t > 0; t--){
 		for(int j = 0; j < sol.inst.Gamma+1; j++){
 			for(int i = 0; i <= j; i++){
 				if(pi_subopt_bool[t][j] and j <= i+sol.inst.deltat[t-1] and (t != 1 or i == 0)){	// Last and is specific for first layer of the graph
