@@ -1903,7 +1903,8 @@ Solution BA_benders_Master(Instance inst, vector<vector<float> > scenarios){
 		I[o] = IloNumVarArray(env, inst.T);
 		for(int t = 0; t < inst.T; t++){
 			char name[80];
-			s[o][t] = IloNumVar(env);
+			//s[o][t] = IloNumVar(env);
+			s[o][t] = IloNumVar(env, -IloInfinity, IloInfinity);
 			sprintf(name, "s_%d_%d", o, t);
 			s[o][t].setName(name);
 

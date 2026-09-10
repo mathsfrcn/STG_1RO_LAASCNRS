@@ -1,0 +1,6 @@
+Fichier 			| Gamma 	| tau 	| 	Validation
+------------------------------------------------------------
+toy_instances/toy_instance_2.txt | 1 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_2.txt | 21 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_2.txt | 41 | 90 | 2 | 600 | Valid quality
+toy_instances/toy_instance_2.txt | 61 | 90 | 2 | 600 | Valid quality
