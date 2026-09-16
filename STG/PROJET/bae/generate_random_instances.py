@@ -6,8 +6,7 @@ import numpy as np
 
 def generate_random_instance(file_path: str, nb_periods: int, nb_items: int, margin_settings: int, demand_prob: float, use_periodicity: bool, start_in_period: bool, timespan_period: int, read_instance_rd_lb: float, read_instance_rd_ub: float):    
     with open(file_path, 'w') as f:
-        # Parameters
-        f.write(f"{nb_periods}\n")
+        f.write(f"{nb_periods}\n")  # Parameters
         f.write(f"{nb_items}\n")
 
         dt_matrix = np.zeros((nb_items, nb_periods), dtype=int)
@@ -37,29 +36,39 @@ def generate_random_instance(file_path: str, nb_periods: int, nb_items: int, mar
                 
                 f.write(" ".join(map(str, dt_matrix[i])) + "\n")
 
-        # dt, Dt
-        dt = dt_matrix.sum(axis=0)
+        dt = dt_matrix.sum(axis=0)                              # dt, Dt
         Dt = np.cumsum(dt)
-
-        # Costs
-        cI: int = int(random.uniform(1, 10) + margin_settings)
+        
+        cI: int = int(random.uniform(1, 10) + margin_settings)  # Costs
         cB: int = int(random.uniform(cI/2, (3*cI)/2))
         cP: int = int(random.uniform(cI/2, (3*cI)/2))
         bP: int = int(random.uniform(cI/2, (3*cI)/2))
         f.write(f"{cI} {cB} {cP} {bP}\n")
 
         X = np.zeros(nb_periods, dtype=int)
+        
         for t in range(nb_periods):
             if Dt[t] == 0:
                 X[t] = 0
             else:
                 A = int(read_instance_rd_lb * Dt[t])
                 B = read_instance_rd_ub * Dt[t]
-                X[t] = random.randint(int(B), int(B) + A)   # Generate int between B and B + A
+                X[t] = random.randint(int(B), int(B) + A)       # Generate int between B and B + A
         
         f.write(" ".join(map(str, X)) + "\n")
 
-def main(outdir: str, nb_instances: int, nb_periods: int, nb_items: int, margin_settings: int, demand_prob: float, use_periodicity: bool, start_in_period: bool, timespan_period: int, read_instance_rd_lb: float, read_instance_rd_ub: float):
+def main(outdir: str, 
+         nb_instances: int, 
+         nb_periods: int, 
+         nb_items: int, 
+         margin_settings: int, 
+         demand_prob: float, 
+         use_periodicity: bool, 
+         start_in_period: bool, 
+         timespan_period: int, 
+         read_instance_rd_lb: float, 
+         read_instance_rd_ub: float):
+    
     if (not outdir
             or (type(use_periodicity) is not bool)
             or (type(start_in_period)  is not bool)
@@ -73,7 +82,6 @@ def main(outdir: str, nb_instances: int, nb_periods: int, nb_items: int, margin_
         print("Error: Invalid configuration")
     else:
         file_list: list[str] = [f for f in listdir(outdir) if isfile(join(outdir, f))]
-
         for file in file_list:
             os.remove(f"toy_instances/{file}")
 
@@ -94,7 +102,7 @@ outdir = "toy_instances"
 use_periodicity: bool      = True
 start_in_period: bool      = True
 timespan_period: int       = 13     # ]0, nb_periods[
-nb_instances: int          = 20
+nb_instances: int          = 50
 nb_periods: int            = 52
 nb_items: int              = 20
 margin_settings: int       = 10    # Costs will be in [x, x+10[
