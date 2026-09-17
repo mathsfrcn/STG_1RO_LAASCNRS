@@ -2465,7 +2465,7 @@ int main(int argc, const char* argv[]){
 	int limit_number_paths = 600;		// Used for the DFS algo
 	int nb_path_to_select  = 2;			// Number of paths the subprobleme give to the master at each iteration (it's the upperbound like the max of the parameter and the number found)
 	float eps              = 1e-1;
-	bool use_graph_export  = false;		// To be corrected before use
+	bool use_graph_export  = true;		// To be corrected before use
 	bool use_result_export = true;		// True if you want to export the results
 	float max_iter         = 100;		// Security, not used in theory
 	float max_time_s       = 3600;
@@ -2479,7 +2479,7 @@ int main(int argc, const char* argv[]){
 	auto t = std::time(nullptr);
 	auto tm = *std::localtime(&t);
 	// Other parameters
-	bool toy_instances = true;			// If you want to use the toy instances or the hand_benders_instances
+	bool toy_instances = false;			// If you want to use the toy instances or the hand_benders_instances
 	vector<string> file_list;
 	int nbInst = 0;
 	Instance inst;

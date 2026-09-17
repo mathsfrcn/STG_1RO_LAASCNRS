@@ -1,0 +1,8 @@
+Fichier 			| Gamma 	| tau 	| 	Validation
+------------------------------------------------------------
+hand_benders_instances/parsed_instances/hand_instance.dzn_parsed | 1 | 90 | 2 | 600 | Valid quality
+hand_benders_instances/parsed_instances/hand_instance.dzn_parsed | 21 | 90 | 2 | 600 | Valid quality
+hand_benders_instances/parsed_instances/hand_instance.dzn_parsed | 41 | 90 | 2 | 600 | Valid quality
+hand_benders_instances/parsed_instances/hand_instance.dzn_parsed | 61 | 90 | 2 | 600 | Valid quality
+hand_benders_instances/parsed_instances/hand_instance.dzn_parsed | 81 | 90 | 2 | 600 | Valid quality
+hand_benders_instances/parsed_instances/hand_instance.dzn_parsed | 101 | 90 | 2 | 600 | Valid quality
