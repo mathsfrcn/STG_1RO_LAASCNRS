@@ -2544,7 +2544,7 @@ int main(int argc, const char* argv[]){
 
 	if(use_result_export){
 		output_validation.open(oss_validation.str());
-		output_validation << "Fichier 			| Gamma 	| tau 	| 	Validation\n";
+		output_validation << "Fichier | Gamma | Tau | nb_path_to_select | limit_number_paths | Convergence\n";
 		output_validation << "------------------------------------------------------------\n";
 		output_time_m_s << "Gamma, tau, nb_path_to_select, limit_number_paths, time_master_BA, time_subproblem_BA, time_master_BAN, time_subproblem_BAN, time_master_BAUD, time_subproblem_BAUD, time_master_KCA, time_subproblem_KCA, time_master_KCF, time_subproblem_KCF, time_master_KCRDK, time_subproblem_KCRDK, time_master_KCRDKL, time_subproblem_KCRDKL, time_master_KCU, time_subproblem_KCU, time_master_KCUD, time_subproblem_KCUD, time_master_KCOG, time_subproblem_KCOG, time_master_KCOGL, time_subproblem_KCOGL\n";
 	}
@@ -2562,12 +2562,11 @@ int main(int argc, const char* argv[]){
 		}
 	}
 
-	// Security
-	if(nbInst == 0){
-		cerr << "Error: No valid instance file found. Check the path." << endl;
+	if(nbInst == 0){	// Security
+		cerr << "Error: No valid instance file found. Check the path" << endl;
 		return -1;
 	} else{
-		cout << "Success: " << nbInst << " files found in the instances folder." << endl;
+		cout << "Success: " << nbInst << " files found in the instances folder" << endl;
 	}
 
 	for(int i = 0; i < total_files; i++ ){
@@ -2595,51 +2594,51 @@ int main(int argc, const char* argv[]){
 											
 						cout << "\n" << filename << " " << Gamma << " " << tau << " " << endl;
 
-						// BA		
+						// ==================== BA ====================		
 						benders_sol_BA = BA_benders_Main(inst, eps, max_iter, max_time_s);
 						cout << "\nBA-----done (Obj:" << benders_sol_BA.obj_value << ")" << endl;
 						
 						// BAO
 
-						// BAN
+						// ==================== BAN ===================
 						benders_sol_BAN = BAO_benders_Main(inst, approx_coeff, BAO_Method::BAN, nb_path_to_select, eps, max_iter, max_time_s);
 						cout << "\nBAN----done (Obj:" << benders_sol_BAN.obj_value << ")" << endl;
 
-						// BAUD
+						// ==================== BAUD ==================
 						benders_sol_BAUD = BAO_benders_Main(inst, approx_coeff, BAO_Method::BAUD, nb_path_to_select, eps, max_iter, max_time_s);
 						cout << "\nBAUD---done (Obj:" << benders_sol_BAUD.obj_value << ")" << endl;
 						
 						// KC
 
-						// KC All (BAEA)
+						// ==================== KC All (BAEA) =========
 						benders_sol_KCA = KC_benders_Main(inst, approx_coeff, KC_Method::KC, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, 1); // First bool is to use HOG, the other is to use the KC random K method
 						cout << "\nKCA----done (Obj:" << benders_sol_KCA.obj_value << ")" <<endl;
 
-						// KC Few (BAEF)
+						// ==================== KC Few (BAEF) =========
 						benders_sol_KCF = KC_benders_Main(inst, approx_coeff, KC_Method::KC, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
 						cout << "\nKCF----done (Obj:" << benders_sol_KCF.obj_value << ")" <<endl;
 
-						// KCRDK (RanDom K)
+						// ==================== KCRDK =================
 						benders_sol_KCRDK = KC_benders_Main(inst, approx_coeff, KC_Method::RDK, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
 						cout << "\nKCRDK--done (Obj:" << benders_sol_KCRDK.obj_value << ")" <<endl;
 
-						// KCRDKL (KCRDK Lexicographical)
+						// ==================== KCRDKL ================
 						benders_sol_KCRDKL = KC_benders_Main(inst, approx_coeff, KC_Method::RDKL, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
 						cout << "\nKCRDKL-done (Obj:" << benders_sol_KCRDKL.obj_value << ")" <<endl;
 						
-						// KCU	(KC Unique)
-						benders_sol_KCU = KC_benders_Main(inst, approx_coeff, KC_Method::Unique, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few); //KCU_benders_Main(inst, eps, max_iter, max_time_s);
+						// ==================== KCU ===================
+						benders_sol_KCU = KC_benders_Main(inst, approx_coeff, KC_Method::Unique, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
 						cout << "\nKCU----done (Obj:" << benders_sol_KCU.obj_value << ")" << endl;
-
-						// KCUD (KC with two optimal paths)
+						
+						// ==================== KCUD ==================
 						benders_sol_KCUD = KC_benders_Main(inst, approx_coeff, KC_Method::UniqueDual, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
 						cout << "\nKCUD---done (Obj:" << benders_sol_KCUD.obj_value << ")" << endl;
 
-						// KCOG
+						// ==================== KCOG ==================
 						benders_sol_KCOG = KC_benders_Main(inst, approx_coeff, KC_Method::HOG, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
 						cout << "\nKCOG---done (Obj:" << benders_sol_KCOG.obj_value << ")"<< endl;
 
-						// KCOGL (OG Lexicographical)
+						// ==================== KCOGL =================
 						benders_sol_KCOGL = KC_benders_Main(inst, approx_coeff, KC_Method::HOGL, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
 						cout << "\nKCOGL--done (Obj:" << benders_sol_KCOGL.obj_value << ")"<< endl;
 
@@ -2654,16 +2653,14 @@ int main(int argc, const char* argv[]){
 								abs(benders_sol_BA.obj_value - benders_sol_KCUD.obj_value) > eps || 
 								abs(benders_sol_BA.obj_value - benders_sol_KCOG.obj_value) > eps || 
 								abs(benders_sol_BA.obj_value - benders_sol_KCOGL.obj_value) > eps){
-							cout << "\nDegraded quality" << endl;
+							cout << "\nConvergence: Degraded quality" << endl;
 							validation_status = "Degraded quality";
 						} else{
-							cout << "\nValid quality" << endl;
-							validation_status = "Valid quality";
+							cout << "\nConvergence: Valid quality" << endl;
+							validation_status = "Convergence: Valid quality";
 						}
 
-						// We export the exact time for each instance and each parameters
 						if(use_result_export){
-							// Validation file
 							output_validation << filename << " | " << Gamma << " | " << tau << " | " << nb_path_to_select << " | " << limit_number_paths << " | " << validation_status << endl;
 						
 							// BA with BAO
