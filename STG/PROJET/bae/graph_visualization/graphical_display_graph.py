@@ -45,7 +45,7 @@ def visualize_benders_graph(json_file_path):
         line=dict(width=0.5, color='#888'),
         hoverinfo='none',
         mode='lines',
-        name='Graphe Complet'
+        name='All graph'
     )
     
     worst_edges_trace = go.Scatter(
@@ -53,7 +53,7 @@ def visualize_benders_graph(json_file_path):
         line=dict(width=3, color='red'),
         hoverinfo='none',
         mode='lines',
-        name='Pire Scénario (Sous-graphe)'
+        name='Worst-case'
     )
 
     nodes_trace = go.Scatter(
@@ -72,12 +72,12 @@ def visualize_benders_graph(json_file_path):
 
     fig = go.Figure(data=[edges_trace, worst_edges_trace, nodes_trace],
              layout=go.Layout(
-                title='Graphe de Budget Benders - Compilation de Connaissances',
+                title='Benders decomposition',
                 showlegend=True,
                 hovermode='closest',
                 margin=dict(b=20,l=5,r=5,t=40),
-                xaxis=dict(title='Période (t)', showgrid=False, zeroline=False),
-                yaxis=dict(title='Budget Consommé (b)', showgrid=True, zeroline=False)
+                xaxis=dict(title='Period (t)', showgrid=False, zeroline=False),
+                yaxis=dict(title='Gamma (b)', showgrid=True, zeroline=False)
              ))
     
     fig.show()
@@ -92,7 +92,7 @@ def main():
     )
 
     if not file_path:
-        print("Aucun fichier sélectionné. Arrêt du programme.")
+        print("Error: No file selected")
         return
 
     print(f"Génération du graphique pour : {file_path}")
