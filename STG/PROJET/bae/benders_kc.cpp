@@ -83,17 +83,20 @@ typedef vector<Arc_Decision> Path;
 
 enum class BAO_Method{	// To select the method for the Benders decomposition
 	BAN,
+	BAU_late,
+	BAU_early,
 	BAUD,
 }; 
 
 enum class KC_Method{
 	KC,
-	RDK,
-	RDKL,
-	Unique,
-	UniqueDual,
-	HOG,
-	HOGL,
+	KCRDK,
+	KCRDKL,
+	KCU_late,
+	KCU_early,
+	KCUD,
+	KCOG,
+	KCOGL,
 }; 
 
 struct MonteCarlo_Result{
@@ -1185,8 +1188,8 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_RDKL(Solution sol, 
 	return arcbool;
 }
 
-// KCU
-vector<vector<vector<vector<int> > > > KC_benders_Subproblem_Unique(Solution sol, float eps, float& ub_cost){
+// KCU_late
+vector<vector<vector<vector<int> > > > KC_benders_Subproblem_Unique_late(Solution sol, float eps, float& ub_cost){
     vector<vector<vector<vector<int> > > > arcbool; 
     vector<vector<float> > pi_value; 				
     vector<vector<vector<vector<float> > > > costs = budget_graph_cost(sol); 
@@ -1256,6 +1259,101 @@ vector<vector<vector<vector<int> > > > KC_benders_Subproblem_Unique(Solution sol
         for(int t = sol.inst.T; t > 0; t--){		// We start at time T, then explore the arcs in increasing order i=0->j
             bool found_arc = false;
             for(int i = 0; i <= current_j; i++){
+                if(current_j <= i+sol.inst.deltat[t-1] && (t != 1 || i == 0)){
+                    if(abs(pi_value[t][current_j] - (pi_value[t-1][i]+costs[t][i][current_j][0])) < eps){	// Type 0
+                        arcbool[t][i][current_j][0] = 1;
+                        current_j = i;
+                        found_arc = true;
+                        break; 
+                    }
+
+                    if(abs(pi_value[t][current_j] - (pi_value[t-1][i]+costs[t][i][current_j][1])) < eps){	// Type 1
+                        arcbool[t][i][current_j][1] = 1;
+                        current_j = i;
+                        found_arc = true;
+                        break;
+                    }
+                }
+            }
+
+            if(!found_arc) break;
+        }
+    }
+
+    return arcbool;
+}
+
+// KCU_early
+vector<vector<vector<vector<int> > > > KC_benders_Subproblem_Unique_early(Solution sol, float eps, float& ub_cost){
+    vector<vector<vector<vector<int> > > > arcbool; 
+    vector<vector<float> > pi_value; 				
+    vector<vector<vector<vector<float> > > > costs = budget_graph_cost(sol); 
+    pi_value.resize(sol.inst.T+2);
+    arcbool.resize(sol.inst.T+2);
+
+    for(int t = 0; t < sol.inst.T+2; t++){
+        pi_value[t].resize(sol.inst.Gamma+1);
+        arcbool[t].resize(sol.inst.Gamma+1);
+        for(int i = 0; i < sol.inst.Gamma+1; i++){
+            arcbool[t][i].resize(sol.inst.Gamma+1);
+            for(int j = 0; j < sol.inst.Gamma+1; j++){
+                arcbool[t][i][j].resize(2, 0);
+            }
+        }
+    }
+
+    // ========================== Forward
+
+    float tmp;
+    pi_value[0][0] = 0;
+
+    for(int t = 1; t < sol.inst.T+1; t++){
+        for(int j = 0; j < sol.inst.Gamma+1; j++){
+            tmp = pi_value[t-1][j] + costs[t][j][j][0];
+            for(int i = 0; i <= j; i++){
+                if(j <= i+sol.inst.deltat[t-1]){
+                    if(pi_value[t-1][i] + costs[t][i][j][0] > tmp){
+                        tmp = pi_value[t-1][i]+costs[t][i][j][0];
+                    }
+
+                    if(pi_value[t-1][i] + costs[t][i][j][1] > tmp){
+                        tmp = pi_value[t-1][i]+costs[t][i][j][1];
+                    } 
+                }
+            }
+
+            pi_value[t][j] = tmp;
+        }
+    }
+
+    tmp = pi_value[sol.inst.T][0];	// We calculate the worst cost
+
+    for(int i = 0; i < sol.inst.Gamma+1; i++){
+        if(pi_value[sol.inst.T][i] > tmp){
+            tmp = pi_value[sol.inst.T][i];
+        }
+    }
+
+    pi_value[sol.inst.T+1][0] = tmp;
+    ub_cost = tmp;
+
+    // ========================== Backtrack
+
+    int current_j = -1;
+    
+    for(int i = 0; i < sol.inst.Gamma+1; i++){	// We look for the first scenario that gives the worst cost
+        if(abs(pi_value[sol.inst.T][i] - ub_cost) < eps){
+            current_j = i;
+            break;
+        }
+    }
+
+    if(current_j != -1){
+        arcbool[sol.inst.T+1][current_j][0][0] = 1;	// Connexion T -> T+1
+        arcbool[sol.inst.T+1][current_j][0][1] = 1;
+        for(int t = sol.inst.T; t > 0; t--){		// We start at time T, then explore the arcs in decreasing order i=j->0
+            bool found_arc = false;
+            for(int i = current_j; i >= 0; i--){
                 if(current_j <= i+sol.inst.deltat[t-1] && (t != 1 || i == 0)){
                     if(abs(pi_value[t][current_j] - (pi_value[t-1][i]+costs[t][i][current_j][0])) < eps){	// Type 0
                         arcbool[t][i][current_j][0] = 1;
@@ -1761,27 +1859,31 @@ Benders_Result KC_benders_Main(Instance inst, float approx_coeff, KC_Method meth
 				arcsol_new = KC_benders_Subproblem(sol, approx_coeff, use_graph_export, ub_cost, eps, p_few);
 				break;
 
-			case KC_Method::RDK:
+			case KC_Method::KCRDK:
 				arcsol_new = KC_benders_Subproblem_RDK(sol, approx_coeff, nb_path_to_select, use_graph_export, limit_number_paths, ub_cost, eps);
 				break;
 
-			case KC_Method::RDKL:
+			case KC_Method::KCRDKL:
 				arcsol_new = KC_benders_Subproblem_RDKL(sol, approx_coeff, nb_path_to_select, use_graph_export, limit_number_paths, ub_cost, eps);
 				break;
 
-			case KC_Method::Unique:
-				arcsol_new = KC_benders_Subproblem_Unique(sol, eps, ub_cost);
+			case KC_Method::KCU_late:
+				arcsol_new = KC_benders_Subproblem_Unique_late(sol, eps, ub_cost);
 				break;
 			
-			case KC_Method::UniqueDual:
+			case KC_Method::KCU_early:
+				arcsol_new = KC_benders_Subproblem_Unique_early(sol, eps, ub_cost);
+				break;
+
+			case KC_Method::KCUD:
 				arcsol_new = KC_benders_Subproblem_Unique_Dual(sol, eps, ub_cost);
 				break;
 
-			case KC_Method::HOG:
+			case KC_Method::KCOG:
 				arcsol_new = KC_benders_Subproblem_OG(sol, approx_coeff, nb_path_to_select, use_graph_export, limit_number_paths, ub_cost, eps);
 				break;
 
-			case KC_Method::HOGL:
+			case KC_Method::KCOGL:
 				arcsol_new = KC_benders_Subproblem_OGL(sol, approx_coeff, nb_path_to_select, use_graph_export, limit_number_paths, ub_cost, eps);
 				break;
 		}
@@ -1944,6 +2046,175 @@ Solution BA_benders_Master(Instance inst, vector<vector<float> > scenarios){
 	return sol;
 }
 
+// BAU_late
+vector<Solution_ADV> BA_benders_Subproblem_Unique_late(Solution sol, float eps){
+    vector<vector<float> > pi_value;
+    vector<vector<vector<vector<float> > > > costs = budget_graph_cost(sol);
+    pi_value.resize(sol.inst.T+2);
+
+    for(int t = 0; t < sol.inst.T+2; t++){
+        pi_value[t].resize(sol.inst.Gamma+1, -1e9); 
+    }
+    
+    // ========================== Forward
+
+    float tmp;
+    pi_value[0][0] = 0;
+
+    for(int t = 1; t < sol.inst.T+1; t++){
+        for(int j = 0; j < sol.inst.Gamma+1; j++){
+            tmp = pi_value[t-1][j] + costs[t][j][j][0]; 
+            for(int i = 0; i <= j; i++){
+                if(j <= i+sol.inst.deltat[t-1]){
+                    if(pi_value[t-1][i] + costs[t][i][j][0] > tmp) tmp = pi_value[t-1][i]+costs[t][i][j][0];
+                    if(pi_value[t-1][i] + costs[t][i][j][1] > tmp) tmp = pi_value[t-1][i]+costs[t][i][j][1];
+                }
+            }
+
+            pi_value[t][j] = tmp;
+        }
+    }
+
+    float ub_cost = pi_value[sol.inst.T][0];
+
+    for(int i = 0; i < sol.inst.Gamma+1; i++){
+        if(pi_value[sol.inst.T][i] > ub_cost){
+            ub_cost = pi_value[sol.inst.T][i];
+        }
+    }
+
+    pi_value[sol.inst.T+1][0] = ub_cost;
+    
+    // ========================== Backtrack
+
+    vector<Solution_ADV> adv_scenarios;
+    int current_j = -1;
+
+    for(int i = 0; i < sol.inst.Gamma+1; i++){		// We search one optimal node
+        if(abs(pi_value[sol.inst.T][i] - ub_cost) < eps){
+            current_j = i;
+            break;
+        }
+    }
+
+    if(current_j != -1){
+        Solution_ADV adv_late;
+        adv_late.Dt.resize(sol.inst.T, 0.0);
+        
+        for(int t = sol.inst.T; t > 0; t--){	// Late consumption (0 to current_j)
+            bool found = false;
+            for(int i = 0; i <= current_j; i++){
+                if(current_j <= i+sol.inst.deltat[t-1] && (t != 1 || i == 0)){
+                    if(abs(pi_value[t][current_j] - (pi_value[t-1][i]+costs[t][i][current_j][0])) < eps){	// Type 0
+                        adv_late.Dt[t-1] = sol.inst.Dt[t-1] - (current_j - i);
+                        current_j = i; 
+						found = true; 
+						break;
+                    }
+
+                    if(abs(pi_value[t][current_j] - (pi_value[t-1][i]+costs[t][i][current_j][1])) < eps){	// Type 1
+                        adv_late.Dt[t-1] = sol.inst.Dt[t-1] + (current_j - i);
+                        current_j = i; 
+						found = true; 
+						break;
+                    }
+                }
+            }
+
+            if(!found) break;
+        }
+
+        adv_scenarios.push_back(adv_late);
+    }
+
+    return adv_scenarios;
+}
+
+// BAU_early
+vector<Solution_ADV> BA_benders_Subproblem_Unique_early(Solution sol, float eps){
+    vector<vector<float> > pi_value;
+    vector<vector<vector<vector<float> > > > costs = budget_graph_cost(sol);
+    pi_value.resize(sol.inst.T+2);
+
+    for(int t = 0; t < sol.inst.T+2; t++){
+        pi_value[t].resize(sol.inst.Gamma+1, -1e9); 
+    }
+    
+    // ========================== Forward
+
+    float tmp;
+    pi_value[0][0] = 0;
+
+    for(int t = 1; t < sol.inst.T+1; t++){
+        for(int j = 0; j < sol.inst.Gamma+1; j++){
+            tmp = pi_value[t-1][j] + costs[t][j][j][0]; 
+            for(int i = 0; i <= j; i++){
+                if(j <= i+sol.inst.deltat[t-1]){
+                    if(pi_value[t-1][i] + costs[t][i][j][0] > tmp) tmp = pi_value[t-1][i]+costs[t][i][j][0];
+                    if(pi_value[t-1][i] + costs[t][i][j][1] > tmp) tmp = pi_value[t-1][i]+costs[t][i][j][1];
+                }
+            }
+
+            pi_value[t][j] = tmp;
+        }
+    }
+
+    float ub_cost = pi_value[sol.inst.T][0];
+
+    for(int i = 0; i < sol.inst.Gamma+1; i++){
+        if(pi_value[sol.inst.T][i] > ub_cost){
+            ub_cost = pi_value[sol.inst.T][i];
+        }
+    }
+
+    pi_value[sol.inst.T+1][0] = ub_cost;
+    
+    // ========================== Backtrack
+
+    vector<Solution_ADV> adv_scenarios;
+    int current_j = -1;
+
+    for(int i = 0; i < sol.inst.Gamma+1; i++){		// We search 2 optimal nodes
+        if(abs(pi_value[sol.inst.T][i] - ub_cost) < eps){
+            current_j = i;                    	   // Higher budget
+			break;
+        }
+    }
+
+    if(current_j != -1){
+        Solution_ADV adv_early;
+        adv_early.Dt.resize(sol.inst.T, 0.0);
+        
+        for(int t = sol.inst.T; t > 0; t--){	// Early consumption (current_j to 0)
+            bool found = false;
+            for(int i = current_j; i >= 0; i--){
+                if(current_j <= i+sol.inst.deltat[t-1] && (t != 1 || i == 0)){
+                    if(abs(pi_value[t][current_j] - (pi_value[t-1][i]+costs[t][i][current_j][0])) < eps){
+                        adv_early.Dt[t-1] = sol.inst.Dt[t-1] - (current_j - i);
+                        current_j = i; 
+						found = true; 
+						break;
+                    }
+                    
+					if(abs(pi_value[t][current_j] - (pi_value[t-1][i]+costs[t][i][current_j][1])) < eps){
+                        adv_early.Dt[t-1] = sol.inst.Dt[t-1] + (current_j - i);
+                        current_j = i; 
+						found = true; 
+						break;
+                    }
+                }
+            }
+
+            if(!found) break;
+        }
+
+        adv_scenarios.push_back(adv_early);
+    
+    }
+
+    return adv_scenarios;
+}
+
 // BAUD
 vector<Solution_ADV> BA_benders_Subproblem_Unique_Dual(Solution sol, float eps){
     vector<vector<float> > pi_value;
@@ -2001,7 +2272,7 @@ vector<Solution_ADV> BA_benders_Subproblem_Unique_Dual(Solution sol, float eps){
         adv_late.Dt.resize(sol.inst.T, 0.0);
         int current_j = start_j_late;
         
-        for(int t = sol.inst.T; t > 0; t--){	// Late Consumption (0 to current_j)
+        for(int t = sol.inst.T; t > 0; t--){	// Late consumption (0 to current_j)
             bool found = false;
             for(int i = 0; i <= current_j; i++){
                 if(current_j <= i+sol.inst.deltat[t-1] && (t != 1 || i == 0)){
@@ -2030,7 +2301,7 @@ vector<Solution_ADV> BA_benders_Subproblem_Unique_Dual(Solution sol, float eps){
         adv_early.Dt.resize(sol.inst.T, 0.0);
         current_j = start_j_early;
         
-        for(int t = sol.inst.T; t > 0; t--){	// Early Consumption (current_j to 0)
+        for(int t = sol.inst.T; t > 0; t--){	// Early consumption (current_j to 0)
             bool found = false;
             for(int i = current_j; i >= 0; i--){
                 if(current_j <= i+sol.inst.deltat[t-1] && (t != 1 || i == 0)){
@@ -2186,6 +2457,14 @@ Benders_Result BAO_benders_Main(Instance inst, float approx_coeff, BAO_Method me
 				adv_scenarios = BA_benders_Subproblem_N(sol, eps, nb_path_to_select, approx_coeff);
 				break;
 			
+			case BAO_Method::BAU_late:
+				adv_scenarios = BA_benders_Subproblem_Unique_late(sol, eps);
+				break;
+
+			case BAO_Method::BAU_early:
+				adv_scenarios = BA_benders_Subproblem_Unique_early(sol, eps);
+				break;
+
 			case BAO_Method::BAUD:
 				adv_scenarios = BA_benders_Subproblem_Unique_Dual(sol, eps);
 				break;
@@ -2448,12 +2727,15 @@ int main(int argc, const char* argv[]){
 	// Get benders results
 	Benders_Result benders_sol_BA;
 	Benders_Result benders_sol_BAN;
+	Benders_Result benders_sol_BAUl;
+	Benders_Result benders_sol_BAUe;
 	Benders_Result benders_sol_BAUD;
 	Benders_Result benders_sol_KCA;
 	Benders_Result benders_sol_KCF;
 	Benders_Result benders_sol_KCRDK;
 	Benders_Result benders_sol_KCRDKL;
-	Benders_Result benders_sol_KCU;
+	Benders_Result benders_sol_KCUl;
+	Benders_Result benders_sol_KCUe;
 	Benders_Result benders_sol_KCUD;
 	Benders_Result benders_sol_KCOG;
 	Benders_Result benders_sol_KCOGL;
@@ -2479,7 +2761,7 @@ int main(int argc, const char* argv[]){
 	auto t = std::time(nullptr);
 	auto tm = *std::localtime(&t);
 	// Other parameters
-	bool toy_instances = false;			// If you want to use the toy instances or the hand_benders_instances
+	bool toy_instances = true;			// If you want to use the toy instances or the hand_benders_instances
 	vector<string> file_list;
 	int nbInst = 0;
 	Instance inst;
@@ -2504,39 +2786,33 @@ int main(int argc, const char* argv[]){
 
 	ostringstream oss_BA_BAN;
 	ostringstream oss_BA_KCF;
-	ostringstream oss_BA_KCRDK;
-	ostringstream oss_BA_KCRDKL;
-	ostringstream oss_BA_KCU;
+	ostringstream oss_BAUl_BAUe;
+	ostringstream oss_BAUl_KCUl;
 	ostringstream oss_BAUD_KCUD;
-	ostringstream oss_KCU_KCUD;
-	ostringstream oss_BA_OG;
-	ostringstream oss_BA_OGL;
+	ostringstream oss_KCUl_KCUe;
+	ostringstream oss_KCUl_KCUD;
 	ostringstream oss_KCA_KCF;
 	ostringstream oss_validation;
 	ostringstream oss_time_m_s;
 	ostringstream oss_stats;
 	oss_BA_BAN		<< folder_path << experience_name << "_BA_BAN.csv";
 	oss_BA_KCF 	   	<< folder_path << experience_name << "_BA_KCF.csv";
-	oss_BA_KCRDK    << folder_path << experience_name << "_BA_KCRDK.csv";
-	oss_BA_KCRDKL   << folder_path << experience_name << "_BA_KCRDKL.csv";
-	oss_BA_KCU		<< folder_path << experience_name << "_BA_KCU.csv";
+	oss_BAUl_BAUe	<< folder_path << experience_name << "_BAUl_BAUe.csv";
+	oss_BAUl_KCUl	<< folder_path << experience_name << "_BAUl_KCUl.csv";
 	oss_BAUD_KCUD	<< folder_path << experience_name << "_BAUD_KCUD.csv";
-	oss_KCU_KCUD	<< folder_path << experience_name << "_KCU_KCUD.csv";
-	oss_BA_OG 	  	<< folder_path << experience_name << "_BA_OG.csv";
-	oss_BA_OGL		<< folder_path << experience_name << "_BA_OGL.csv";
+	oss_KCUl_KCUe	<< folder_path << experience_name << "_KCUl_KCUe.csv";
+	oss_KCUl_KCUD	<< folder_path << experience_name << "_KCU_KCUD.csv";
 	oss_KCA_KCF  	<< folder_path << experience_name << "_KCA_KCF.csv";
 	oss_validation  << folder_path << experience_name << "_validation.txt";
 	oss_time_m_s    << folder_path << experience_name << "_time_m_s.csv";
 	oss_stats		<< folder_path << experience_name << "_stats.csv";
 	ofstream output_BA_BAN(oss_BA_BAN.str());
 	ofstream output_BA_KCF(oss_BA_KCF.str());
-	ofstream output_BA_KCRDK(oss_BA_KCRDK.str());
-	ofstream output_BA_KCRDKL(oss_BA_KCRDKL.str());
-	ofstream output_BA_KCU(oss_BA_KCU.str());
+	ofstream output_BAUl_BAUe(oss_BAUl_BAUe.str());
+	ofstream output_BAUl_KCUl(oss_BAUl_KCUl.str());
 	ofstream output_BAUD_KCUD(oss_BAUD_KCUD.str());
-	ofstream output_BA_KCUD(oss_KCU_KCUD.str());
-	ofstream output_BA_OG(oss_BA_OG.str());
-	ofstream output_BA_OGL(oss_BA_OGL.str());
+	ofstream output_KCUl_KCUe(oss_KCUl_KCUe.str());
+	ofstream output_KCUl_KCUD(oss_KCUl_KCUD.str());
 	ofstream output_KCA_KCF(oss_KCA_KCF.str());
 	ofstream output_validation;
 	ofstream output_time_m_s(oss_time_m_s.str());
@@ -2546,7 +2822,7 @@ int main(int argc, const char* argv[]){
 		output_validation.open(oss_validation.str());
 		output_validation << "Fichier | Gamma | Tau | nb_path_to_select | limit_number_paths | Convergence\n";
 		output_validation << "------------------------------------------------------------\n";
-		output_time_m_s << "Gamma, tau, nb_path_to_select, limit_number_paths, time_master_BA, time_subproblem_BA, time_master_BAN, time_subproblem_BAN, time_master_BAUD, time_subproblem_BAUD, time_master_KCA, time_subproblem_KCA, time_master_KCF, time_subproblem_KCF, time_master_KCRDK, time_subproblem_KCRDK, time_master_KCRDKL, time_subproblem_KCRDKL, time_master_KCU, time_subproblem_KCU, time_master_KCUD, time_subproblem_KCUD, time_master_KCOG, time_subproblem_KCOG, time_master_KCOGL, time_subproblem_KCOGL\n";
+		output_time_m_s << "Gamma, tau, nb_path_to_select, limit_number_paths, time_master_BA, time_subproblem_BA, time_master_BAN, time_subproblem_BAN, time_master_BAUl, time_subproblem_BAUl, time_master_BAUe, time_subproblem_BAUe, time_master_BAUD, time_subproblem_BAUD, time_master_KCA, time_subproblem_KCA, time_master_KCF, time_subproblem_KCF, time_master_KCRDK, time_subproblem_KCRDK, time_master_KCRDKL, time_subproblem_KCRDKL, time_master_KCUl, time_subproblem_KCUl, time_master_KCUl, time_subproblem_KCUe, time_master_KCUD, time_subproblem_KCUD, time_master_KCOG, time_subproblem_KCOG, time_master_KCOGL, time_subproblem_KCOGL\n";
 	}
 
 	if(toy_instances){
@@ -2604,6 +2880,14 @@ int main(int argc, const char* argv[]){
 						benders_sol_BAN = BAO_benders_Main(inst, approx_coeff, BAO_Method::BAN, nb_path_to_select, eps, max_iter, max_time_s);
 						cout << "\nBAN----done (Obj:" << benders_sol_BAN.obj_value << ")" << endl;
 
+						// ==================== BAUl ==================
+						benders_sol_BAUl = BAO_benders_Main(inst, approx_coeff, BAO_Method::BAU_late, nb_path_to_select, eps, max_iter, max_time_s);
+						cout << "\nBAUl---done (Obj:" << benders_sol_BAUl.obj_value << ")" << endl;
+
+						// ==================== BAUe ==================
+						benders_sol_BAUe = BAO_benders_Main(inst, approx_coeff, BAO_Method::BAU_early, nb_path_to_select, eps, max_iter, max_time_s);
+						cout << "\nBAUe---done (Obj:" << benders_sol_BAUe.obj_value << ")" << endl;
+						
 						// ==================== BAUD ==================
 						benders_sol_BAUD = BAO_benders_Main(inst, approx_coeff, BAO_Method::BAUD, nb_path_to_select, eps, max_iter, max_time_s);
 						cout << "\nBAUD---done (Obj:" << benders_sol_BAUD.obj_value << ")" << endl;
@@ -2619,42 +2903,48 @@ int main(int argc, const char* argv[]){
 						cout << "\nKCF----done (Obj:" << benders_sol_KCF.obj_value << ")" <<endl;
 
 						// ==================== KCRDK =================
-						benders_sol_KCRDK = KC_benders_Main(inst, approx_coeff, KC_Method::RDK, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
+						benders_sol_KCRDK = KC_benders_Main(inst, approx_coeff, KC_Method::KCRDK, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
 						cout << "\nKCRDK--done (Obj:" << benders_sol_KCRDK.obj_value << ")" <<endl;
 
 						// ==================== KCRDKL ================
-						benders_sol_KCRDKL = KC_benders_Main(inst, approx_coeff, KC_Method::RDKL, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
+						benders_sol_KCRDKL = KC_benders_Main(inst, approx_coeff, KC_Method::KCRDKL, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
 						cout << "\nKCRDKL-done (Obj:" << benders_sol_KCRDKL.obj_value << ")" <<endl;
 						
-						// ==================== KCU ===================
-						benders_sol_KCU = KC_benders_Main(inst, approx_coeff, KC_Method::Unique, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
-						cout << "\nKCU----done (Obj:" << benders_sol_KCU.obj_value << ")" << endl;
+						// ==================== KCUl ==================
+						benders_sol_KCUl = KC_benders_Main(inst, approx_coeff, KC_Method::KCU_late, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
+						cout << "\nKCUl---done (Obj:" << benders_sol_KCUl.obj_value << ")" << endl;
+
+						// ==================== KCUe ==================
+						benders_sol_KCUe = KC_benders_Main(inst, approx_coeff, KC_Method::KCU_early, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
+						cout << "\nKCUe---done (Obj:" << benders_sol_KCUe.obj_value << ")" << endl;
 						
 						// ==================== KCUD ==================
-						benders_sol_KCUD = KC_benders_Main(inst, approx_coeff, KC_Method::UniqueDual, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
+						benders_sol_KCUD = KC_benders_Main(inst, approx_coeff, KC_Method::KCUD, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
 						cout << "\nKCUD---done (Obj:" << benders_sol_KCUD.obj_value << ")" << endl;
 
 						// ==================== KCOG ==================
-						benders_sol_KCOG = KC_benders_Main(inst, approx_coeff, KC_Method::HOG, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
+						benders_sol_KCOG = KC_benders_Main(inst, approx_coeff, KC_Method::KCOG, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
 						cout << "\nKCOG---done (Obj:" << benders_sol_KCOG.obj_value << ")"<< endl;
 
 						// ==================== KCOGL =================
-						benders_sol_KCOGL = KC_benders_Main(inst, approx_coeff, KC_Method::HOGL, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
+						benders_sol_KCOGL = KC_benders_Main(inst, approx_coeff, KC_Method::KCOGL, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
 						cout << "\nKCOGL--done (Obj:" << benders_sol_KCOGL.obj_value << ")"<< endl;
 
 						// Quality control of the solution
 						if(abs(benders_sol_BA.obj_value - benders_sol_BAN.obj_value) > eps || 
+								abs(benders_sol_BA.obj_value - benders_sol_BAUl.obj_value) > eps || 
+								abs(benders_sol_BA.obj_value - benders_sol_BAUe.obj_value) > eps || 
 								abs(benders_sol_BA.obj_value - benders_sol_BAUD.obj_value) > eps || 
 								abs(benders_sol_BA.obj_value - benders_sol_KCA.obj_value) > eps || 
 								abs(benders_sol_BA.obj_value - benders_sol_KCF.obj_value) > eps || 
 								abs(benders_sol_BA.obj_value - benders_sol_KCRDK.obj_value) > eps || 
 								abs(benders_sol_BA.obj_value - benders_sol_KCRDKL.obj_value) > eps || 
-								abs(benders_sol_BA.obj_value - benders_sol_KCU.obj_value) > eps || 
+								abs(benders_sol_BA.obj_value - benders_sol_KCUl.obj_value) > eps || 
 								abs(benders_sol_BA.obj_value - benders_sol_KCUD.obj_value) > eps || 
 								abs(benders_sol_BA.obj_value - benders_sol_KCOG.obj_value) > eps || 
 								abs(benders_sol_BA.obj_value - benders_sol_KCOGL.obj_value) > eps){
 							cout << "\nConvergence: Degraded quality" << endl;
-							validation_status = "Degraded quality";
+							validation_status = "Convergence: Degraded quality";
 						} else{
 							cout << "\nConvergence: Valid quality" << endl;
 							validation_status = "Convergence: Valid quality";
@@ -2663,7 +2953,7 @@ int main(int argc, const char* argv[]){
 						if(use_result_export){
 							output_validation << filename << " | " << Gamma << " | " << tau << " | " << nb_path_to_select << " | " << limit_number_paths << " | " << validation_status << endl;
 						
-							// BA with BAO
+							// BA with BAN
 							output_BA_BAN	<< "BA," 
 											<< Gamma << "," 
 											<< tau << ","
@@ -2684,8 +2974,8 @@ int main(int argc, const char* argv[]){
 											<< benders_sol_BAN.time_master << ","
 											<< benders_sol_BAN.time_subproblem << endl;
 
-							// BA with KC standard 
-							output_BA_KCF 	<< "BA," 
+							// BA with KCF
+							output_BA_KCF	<< "BA," 
 											<< Gamma << "," 
 											<< tau << ","
 											<< nb_path_to_select << ","
@@ -2694,92 +2984,113 @@ int main(int argc, const char* argv[]){
 											<< benders_sol_BA.time << ","
 											<< benders_sol_BA.time_master << ","
 											<< benders_sol_BA.time_subproblem << endl;
-
-							output_BA_KCF 	<< "KCF," 
+							
+							output_BA_KCF	<< "KCF," 
 											<< Gamma << "," 
 											<< tau << ","
 											<< nb_path_to_select << ","
 											<< limit_number_paths << ","
-											<< benders_sol_KCF.iter << ","
+											<< benders_sol_KCF.iter << "," 
 											<< benders_sol_KCF.time << ","
 											<< benders_sol_KCF.time_master << ","
 											<< benders_sol_KCF.time_subproblem << endl;
+						
+							// BAUl with BAUe
+							oss_BAUl_BAUe	<< "BAUl," 
+											<< Gamma << "," 
+											<< tau << ","
+											<< nb_path_to_select << ","
+											<< limit_number_paths << ","
+											<< benders_sol_BAUl.iter << "," 
+											<< benders_sol_BAUl.time << ","
+											<< benders_sol_BAUl.time_master << ","
+											<< benders_sol_BAUl.time_subproblem << endl;
 							
-							// BA with KCRDK
-							output_BA_KCRDK << "BA,"
+							oss_BAUl_BAUe	<< "BAUe," 
+											<< Gamma << "," 
+											<< tau << ","
+											<< nb_path_to_select << ","
+											<< limit_number_paths << ","
+											<< benders_sol_BAUe.iter << "," 
+											<< benders_sol_BAUe.time << ","
+											<< benders_sol_BAUe.time_master << ","
+											<< benders_sol_BAUe.time_subproblem << endl;
+							
+							// BAUl with KCUl
+							oss_BAUl_KCUl	<< "BAUl," 
+											<< Gamma << "," 
+											<< tau << ","
+											<< nb_path_to_select << ","
+											<< limit_number_paths << ","
+											<< benders_sol_BAUl.iter << "," 
+											<< benders_sol_BAUl.time << ","
+											<< benders_sol_BAUl.time_master << ","
+											<< benders_sol_BAUl.time_subproblem << endl;
+							
+							oss_BAUl_KCUl	<< "KCUl," 
+											<< Gamma << "," 
+											<< tau << ","
+											<< nb_path_to_select << ","
+											<< limit_number_paths << ","
+											<< benders_sol_KCUl.iter << "," 
+											<< benders_sol_KCUl.time << ","
+											<< benders_sol_KCUl.time_master << ","
+											<< benders_sol_KCUl.time_subproblem << endl;
+
+							// BAUD with KCUD
+							oss_BAUD_KCUD	<< "BAUD," 
+											<< Gamma << "," 
+											<< tau << ","
+											<< nb_path_to_select << ","
+											<< limit_number_paths << ","
+											<< benders_sol_BAUD.iter << "," 
+											<< benders_sol_BAUD.time << ","
+											<< benders_sol_BAUD.time_master << ","
+											<< benders_sol_BAUD.time_subproblem << endl;
+
+							oss_BAUD_KCUD	<< "KCUD," 
+											<< Gamma << "," 
+											<< tau << ","
+											<< nb_path_to_select << ","
+											<< limit_number_paths << ","
+											<< benders_sol_KCUD.iter << "," 
+											<< benders_sol_KCUD.time << ","
+											<< benders_sol_KCUD.time_master << ","
+											<< benders_sol_KCUD.time_subproblem << endl;
+
+							// KCUl with KCUe
+							oss_KCUl_KCUe 	<< "KCUl," 
+											<< Gamma << "," 
+											<< tau << ","
+											<< nb_path_to_select << ","
+											<< limit_number_paths << ","
+											<< benders_sol_KCUl.iter << "," 
+											<< benders_sol_KCUl.time << ","
+											<< benders_sol_KCUl.time_master << ","
+											<< benders_sol_KCUl.time_subproblem << endl;
+
+							oss_KCUl_KCUe	<< "KCUe,"
 											<< Gamma << ","
 											<< tau << ","
 											<< nb_path_to_select << ","
 											<< limit_number_paths << ","
-											<< benders_sol_BA.iter << ","
-											<< benders_sol_BA.time << ","
-											<< benders_sol_BA.time_master << ","
-											<< benders_sol_BA.time_subproblem << endl;
+											<< benders_sol_KCUe.iter << ","
+											<< benders_sol_KCUe.time << ","
+											<< benders_sol_KCUe.time_master << ","
+											<< benders_sol_KCUe.time_subproblem << endl;
 
-							output_BA_KCRDK << "KCRDK,"
-											<< Gamma << ","
-											<< tau << ","
-											<< nb_path_to_select << ","
-											<< limit_number_paths << ","
-											<< benders_sol_KCRDK.iter << ","
-											<< benders_sol_KCRDK.time << ","
-											<< benders_sol_KCRDK.time_master << ","
-											<< benders_sol_KCRDK.time_subproblem << endl;
-
-							// BA with KCRDKL
-							output_BA_KCRDKL	<< "BA,"
-												<< Gamma << ","
-												<< tau << ","
-												<< nb_path_to_select << ","
-												<< limit_number_paths << ","
-												<< benders_sol_BA.iter << ","
-												<< benders_sol_BA.time << ","
-												<< benders_sol_BA.time_master << ","
-												<< benders_sol_BA.time_subproblem << endl;
-										
-							output_BA_KCRDKL	<< "KCRDKL,"
-												<< Gamma << ","
-												<< tau << ","
-												<< nb_path_to_select << ","
-												<< limit_number_paths << ","
-												<< benders_sol_KCRDKL.iter << ","
-												<< benders_sol_KCRDKL.time << ","
-												<< benders_sol_KCRDKL.time_master << ","
-												<< benders_sol_KCRDKL.time_subproblem << endl;
-
-							// BA with KCU
-							output_BA_KCU	<< "BA," 
+							// KCUl with KCUD
+							oss_KCUl_KCUD 	<< "KCUl," 
 											<< Gamma << "," 
 											<< tau << ","
 											<< nb_path_to_select << ","
 											<< limit_number_paths << ","
-											<< benders_sol_BA.iter << "," 
-											<< benders_sol_BA.time << ","
-											<< benders_sol_BA.time_master << ","
-											<< benders_sol_BA.time_subproblem << endl;
+											<< benders_sol_KCUl.iter << "," 
+											<< benders_sol_KCUl.time << ","
+											<< benders_sol_KCUl.time_master << ","
+											<< benders_sol_KCUl.time_subproblem << endl;
 
-							output_BA_KCU 	<< "KCU," 
-											<< Gamma << "," 
-											<< tau << ","
-											<< nb_path_to_select << ","
-											<< limit_number_paths << ","
-											<< benders_sol_KCU.iter << "," 
-											<< benders_sol_KCU.time << ","
-											<< benders_sol_KCU.time_master << ","
-											<< benders_sol_KCU.time_subproblem << endl;
-
-							// KCU with KCUD
-							output_BA_KCUD 	<< "KCU," 
-											<< Gamma << "," 
-											<< tau << ","
-											<< nb_path_to_select << ","
-											<< limit_number_paths << ","
-											<< benders_sol_KCU.iter << "," 
-											<< benders_sol_KCU.time << ","
-											<< benders_sol_KCU.time_master << ","
-											<< benders_sol_KCU.time_subproblem << endl;
-
-							output_BA_KCUD	<< "KCUD,"
+							oss_KCUl_KCUD	<< "KCUD,"
 											<< Gamma << ","
 											<< tau << ","
 											<< nb_path_to_select << ","
@@ -2788,69 +3099,6 @@ int main(int argc, const char* argv[]){
 											<< benders_sol_KCUD.time << ","
 											<< benders_sol_KCUD.time_master << ","
 											<< benders_sol_KCUD.time_subproblem << endl;
-
-							// BAUD with KCUD
-							output_BAUD_KCUD 	<< "BAUD," 
-												<< Gamma << "," 
-												<< tau << ","
-												<< nb_path_to_select << ","
-												<< limit_number_paths << ","
-												<< benders_sol_BAUD.iter << "," 
-												<< benders_sol_BAUD.time << ","
-												<< benders_sol_BAUD.time_master << ","
-												<< benders_sol_BAUD.time_subproblem << endl;
-
-							output_BAUD_KCUD	<< "KCUD,"
-												<< Gamma << ","
-												<< tau << ","
-												<< nb_path_to_select << ","
-												<< limit_number_paths << ","
-												<< benders_sol_KCUD.iter << ","
-												<< benders_sol_KCUD.time << ","
-												<< benders_sol_KCUD.time_master << ","
-												<< benders_sol_KCUD.time_subproblem << endl;
-
-							// BA with HOG
-							output_BA_OG	<< "BA," 
-											<< Gamma << "," 
-											<< tau << ","
-											<< nb_path_to_select << ","
-											<< limit_number_paths << ","
-											<< benders_sol_BA.iter << "," 
-											<< benders_sol_BA.time << ","
-											<< benders_sol_BA.time_master << ","
-											<< benders_sol_BA.time_subproblem << endl;
-											
-							output_BA_OG 	<< "KCOG," 
-											<< Gamma << "," 
-											<< tau << ","
-											<< nb_path_to_select << ","
-											<< limit_number_paths << ","
-											<< benders_sol_KCOG.iter << "," 
-											<< benders_sol_KCOG.time << ","
-											<< benders_sol_KCOG.time_master << ","
-											<< benders_sol_KCOG.time_subproblem << endl;
-
-							// BA with OGL
-							output_BA_OGL	<< "BA," 
-											<< Gamma << "," 
-											<< tau << ","
-											<< nb_path_to_select << ","
-											<< limit_number_paths << ","
-											<< benders_sol_BA.iter << "," 
-											<< benders_sol_BA.time << ","
-											<< benders_sol_BA.time_master << ","
-											<< benders_sol_BA.time_subproblem << endl;
-											
-							output_BA_OGL 	<< "KCOGL," 
-											<< Gamma << "," 
-											<< tau << ","
-											<< nb_path_to_select << ","
-											<< limit_number_paths << ","
-											<< benders_sol_KCOGL.iter << "," 
-											<< benders_sol_KCOGL.time << ","
-											<< benders_sol_KCOGL.time_master << ","
-											<< benders_sol_KCOGL.time_subproblem << endl;
 
 							// KCA with KCF
 							output_KCA_KCF	<< "KCA," 
@@ -2882,6 +3130,10 @@ int main(int argc, const char* argv[]){
 											<< benders_sol_BA.time_subproblem 		<< ","
 											<< benders_sol_BAN.time_master 			<< ","
 											<< benders_sol_BAN.time_subproblem 		<< ","
+											<< benders_sol_BAUl.time_master 		<< ","
+											<< benders_sol_BAUl.time_subproblem 	<< ","
+											<< benders_sol_BAUe.time_master 		<< ","
+											<< benders_sol_BAUe.time_subproblem 	<< ","
 											<< benders_sol_BAUD.time_master 		<< ","
 											<< benders_sol_BAUD.time_subproblem 	<< ","
 											<< benders_sol_KCA.time_master 			<< ","
@@ -2892,8 +3144,10 @@ int main(int argc, const char* argv[]){
 											<< benders_sol_KCRDK.time_subproblem 	<< ","
 											<< benders_sol_KCRDKL.time_master 		<< ","
 											<< benders_sol_KCRDKL.time_subproblem 	<< ","
-											<< benders_sol_KCU.time_master 			<< ","
-											<< benders_sol_KCU.time_subproblem 		<< ","
+											<< benders_sol_KCUl.time_master 		<< ","
+											<< benders_sol_KCUl.time_subproblem 	<< ","
+											<< benders_sol_KCUe.time_master 		<< ","
+											<< benders_sol_KCUe.time_subproblem 	<< ","
 											<< benders_sol_KCUD.time_master 		<< ","
 											<< benders_sol_KCUD.time_subproblem 	<< ","
 											<< benders_sol_KCOG.time_master 		<< ","
@@ -2918,6 +3172,22 @@ int main(int argc, const char* argv[]){
 											<< benders_sol_BAN.time << ","
 											<< benders_sol_BAN.iter << endl;
 							
+							output_stats	<< "BAUl,"
+											<< Gamma << ","
+											<< tau << ","
+											<< nb_path_to_select << ","
+											<< limit_number_paths << ","
+											<< benders_sol_BAUl.time << ","
+											<< benders_sol_BAUl.iter << endl;
+
+							output_stats	<< "BAUe,"
+											<< Gamma << ","
+											<< tau << ","
+											<< nb_path_to_select << ","
+											<< limit_number_paths << ","
+											<< benders_sol_BAUe.time << ","
+											<< benders_sol_BAUe.iter << endl;
+
 							output_stats	<< "BAUD,"
 											<< Gamma << ","
 											<< tau << ","
@@ -2958,13 +3228,21 @@ int main(int argc, const char* argv[]){
 											<< benders_sol_KCRDKL.time << ","
 											<< benders_sol_KCRDKL.iter << endl;
 
-							output_stats 	<< "KCU,"
+							output_stats 	<< "KCUl,"
 											<< Gamma << ","
 											<< tau << ","
 											<< nb_path_to_select << ","
 											<< limit_number_paths << ","
-											<< benders_sol_KCU.time << ","
-											<< benders_sol_KCU.iter << endl;
+											<< benders_sol_KCUl.time << ","
+											<< benders_sol_KCUl.iter << endl;
+							
+							output_stats 	<< "KCUe,"
+											<< Gamma << ","
+											<< tau << ","
+											<< nb_path_to_select << ","
+											<< limit_number_paths << ","
+											<< benders_sol_KCUe.time << ","
+											<< benders_sol_KCUe.iter << endl;
 
 							output_stats 	<< "KCUD,"
 											<< Gamma << ","
@@ -3018,6 +3296,24 @@ int main(int argc, const char* argv[]){
 		cout << "Worst case simulated                 : " 	<< mc_robuste.worst_case_simulated 						<< endl;
 		cout << "Theoretical worst-case cost (Benders): " 	<< benders_sol_BAN.obj_value 							<< endl;
 
+		// ==================== BAUl ===================
+		mc_robuste = run_monte_carlo(benders_sol_BAUl.final_solution, num_scenarios);
+		cout << "\n--- Monte Carlo evaluation of the BAUl plan on " << num_scenarios 		      << " demands ---" << endl;
+		cout << "Expected average cost                : " 	<< mc_robuste.mean_cost 								<< endl;
+		cout << "Standard deviation                   : " 	<< mc_robuste.std_dev 									<< endl;
+		cout << "CI (95%)                             : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
+		cout << "Worst case simulated                 : " 	<< mc_robuste.worst_case_simulated 						<< endl;
+		cout << "Theoretical worst-case cost (Benders): " 	<< benders_sol_BAUl.obj_value 							<< endl;
+
+		// ==================== BAUe ===================
+		mc_robuste = run_monte_carlo(benders_sol_BAUe.final_solution, num_scenarios);
+		cout << "\n--- Monte Carlo evaluation of the BAUe plan on " << num_scenarios 		      << " demands ---" << endl;
+		cout << "Expected average cost                : " 	<< mc_robuste.mean_cost 								<< endl;
+		cout << "Standard deviation                   : " 	<< mc_robuste.std_dev 									<< endl;
+		cout << "CI (95%)                             : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
+		cout << "Worst case simulated                 : " 	<< mc_robuste.worst_case_simulated 						<< endl;
+		cout << "Theoretical worst-case cost (Benders): " 	<< benders_sol_BAUe.obj_value 							<< endl;
+
 		// ==================== BAUD ====================
 		mc_robuste = run_monte_carlo(benders_sol_BAUD.final_solution, num_scenarios);
 		cout << "\n--- Monte Carlo evaluation of the BAUD plan on " << num_scenarios 		      << " demands ---" << endl;
@@ -3045,14 +3341,23 @@ int main(int argc, const char* argv[]){
 		cout << "Worst case simulated                 : " 	<< mc_robuste.worst_case_simulated 						<< endl;
 		cout << "Theoretical worst-case cost (Benders): " 	<< benders_sol_KCF.obj_value 							<< endl;
 	
-		// ==================== KCU ====================
-		mc_robuste = run_monte_carlo(benders_sol_KCU.final_solution, num_scenarios);
-		cout << "\n--- Monte Carlo evaluation of the KCU plan on " << num_scenarios 			  << " demands ---" << endl;
+		// ==================== KCUl ===================
+		mc_robuste = run_monte_carlo(benders_sol_KCUl.final_solution, num_scenarios);
+		cout << "\n--- Monte Carlo evaluation of the KCUl plan on " << num_scenarios 			  << " demands ---" << endl;
 		cout << "Expected average cost                : " 	<< mc_robuste.mean_cost 								<< endl;
 		cout << "Standard deviation                   : " 	<< mc_robuste.std_dev	 								<< endl;
 		cout << "CI (95%)                             : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
 		cout << "Worst case simulated                 : " 	<< mc_robuste.worst_case_simulated 						<< endl;
-		cout << "Theoretical worst-case cost (Benders): " 	<< benders_sol_KCU.obj_value 							<< endl;
+		cout << "Theoretical worst-case cost (Benders): " 	<< benders_sol_KCUl.obj_value 							<< endl;
+
+		// ==================== KCUe ===================
+		mc_robuste = run_monte_carlo(benders_sol_KCUe.final_solution, num_scenarios);
+		cout << "\n--- Monte Carlo evaluation of the KCUe plan on " << num_scenarios 			  << " demands ---" << endl;
+		cout << "Expected average cost                : " 	<< mc_robuste.mean_cost 								<< endl;
+		cout << "Standard deviation                   : " 	<< mc_robuste.std_dev	 								<< endl;
+		cout << "CI (95%)                             : [" << mc_robuste.ci_lower << "; " << mc_robuste.ci_upper 	<< "]" << endl;
+		cout << "Worst case simulated                 : " 	<< mc_robuste.worst_case_simulated 						<< endl;
+		cout << "Theoretical worst-case cost (Benders): " 	<< benders_sol_KCUe.obj_value 							<< endl;
 
 		// ==================== KCUD ====================
 		mc_robuste = run_monte_carlo(benders_sol_KCUD.final_solution, num_scenarios);
@@ -3086,13 +3391,11 @@ int main(int argc, const char* argv[]){
 	if(use_result_export){
 		output_BA_BAN.close();
 		output_BA_KCF.close();
-		output_BA_KCRDK.close();
-		output_BA_KCRDKL.close();
-		output_BA_KCU.close();
-		output_BA_KCUD.close();
+		output_BAUl_BAUe.close();
+		output_BAUl_KCUl.close();
 		output_BAUD_KCUD.close();
-		output_BA_OG.close();
-		output_BA_KCRDKL.close();
+		output_KCUl_KCUe.close();
+		output_KCUl_KCUD.close();
 		output_KCA_KCF.close();
 		output_validation.close();
 		output_time_m_s.close();
