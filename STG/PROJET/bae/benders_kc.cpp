@@ -2757,7 +2757,7 @@ int main(int argc, const char* argv[]){
 	float read_instance_rd_lb = 0.4;	// The production plan will be between lb% and ub% of the cumulative demand
 	float read_instance_rd_ub = 0.8;
 	float adv_margin          = 2.0;	// Margin allowed to the opponent in the calculation of deltats: adv_margin*Gamma (=1: no marge, =2: a lot of)
-	// Création of the folder architecture
+	// Creation of the folder architecture
 	auto t = std::time(nullptr);
 	auto tm = *std::localtime(&t);
 	// Other parameters
