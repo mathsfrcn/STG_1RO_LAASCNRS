@@ -1,0 +1,3 @@
+Fichier | Gamma | Tau | nb_path_to_select | limit_number_paths | Convergence
+------------------------------------------------------------
+hand_benders_instances/parsed_instances/hand_instance.dzn_parsed | 2 | 90 | 5 | 600 | Convergence: Valid quality
