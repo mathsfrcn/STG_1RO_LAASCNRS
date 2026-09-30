@@ -2744,8 +2744,8 @@ int main(int argc, const char* argv[]){
 	// Monte Carlo parameter
 	bool use_monte_carlo = false;
 	// Simulation parameters
-	int nb_path_to_select  = 5;			// Number of paths the subprobleme give to the master at each iteration (it's the upperbound like the max of the parameter and the number found)
-	int limit_number_paths = 600;		// Limit number of paths to explore in the subproblem
+	int nb_path_to_select  = 2;			// Number of paths the subprobleme give to the master at each iteration (it's the upperbound like the max of the parameter and the number found)
+	//int limit_number_paths = 600;		// Limit number of paths to explore in the subproblem
 	float eps              = 1e-1;
 	bool use_graph_export  = false;		// To be corrected before use
 	bool use_result_export = true;		// True if you want to export the results
@@ -2864,8 +2864,7 @@ int main(int argc, const char* argv[]){
 				approx_coeff = float(tau)/100;
 				//for(int nb_path_to_select = 1; nb_path_to_select < 12; nb_path_to_select += 2){
 				//int nb_path_to_select = 5;
-					for(int limit_number_paths = 200; limit_number_paths < 901; limit_number_paths += 100){
-					//int limit_number_paths = 600;
+					//for(int limit_number_paths = 200; limit_number_paths < 901; limit_number_paths += 100){
 						if(toy_instances){
 							inst = read_instance_py(filename, Gamma, adv_margin);
 							// inst = read_instance_randomized(filename, Gamma, read_instance_rd_lb, read_instance_rd_ub, adv_margin);	// If you don't want to use py script
@@ -2875,7 +2874,6 @@ int main(int argc, const char* argv[]){
 											
 						cout << "\n" << filename << " " << Gamma << " " << tau << " " << endl;
 
-						/*
 						// ==================== BA ====================		
 						benders_sol_BA = BA_benders_Main(inst, eps, max_iter, max_time_s);
 						cout << "\nBA-----done (Obj:" << benders_sol_BA.obj_value << ")" << endl;
@@ -2911,11 +2909,11 @@ int main(int argc, const char* argv[]){
 						// ==================== KCRDK =================
 						benders_sol_KCRDK = KC_benders_Main(inst, approx_coeff, KC_Method::KCRDK, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
 						cout << "\nKCRDK--done (Obj:" << benders_sol_KCRDK.obj_value << ")" <<endl;
-*/
+
 						// ==================== KCRDKL ================
 						benders_sol_KCRDKL = KC_benders_Main(inst, approx_coeff, KC_Method::KCRDKL, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
 						cout << "\nKCRDKL-done (Obj:" << benders_sol_KCRDKL.obj_value << ")" <<endl;
-/*						
+					
 						// ==================== KCUl ==================
 						benders_sol_KCUl = KC_benders_Main(inst, approx_coeff, KC_Method::KCU_late, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
 						cout << "\nKCUl---done (Obj:" << benders_sol_KCUl.obj_value << ")" << endl;
@@ -2931,11 +2929,11 @@ int main(int argc, const char* argv[]){
 						// ==================== KCOG ==================
 						benders_sol_KCOG = KC_benders_Main(inst, approx_coeff, KC_Method::KCOG, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
 						cout << "\nKCOG---done (Obj:" << benders_sol_KCOG.obj_value << ")"<< endl;
-*/
+
 						// ==================== KCOGL =================
 						benders_sol_KCOGL = KC_benders_Main(inst, approx_coeff, KC_Method::KCOGL, use_graph_export, limit_number_paths, nb_path_to_select, eps, max_iter, max_time_s, p_few);
 						cout << "\nKCOGL--done (Obj:" << benders_sol_KCOGL.obj_value << ")"<< endl;
-/*
+
 						// Quality control of the solution
 						if(abs(benders_sol_BA.obj_value - benders_sol_BAN.obj_value) > eps || 
 								abs(benders_sol_BA.obj_value - benders_sol_BAUl.obj_value) > eps || 
@@ -2955,10 +2953,10 @@ int main(int argc, const char* argv[]){
 							cout << "\nConvergence: Valid quality" << endl;
 							validation_status = "Convergence: Valid quality";
 						}
-*/
+
 						if(use_result_export){
 							output_validation << filename << " | " << Gamma << " | " << tau << " | " << nb_path_to_select << " | " << limit_number_paths << " | " << validation_status << endl;
-	/*					
+				
 							// BA with BAN
 							output_BA_BAN	<< "BA," 
 											<< Gamma << "," 
@@ -3126,7 +3124,6 @@ int main(int argc, const char* argv[]){
 											<< benders_sol_KCF.time << ","
 											<< benders_sol_KCF.time_master << ","
 											<< benders_sol_KCF.time_subproblem << endl;
-*/
 
 							output_KCRDKL_KCOGL	<< "KCRDKL," 
 											<< Gamma << "," 
@@ -3153,7 +3150,7 @@ int main(int argc, const char* argv[]){
 											<< tau 									<< ","
 											<< nb_path_to_select 					<< ","
 											<< limit_number_paths 					<< ","
-											/*<< benders_sol_BA.time_master 			<< ","
+											<< benders_sol_BA.time_master 			<< ","
 											<< benders_sol_BA.time_subproblem 		<< ","
 											<< benders_sol_BAN.time_master 			<< ","
 											<< benders_sol_BAN.time_subproblem 		<< ","
@@ -3169,9 +3166,9 @@ int main(int argc, const char* argv[]){
 											<< benders_sol_KCF.time_subproblem 		<< ","
 											<< benders_sol_KCRDK.time_master 		<< ","
 											<< benders_sol_KCRDK.time_subproblem 	<< ","
-											*/<< benders_sol_KCRDKL.time_master 		<< ","
+											<< benders_sol_KCRDKL.time_master 		<< ","
 											<< benders_sol_KCRDKL.time_subproblem 	<< ","
-											/*<< benders_sol_KCUl.time_master 		<< ","
+											<< benders_sol_KCUl.time_master 		<< ","
 											<< benders_sol_KCUl.time_subproblem 	<< ","
 											<< benders_sol_KCUe.time_master 		<< ","
 											<< benders_sol_KCUe.time_subproblem 	<< ","
@@ -3179,11 +3176,11 @@ int main(int argc, const char* argv[]){
 											<< benders_sol_KCUD.time_subproblem 	<< ","
 											<< benders_sol_KCOG.time_master 		<< ","
 											<< benders_sol_KCOG.time_subproblem 	<< ","
-											*/<< benders_sol_KCOGL.time_master 		<< ","
+											<< benders_sol_KCOGL.time_master 		<< ","
 											<< benders_sol_KCOGL.time_subproblem 	<< endl;
 
 							// Stats
-							/*output_stats	<< "BA,"
+							output_stats	<< "BA,"
 											<< Gamma << ","
 											<< tau << ","
 											<< nb_path_to_select << ","
@@ -3247,7 +3244,7 @@ int main(int argc, const char* argv[]){
 											<< benders_sol_KCRDK.time << ","
 											<< benders_sol_KCRDK.iter << endl;
 
-							*/output_stats	<< "KCRDKL,"
+							output_stats	<< "KCRDKL,"
 											<< Gamma << ","
 											<< tau << ","
 											<< nb_path_to_select << ","
@@ -3255,7 +3252,7 @@ int main(int argc, const char* argv[]){
 											<< benders_sol_KCRDKL.time << ","
 											<< benders_sol_KCRDKL.iter << endl;
 
-							/*output_stats 	<< "KCUl,"
+							output_stats 	<< "KCUl,"
 											<< Gamma << ","
 											<< tau << ","
 											<< nb_path_to_select << ","
@@ -3287,7 +3284,7 @@ int main(int argc, const char* argv[]){
 											<< benders_sol_KCOG.time << ","
 											<< benders_sol_KCOG.iter << endl;
 							
-							*/output_stats 	<< "KCOGL,"
+							output_stats 	<< "KCOGL,"
 											<< Gamma << ","
 											<< tau << ","
 											<< nb_path_to_select << ","
@@ -3295,7 +3292,7 @@ int main(int argc, const char* argv[]){
 											<< benders_sol_KCOGL.time << ","
 											<< benders_sol_KCOGL.iter << endl;
 						}
-					}	// limit_dfs
+					//}	// limit_dfs
 				//}		// number_path_to_take
 			//}			// tau
 		}
