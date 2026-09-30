@@ -2745,7 +2745,7 @@ int main(int argc, const char* argv[]){
 	bool use_monte_carlo = false;
 	// Simulation parameters
 	int nb_path_to_select  = 2;			// Number of paths the subprobleme give to the master at each iteration (it's the upperbound like the max of the parameter and the number found)
-	//int limit_number_paths = 600;		// Limit number of paths to explore in the subproblem
+	int limit_number_paths = 500;		// Limit number of paths to explore in the subproblem
 	float eps              = 1e-1;
 	bool use_graph_export  = false;		// To be corrected before use
 	bool use_result_export = true;		// True if you want to export the results
@@ -2862,7 +2862,7 @@ int main(int argc, const char* argv[]){
 			//for(int tau = 80; tau < 101; tau += 10){
 			int tau = 90;
 				approx_coeff = float(tau)/100;
-				//for(int nb_path_to_select = 1; nb_path_to_select < 12; nb_path_to_select += 2){
+				for(int nb_path_to_select = 1; nb_path_to_select < 10; nb_path_to_select += 2){
 				//int nb_path_to_select = 5;
 					//for(int limit_number_paths = 200; limit_number_paths < 901; limit_number_paths += 100){
 						if(toy_instances){
@@ -3293,7 +3293,7 @@ int main(int argc, const char* argv[]){
 											<< benders_sol_KCOGL.iter << endl;
 						}
 					//}	// limit_dfs
-				//}		// number_path_to_take
+				}		// number_path_to_take
 			//}			// tau
 		}
 	}
