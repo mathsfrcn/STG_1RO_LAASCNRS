@@ -1,3 +1,41 @@
+/**
+ * =====================================================================================
+ * @file        benders_kc.cpp
+ * @version     24.4.1
+ * @date        October 2026
+ * 
+ * @author      Mathis FRANCINE-HABAS <mathis.francine-habas@alumni.enac.fr>
+ * @affiliation LAAS-CNRS (ROC Team) / IRIT-CNRS (ADRIA Team) / ANITI (HEROIC Team) / University of Toulouse - Toulouse, France
+ * @author      Tom PORTOLLEAU <>
+ * @affiliation LAAS-CNRS (Équipe ROC) - Toulouse, France
+ * @author      Christian ARTIGUES <christian.artigues@laas.fr>
+ * @affiliation LAAS-CNRS (ROC Team) / ANITI (HEROIC Team) - Toulouse, France
+ * @author      Romain GUILLAUME <>
+ * @affiliation IRIT-CNRS (ADRIA Team) / ANITI (HEROIC Team) - Toulouse, France
+ * 
+ * @brief       Robust resolution of the lot-sizing problem via Benders Adversarial approach and 
+ *              Knowledge Compilation
+ * 
+ * @details     This source code implements various adversarial scenario extraction heuristics 
+ *              (BA, BAEA, BAEF, BAUL, BAUE, BAUD, BAN, KCUL, KCUE, KCUD, KCOG, KCHOGL, KCRDK, KCRDKL) 
+ *              based on dynamic programming and the factorization of partial budget graphs. 
+ *              It accelerates the convergence of the master problem in robust optimization.
+ * 
+ * @reference   [1] T. Portoleau, "Représentations discrètes pour l'ordonnancement et la 
+ *                  planification robustes", PhD, LAAS-CNRS, 2022.
+ * 				[2] M. Francine-Habas, "Amélioration de Méthodes de Benders pour un Problème 
+ *                  de Planification Robuste sous Incertitude", Research report, 
+ *                  LAAS-CNRS, University of Toulouse, 2026.
+ *              
+ * 
+ * @doi         [À renseigner lors de la publication de l'article, ex: 10.xxxx/xxxxx]
+ * 
+ * @copyright   Copyright (c) 2026 LAAS-CNRS.
+ *              This code is distributed under the MIT license (or GNU GPLv3).
+ *              Any use in an academic context must cite the references above.
+ * =====================================================================================
+ */
+
 #include <cstddef>
 #include <ilcplex/ilocplex.h>
 #include <vector>
@@ -24,8 +62,13 @@ using namespace std;
 using namespace std::chrono;
 namespace fs = std::filesystem;
 
-//=========================================== structures
+// =====================================================================================
+// ========================= STRUCTURES DE DONNÉES =====================================
+// =====================================================================================
 
+/**
+ * @brief Represents an instance of the uncertain lot-sizing problem
+ */
 struct Instance{
 	int T, cI, cB, cP, bP;
 	float Gamma;
@@ -125,11 +168,31 @@ int calculate_L1_distance(const Path& pathA, const Path& pathB){
 
 // =========================================== Recursive extraction of worst-case scenarios following a Depth-First Search
 
+/**
+ * @brief Extraction récursive des scénarios par parcours en profondeur (DFS).
+ * 
+ * Construit un bassin de candidats en remontant les chemins depuis un état terminal 
+ * donné, en respectant rigoureusement le principe d'optimalité de Bellman.
+ * 
+ * @note Implémente l'Algorithme 10 (DFS) de l'Annexe H du rapport.
+ * 
+ * @param t Période temporelle courante lors du backtracking.
+ * @param j Budget local consommé à l'instant t.
+ * @param pi_value Matrice duale (\pi) issue de la programmation dynamique.
+ * @param costs Matrice des coûts locaux de transition c[t][i][j].
+ * @param sol Solution nominale (plan de production X) à attaquer.
+ * @param current_path Séquence d'arcs en cours d'exploration.
+ * @param all_paths (P_all) Ensemble global stockant les chemins complets extraits.
+ * @param limit_number_paths (L) Limite d'exploration (troncature du graphe combinatoire).
+ * @param eps Tolérance numérique.
+ * 
+ * @complexity O(L * T * \Gamma)
+ */
 void extract_paths_dfs(
             int t,                                                  
-            int j,                                                  // Current node in the backtrack
-            const vector<vector<float> >& pi_value,                 // Dynamic programming matrix
-            const vector<vector<vector<vector<float> > > >& costs,  // Original costs
+            int j,
+            const vector<vector<float> >& pi_value,
+            const vector<vector<vector<vector<float> > > >& costs,
             const Solution& sol,
             Path& current_path,
             vector<Path>& all_paths,
