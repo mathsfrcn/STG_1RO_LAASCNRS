@@ -170,7 +170,7 @@ def main():
     else:
         print("Error: No file selected")
 
-method = False  # True if you want to use the GUI, False if you want to use the command line
+method = True  # True if you want to use the GUI, False if you want to use the command line
 
 if method:  # Window with Tkinter
     import tkinter as tk
