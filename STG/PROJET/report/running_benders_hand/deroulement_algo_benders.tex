@@ -1,0 +1,547 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\geometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+\usepackage{amsmath,amssymb,amsfonts,mathtools}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{titlesec}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{MnSymbol}
+\usepackage{eurosym}
+\usepackage{float}
+
+% --- Palette de Couleurs Académique ---
+\definecolor{mainblue}{RGB}{26, 54, 93}       % Bleu nuit pour les titres principaux
+\definecolor{slate}{RGB}{74, 85, 104}         % Gris ardoise pour les sous-titres et détails
+\definecolor{lightbg}{RGB}{247, 250, 252}     % Fond très clair pour les encadrés
+\definecolor{bordergrey}{RGB}{226, 232, 240}  % Gris clair pour les lignes de séparation
+
+% --- Configuration des Titres ---
+\titleformat{\section}{\color{mainblue}\large\bfseries}{\thesection.}{0.5em}{}[{\titlerule[0.5pt]}]
+\titleformat{\subsection}{\color{slate}\normalsize\bfseries}{\thesubsection.}{0.5em}{}
+
+% --- Configuration des En-têtes et Pieds de page ---
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\fancyhead[L]{\footnotesize\color{slate}\textbf{Note Technique} | LAAS-CNRS}
+\fancyhead[R]{\footnotesize\color{slate}Décomposition de Benders Robuste}
+\fancyfoot[C]{\footnotesize\color{slate}Page \thepage}
+
+% --- Configuration de Hyperref ---
+\hypersetup{
+    colorlinks=true,
+    linkcolor=mainblue,
+    urlcolor=mainblue,
+    pdftitle={deroulement_algo_benders},
+    pdfauthor={Mathis Francine-Habas}
+}
+
+\begin{document}
+
+\begin{center}
+    {\color{mainblue}\LARGE\bfseries Déroulement Manuel de l'Algorithme de Benders}\\[0.3cm]
+    {\color{slate}\large Planification Robuste sous Incertitude}\\[0.5cm]
+    \noindent\makebox[\linewidth]{\color{bordergrey}\rule{\linewidth}{1pt}}\\[0.2cm]
+    \begin{minipage}{0.48\textwidth}
+        \begin{flushleft} \small
+            \textbf{Auteur :} Mathis Francine-Habas \\
+            \textbf{Structure :} LAAS-CNRS
+        \end{flushleft}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \begin{flushright} \small
+            \textbf{Date :} \today \\
+            \textbf{Version :} 2.0
+        \end{flushright}
+    \end{minipage}\\[0.1cm]
+    \noindent\makebox[\linewidth]{\color{bordergrey}\rule{\linewidth}{1pt}}
+\end{center}
+
+\vspace{0.4cm}
+
+
+\section{Première configuration}
+\label{sec:formulation1}
+
+\textit{Afin de simplifier le déroulement de l'algorithme de Benders, nous allons prendre,  dans un premier temps, $\Delta_i$ constant $\forall i\in[\![1, T]\!]$. Nous suggérerons également que les coûts de lancement $c^P$ ainsi que les bénéfices $b^P$ sont nuls.}
+
+
+\subsection{Formulation du problème}
+
+Soit le jeu de données suivant :
+
+\begin{alignat}{5}
+    &T&&=3\\
+    &\Gamma&&=2\\
+    &\Delta_i&&=2, \forall i\in[\![1, T]\!]\\
+    &c^I&&=1\text{\euro}\\
+    &c^B&&=2\text{\euro}\\
+    &c^P&&=0\text{\euro}\\
+    &b^P&&=0\text{\euro}\\
+    &\widehat{D}_{nominal}&&=[10, 20, 30]
+\end{alignat}
+
+
+On obtient le graphe ci-dessous :
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{running_benders_hand/images/deroulement_algo_methode_1.png}
+    \caption{Graphe initialisé avec les poids préliminaires}
+    \label{fig:graph_congif_1}
+\end{figure}
+
+
+\subsection{Itérations}
+
+Soit $U$ l'ensemble contenant le scénario nominal et $U'$ l'ensemble agrégé de $U$ par les nouveaux scénarios remontés au Maître.
+
+\subsubsection{Step 1 : Itération naïve}
+
+\paragraph{Lower Bound (Problème Maître)} Lors de la première étape, le problème Maître n'a aucune idée de l'incertitude, il ne connaît que le scénario nominal.
+Il va donc chercher à satisfaire $\widehat{D}_{nom}=[10, 20, 30]$.
+
+\begin{itemize}
+    \item Décision du Maître : il va produire exactement la demande. Son plan de production cumulé est $X^{(1)}=[10, 20, 30]$ ;
+    \item $LowerBound=\textcolor{green}{0}$\euro\, (car ni stock ni de rupture).
+\end{itemize}
+
+\paragraph{Upper Bound (Sous-Problème)} L'adversaire observe le plan $X^{(1)}$ et va chercher à maximiser $c^I$ et $c^B$ tout en dépensant le maximum de budget possible $\Delta_i\leq\Gamma\,\forall i\in[\![1, T]\!]$. Etant donné que la demande est cumulée, une attaque en $t=1$ va faire beaucoup de dégats. On a donc :
+
+\begin{itemize}
+    \item L'adversaire lance l'attaque $\delta_1=[+2, 0, 0]$ ;
+    \item Nouveau scénario généré $D_{up}=[12, 22, 32]$ ;
+    \item $UpperBound=2\times (2+2+2)=\textcolor{green}{12}$\euro
+\end{itemize}
+
+\underline{Bilan itération 1 :}
+
+\[
+    \textcolor{red}{UB(12)>LB(0)}
+\]
+Nous ne sommes pas à l'équilibre. Le scénario $D_{up}$ est remonté au Maître. On l'ajoute à $U'$.
+
+
+\subsubsection{Step 2 : Correction de l'attaque}
+
+\paragraph{Lower Bound} Connaissant les scénarios contenus dans $U'$, le Maître doit surproduire pour se protéger de $D_{up}$, mais il sait également que s'il produit trop, le scénario nominal lui coûtera cher en frais de stockage. Il va donc chercher un point d'équilibre selon lequel le coût de surstock sera égal au coût de rupture face à l'attaque $D_{up}$.
+
+L'objectif est donc de minimiser le coût Z. Posons $S=X_1 + X_2 + X_3$, la somme des décisons du plan d'attaque. Nous avons deux contraintes à satisfaire en même temps :
+
+\begin{alignat}{5}
+   Z& \geq{}&  c^I(X_1-10)&& + c^I(X_2-20)& + c^I(X_3-30)&&\\
+   Z& \geq{}& (X_1-10)&& + (X_2-20)& + (X_3-30)&&\\
+   Z& \geq{}& S-60&&\\
+\end{alignat}
+    
+\begin{alignat}{5}
+   Z& \geq{}&  c^B(12 - X_1)&& + c^B(22 - X_2)& + c^B(32 - X_3)&&\\
+   Z& \geq{}& 2(12 - X_1)&& + 2(22 - X_2)& + 2(32 - X_3)&&\\
+   Z& \geq{}& 132-2S&&\\
+\end{alignat}
+
+Minimiser $Z$ revient à trouver l'intersection entre ces deux équations, aussi :
+
+\[
+    S=\frac{192}{3}=64\text{\euro}
+\]
+
+Or sachant que la demande nominale est de $60$\euro, il nous reste $4$\euro{} à partager entre $\{X_1, X_2, X_3\}$.
+Si l'on décide de répartir ce stock de façon "lisse", en ajoutant une production supplémentaire constante $\alpha$ à chaque période, la marge s'accumule :
+
+\begin{itemize}
+    \item $t=1 : \alpha$ ;
+    \item $t=2 : 2\alpha$ ;
+    \item $t=3 : 3\alpha$.
+\end{itemize}
+
+En résolvant ce système d'équations, on obtient : $\alpha=\frac{2}{3}\approx0.66$. Nous avons donc notre plan de production ajusté :
+
+\begin{itemize}
+    \item $X_1 = 10 + \alpha = 10.66$\euro ;
+    \item $X_2 = 20 + 2\alpha = 21.33$\euro ;
+    \item $X_3 = 30 + 3\alpha = 32.00$\euro ;
+    \item $LowerBound=S-60=\textcolor{green}{4}$\euro.
+\end{itemize}
+
+\paragraph{Upper Bound} Puisque le Maître a sur-produit, l'adversaire va diminuer la demande, on a :
+
+\begin{itemize}
+    \item L'adversaire lance l'attaque $\delta_2=[-2, 0, 0]$ ;
+    \item Nouveau scénario généré $D_{down}=[8, 18, 28]$ ;
+    \item $UpperBound=1\times (2.66+3.33+4.00)=\textcolor{green}{10}$\euro.
+\end{itemize}
+
+\underline{Bilan itération 2 :}
+
+\[
+    \textcolor{red}{UB(10)>LB(4)}
+\]
+
+Nous ne sommes pas à l'équilibre. Le scénario $D_{down}$ est remonté au Maître.
+
+
+\subsubsection{Step 3 : Trouver l'équilibre}
+
+\paragraph{Lower Bound} Le Maître connaît maintenant les deux extrêmes ($\in U'$). Il faut équilibrer les deux risques en fonction de leur coût respectif. Soit :
+
+\begin{itemize}
+    \item Après résolution du système, on trouve le nouveau plan d'attaque $X^{(3)}=[10.33, 20.66, 31.00]$ ;
+    \item $LowerBound=S-54=\textcolor{green}{8}$\euro.
+\end{itemize}
+
+\paragraph{Upper Bound} L'adversaire se heurte à un mur, le Maître est maintenant centré entre les pires bornes de l'incertitude. La pire attaque de l'adversaire plafonne à $\textcolor{green}{8}$\euro.
+
+\underline{Bilan itération 3 :}
+
+\[
+    \textcolor{red}{UB(8)<LB(8)+\epsilon}
+\]
+
+Nous sommes à l'équilibre. L'algorithme a convergé. Graphiquement, il faudra vérifier que l'intérieur du graphe ($noeud(1, 1),\, noeud(2, 1),\, noeud(3, 1)$) a été supprimé.
+
+
+\section{Deuxième configuration}
+\label{sec:formulation2}
+
+\textit{Dans cette seconde expérience, nous prendrons $\Delta_i$ inconstant $\forall i\in[\![1, T]\!]$. Nous suggérerons de la même façon que les coûts de lancement $c^P$ ainsi que les bénéfices $b^P$ sont nuls.}
+
+
+\subsection{Formulation du problème}
+
+Soit le jeu de données suivant :
+
+\begin{alignat}{5}
+    &T&&=3\\
+    &\Gamma&&=2\\
+    &\Delta_1&&=1\\
+    &\Delta_i&&=2, \forall i\in[\![2, T]\!]\\
+    &c^I&&=1\text{\euro}\\
+    &c^B&&=2\text{\euro}\\
+    &c^P&&=0\text{\euro}\\
+    &b&&=0\text{\euro}\\
+    &\widehat{D}_{nominal}&&=[10, 20, 30]
+\end{alignat}
+
+On obtient le graphe suivant :
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{running_benders_hand/images/deroulement_algo_methode_2.png}
+    \caption{Graphe initialisé avec les poids préliminaires de la seconde configuration}
+    \label{fig:graph_congif_2}
+\end{figure}
+
+
+\subsection{Itérations}
+
+
+\subsubsection{Step 1 : Itération naïve}
+
+\paragraph{Lower Bound} L'idée est la même concernant cette première étape.
+
+\begin{itemize}
+    \item Plan de production cumulé : $X^{(1)}=[10, 20, 30]$ ;
+    \item $LowerBound=\textcolor{green}{0}$\euro.
+\end{itemize}
+
+\paragraph{Upper Bound} De la même façon, une attaque en $t=1$ va faire beaucoup de dégats. On a donc :
+
+\begin{itemize}
+    \item L'adversaire lance l'attaque $\delta_1=[+1, +1, 0]$ ;
+    \item Nouveau scénario généré $D_{up}=[11, 22, 32]$ ;
+    \item $UpperBound=2\times (1+2+2)=\textcolor{green}{10}$\euro
+\end{itemize}
+
+\underline{Bilan itération 1 :}
+
+\[
+    \textcolor{red}{UB(10)>LB(0)}
+\]
+
+Nous ne sommes pas à l'équilibre. Le scénario $D_{up}$ est remonté au Maître.
+
+
+\subsubsection{Step 2 : Correction de l'attaque}
+
+\paragraph{Lower Bound} L'objectif reste de minimiser le coût $Z$. Soit :
+    
+\begin{alignat}{5}
+   Z& \geq{}&  c^I(X_1-10)&& + c^I(X_2-20)& + c^I(X_3-30)&&\\
+   Z& \geq{}& (X_1-10)&& + (X_2-20)& + (X_3-30)&&\\
+   Z& \geq{}& S-60&&\\
+\end{alignat}
+    
+\begin{alignat}{5}
+   Z& \geq{}&  c^B(11-X_1)&& + c^B(22-X_2)& + c^B(32-X_3)&&\\
+   Z& \geq{}& 2(11-X_1)&& + 2(22-X_2)& + 2(32-X_3)&&\\
+   Z& \geq{}& 130-2S&&\\
+\end{alignat}
+
+De plus, 
+
+\[
+    S = \frac{185}{2}\approx 61.66
+\]
+
+Il nous reste $1.66$ à partager. On obtient : $\alpha=\frac{5}{9}\approx0.555$. Nous avons donc notre plan de production ajusté $X^{(2)}$ :
+
+\begin{itemize}
+    \item $X_1 = 10 + \alpha = 10.55$ ;
+    \item $X_2 = 20 + 2\alpha = 21.11$ ;
+    \item $X_3 = 30 + 3\alpha = 31.66$ ;
+\end{itemize}
+
+\underline{Vérification et calcul de la Lower Bound :}
+
+\begin{itemize}
+    \item Si $D_{nom}$ arrive, son surstock cumulé lui coûtera $c^I(0.55+1.11+1.66)=\textcolor{green}{3.33}$\euro ;
+    \item  Si $D_{up}$ arrive, sa rupture cumulée lui coûtera $c^B(0.45+0.89+0.34)=\textcolor{green}{3.33}$\euro.
+\end{itemize}
+
+\paragraph{Upper Bound} L'adversaire va jouer le plan $X^{(2)}$ et attaquer à la baisse.
+
+\begin{itemize}
+    \item L'adversaire lance l'attaque $\delta_2=[-1, -1, 0]$ ;
+    \item Nouveau scénario généré $D_{down}=[9, 18, 28]$ ;
+    \item $UpperBound=(1.55+3.11+3.66)=\textcolor{green}{8.33}$\euro
+\end{itemize}
+
+\underline{Bilan itération 2 :}
+
+\[
+    \textcolor{red}{UB(8.33)>LB(3.33)}
+\]
+
+Nous ne sommes pas à l'équilibre. Le scénario $D_{down}$ est remonté au Maître.
+
+
+\subsubsection{Step 3 : Trouver l'équilibre}
+
+\textit{$U'=\{D_{up}=[10.55, 21.10, 31.66], D_{nom}=[10, 20, 30], D_{down}=[9, 18, 28]\}$}
+
+\paragraph{Lower Bound} De la même façon, l'objectif est de chercher $X^{(3)}$ qui minimise le coût $Z$ entre les deux scénarios les plus distants.
+
+Après la résolution du système, nous trouvons le plan d'attaque cumulé $X^{(3)}=[10.28, 20.56, 30.83]$ tel que $Z=\textcolor{green}{6.66}$\euro.
+
+\paragraph{Upper Bound} L'adversaire cherche la faille qui permettra d'infliger plus de $6.66$\euro{} mais le Maître s'est déjà paré contre toutes les attaques :
+
+\begin{itemize}
+    \item S'il relance l'attaque $D_{up}$ ou $D_{down}$ le coût est de $6.66$\euro ;
+    \item S'il tente une attaque hybride : par exemple, augmenter très fortement au milieu, la demande deviendrait [10, 22, 32], le coût ne serait que de $5.22\text{\euro}\leq \textcolor{green}{6.66}$\euro.
+\end{itemize}
+
+\underline{Bilan itération 3 :}
+
+\[
+    \textcolor{red}{UB(6.66)<LB(6.66)+\epsilon}
+\]
+
+Nous sommes à l'équilibre, il n'est plus possible de trouver des plans d'attaque qui dégraderont la valeur objective. Nous avons trouvé l'optimum.
+
+
+\section{Troisième configuration}
+\label{sec:formulation2}
+
+\textit{Dans cette dérnière expérience, nous prendrons $\Delta_i$ inconstant $\forall i\in[\![1, T]\!]$. Cependant, nous suggérons que le bénéfice par object venu est strictement positif.}
+
+
+\subsection{Formulation du problème}
+
+Soit le jeu de données suivant :
+
+\begin{alignat}{5}
+    &T&&=3\\
+    &\Gamma&&=2\\
+    &\Delta_1&&=1\\
+    &\Delta_i&&=2, \forall i\in[\![2, T]\!]\\
+    &c^I&&=1\text{\euro}\\
+    &c^B&&=2\text{\euro}\\
+    &c^P&&=0\text{\euro}\\
+    &b^P&&=10\text{\euro}\\
+    &\widehat{D}_{nominal}&&=[10, 20, 30]
+\end{alignat}
+
+
+\subsection{Itérations}
+
+
+\subsubsection{Step 1 :}
+
+\paragraph{Lower Bound}
+
+\begin{itemize}
+    \item Plan de production cumulé : $X^{(1)}=[10, 20, 30]$ ;
+    \item Pénalités $=0$\euro ;
+    \item Ventes $=\sum (max\{0, 0\}) - b^Pmin\{30, 30\}=- 10\cdot min\{30, 30\}=-300$\euro ;
+    \item $LowerBound=\textcolor{green}{-300}$\euro.
+\end{itemize}
+
+\paragraph{Upper Bound} Nous devons calculer le coût maximum des deux scénarios :
+
+\begin{itemize}
+Scénario 1 : Attaque $D_{up}$ (rupture)
+    \item $D_{up}=[11, 22, 32]$ ;
+    \item Pénalités $=2\cdot(1+2+2)=10$\euro ;
+    \item Ventes $=b^Pmin\{30, 32\}=300$\euro ;
+    \item $UpperBound=10-300=-290$\euro.
+\end{itemize}
+
+\begin{itemize}
+Scénario 2 : Attaque $D_{down}$ (sur-stock)
+    \item $D_{up}=[9, 18, 28]$ ;
+    \item Pénalités $=6$\euro ;
+    \item Ventes $=b^Pmin\{30, 28\}=280$\euro ;
+    \item $UpperBound=5-280=\textcolor{green}{-275}$\euro.
+\end{itemize}
+
+\underline{Bilan itération 1 :}
+
+\[
+    \textcolor{red}{UB(-275)>LB(-290)}
+\]
+
+Nous ne sommes pas à l'équilibre. Le scénario $D_{down}$ est remonté au Maître.
+
+
+\subsubsection{Step 2 :}
+
+$U=\{[10, 20, 30], [9, 18, 28]\}$\\
+\textit{Avec $b^P=0$, les trois périodes avaient la même importance. Ici, les revenus étant comptabilisés après le dernier temps $T-1$, cette dernière période a plus d'importance. Aussi, l'adversaire va chercher à réduire sa demande pour être en rupture et coûter plus cher au temps 3.}
+
+\paragraph{Lower Bound}
+
+Si $a, b, c$ représentent la quantité de ``sous-production'', nous pouvons poser :
+
+\begin{align}
+    &X_1=10-a\\
+    &X_2=20-b\\
+    &X_3=30-c
+\end{align}
+
+Nous devons comparer la demande $D'=[10-a, 20-b, 30-c]$ à la demande nominale. Et sachant que $a, b, c \geq 0$, le Maître est en rupture. Nous avons donc :
+
+\begin{itemize}
+    %\item $X^{(1)}=[9, 18, 28]$ ;
+    \item Pénalités $=2(a+b+c)$ ;
+    \item Ventes $=10(30-c)=300-10c$ ;
+    \item $LowerBound=(2a+2b+2c)-(300-10c)=2a+2b+12c-300$.
+\end{itemize}
+
+Comparons maintenant la demande $D'$ à la demande $D_{down}$. Soit :
+
+\begin{itemize}
+    %\item $X^{(1)}=[9, 18, 28]$ ;
+    \item Pénalités $=2(a+b+c)$ ;
+    \item Ventes $=10(30-c)=300-10c$ ;
+    \item $LowerBound=(2a+2b+2c)-(300-10c)=2a+2b+12c-300$.
+\end{itemize}
+
+
+
+
+
+\paragraph{Upper Bound} Nous devons calculer le coût max des deux scénarios :
+
+\begin{itemize}
+Scénario 1 : Attaque $D_{up}$ (rupture)
+    \item $D_{up}=[11, 22, 32]$ ;
+    \item Pénalités $=2\cdot(1+2+2)=10$\euro ;
+    \item Ventes $=b^Pmin\{30, 32\}=300$\euro ;
+    \item $UpperBound=10-300=-290$\euro.
+\end{itemize}
+
+\begin{itemize}
+Scénario 2 : Attaque $D_{down}$ (sur-stock)
+    \item $D_{up}=[9, 18, 28]$ ;
+    \item Pénalités $=6$\euro ;
+    \item Ventes $=b^Pmin\{30, 28\}=280$\euro ;
+    \item $UpperBound=5-280=\textcolor{green}{-275}$\euro.
+\end{itemize}
+
+\underline{Bilan itération 1 :}
+
+\[
+    \textcolor{red}{UB(-275)>LB(-290)}
+\]
+
+Nous ne sommes pas à l'équilibre. Le scénario $D_{down}$ est remonté au Maître.
+
+
+
+
+
+
+
+
+
+!!!!!!!!!! EN TRAVAUX!!!!!!!!!
+
+
+
+
+
+
+
+
+\subsection{Résultats de l'expérimentation par CPLEX}
+
+\begin{figure}[H]
+    \begin{minipage}[c]{.50\linewidth}
+        \centering
+        \includegraphics[width=0.95\linewidth]{running_benders_hand/images/results_config_1.png}
+        \caption{Résultats pour les 3 méthodes étudiées sur la configuration 1.}
+        \label{fig:res_config1}
+    \end{minipage}
+    \hfill%
+    \begin{minipage}[c]{.50\linewidth}
+        \centering
+        \includegraphics[width=0.95\linewidth]{running_benders_hand/images/results_config_2.png}
+        \caption{Résultats pour les 3 méthodes étudiées sur la configuration 2.}
+        \label{fig:res_config1}
+    \end{minipage}
+\end{figure}
+
+Nous retrouvons les valeurs objectives souhaitées et constatons dès lors que les deux méthodes $KC$ effectuent moins d'itérations que la méthode classique.
+
+
+\subsection{Etude des divergences sur les différentes méthodes}
+
+\textit{Pour bien comprendre les différences entre les trois algorithmes, nous reprendrons le cas d'étude \ref{sec:formulation1}. Le coût maximal étant de $4$, nous avons plusieurs chemins possibles pour y parvenir :}
+$$[+2, 0, 0], [0, +2, 0], [0, 0, +2], [+1, +1, 0]\dots$$
+
+
+\subsubsection{Méthode Benders classique}
+
+L'idée est la suivante : "renvoyer et se protéger contre le premier scénario trouvé."
+
+Exemple : Si le Maître trouve l'attaque $\delta=[+2, 0, 0]$ en premier, alors il va renvoyer le vecteur de demande associé $D'=[12, 22, 32]$. A la prochaine itération, le Maître va se blinder contre une grosse attaque à $t=1$ mais restera vulnérable aux attaques sur $t=2$ ou $t=3$.
+
+
+\subsubsection{Méthode Knowledge Compilation original (KC)}
+
+Cette méthode va extraire (dans la matrice $arcbool$) tous les chemins qui ont un coût de $4$.
+A la prochaine itération, il apprendra toutes les failles, mais son PLNE sera trop gros pour être résolu en temps fini.
+
+
+\subsubsection{Méthode KC avec heuristique d'orthogonalité (KC\_HOG)}
+
+L'algorithme $DFS$\footnote{Algorithme de type Depth-First Search.} va trouver tous les chemins critiques, puis l'algorithme glouton (Max-min \& Brays-Curtis) va filtrer.
+
+\begin{itemize}
+    \item Il prendra le chemin $A=[2, 0, 0]$ ;
+    \item Il cherchera les plus éloignés $B=[0, 2, 0]$ et $C=[0, 0, 2]$ ;
+    \item Il rejettera $D=[1, 1, 0]$ car il est trop proche de $A$ et $B$ ;
+    \item Enfin, il bouclera tant que le nombre de chemin sélectionés est inférieur à $k>0$ puis renverra $arcbool$ allégé.
+\end{itemize}
+
+\end{document}

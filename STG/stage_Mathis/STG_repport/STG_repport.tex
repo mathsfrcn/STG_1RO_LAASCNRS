@@ -1,0 +1,1039 @@
+\documentclass[12pt, a4paper, twoside]{article}
+
+% ================================================================================
+% ENCODAGE ET LANGUE
+% ================================================================================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[babel=true]{csquotes}
+\frenchsetup{IndentFirst=false}
+\usepackage{eurosym}
+
+% ================================================================================
+% BIBLIOGRAPHIE
+% ================================================================================
+\usepackage[backend=biber, style=numeric]{biblatex}
+\addbibresource{biblio.bib}
+
+% ================================================================================
+% TYPOGRAPHIE ET COULEURS
+% ================================================================================
+\usepackage{mathpazo}
+\usepackage{helvet}
+\usepackage{xcolor}
+
+% Définition de toutes les couleurs du document
+\definecolor{mainblue}{RGB}{0, 68, 124}
+\definecolor{darkgray}{RGB}{80, 80, 80}
+\definecolor{bgcode}{RGB}{248, 248, 248}
+\definecolor{bgmath}{RGB}{246, 249, 252}
+
+% ================================================================================
+% MISE EN PAGE ET STRUCTURE
+% ================================================================================
+\usepackage[top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{setspace}
+\setstretch{1.15}
+\usepackage{float}
+\usepackage{pdfpages}
+\usepackage{etoc}
+\usepackage[printonlyused, withpage]{acronym}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{titlesec}
+
+% Design des titres de sections (adapté pour la classe article)
+\titleformat{\section}{\normalfont\sffamily\Large\bfseries\color{mainblue}}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\sffamily\large\bfseries\color{mainblue}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalfont\sffamily\normalsize\bfseries\color{mainblue}}{\thesubsubsection}{1em}{}
+
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+
+% ================================================================================
+% EN-TÊTES ET PIEDS DE PAGE (FANCYHDR)
+% ================================================================================
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+
+% Récupération propre du nom de la section en cours
+\renewcommand{\sectionmark}[1]{\markboth{#1}{}}
+
+% En-têtes : Police plus fine (\small et sans \bfseries)
+% LO/RE = Gauche impaire / Droite paire -> Nom de la section
+\fancyhead[LO, RE]{\textcolor{mainblue}{\sffamily\small \leftmark}}
+% RO/LE = Droite impaire / Gauche paire -> Titre du rapport
+\fancyhead[RO, LE]{\textcolor{mainblue}{\sffamily\small Rapport de Stage}}
+
+% Pied de page : Numéro au centre
+\fancyfoot[C]{\sffamily \thepage}
+
+% Ligne de séparation de l'en-tête
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{mainblue}\leaders\hrule height \headrulewidth\hfill}}
+
+% ================================================================================
+% MATHÉMATIQUES
+% ================================================================================
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage[most]{tcolorbox}
+\numberwithin{equation}{section}
+
+% Configuration des boîtes mathématiques
+\tcbset{
+	mathstyle/.style={
+		enhanced,
+		colback=bgmath,
+		colframe=mainblue,
+		boxrule=0.8pt,
+		arc=3pt,
+		left=5pt, right=5pt, top=5pt, bottom=5pt,
+		fonttitle=\sffamily\bfseries,
+		coltitle=white,
+		attach boxed title to top left={yshift=-2mm, xshift=3mm},
+		boxed title style={colback=mainblue, arc=2pt, boxrule=0pt}
+	}
+}
+
+\newtcbtheorem[number within=section]{theoreme}{Théorème}{mathstyle}{thm}
+\newtcbtheorem[number within=section]{definition}{Définition}{mathstyle}{def}
+\newtcbtheorem[number within=section]{propriete}{Propriété}{mathstyle}{prop}
+
+\newtcolorbox{preuve}{
+	empty,
+	borderline west={2pt}{0pt}{mainblue!60},
+	left=10pt,
+	title={\textit{\textbf{Preuve.}}},
+	coltitle=black,
+	detach title,
+	before upper={\tcbtitle\quad}
+}
+
+% Raccourcis Maths
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\U}{\mathbb{U}}
+\newcommand{\K}{\mathbb{K}}
+\newcommand{\M}{\mathcal{M}}
+\newcommand{\B}{\mathcal{B}}
+\renewcommand{\epsilon}{\varepsilon}
+\renewcommand{\phi}{\varphi}
+\renewcommand{\rho}{\varrho}
+
+\newcommand{\mba}{méthode de \textit{BA} }
+\newcommand{\mbae}{méthode de \textit{BAE} }
+\newcommand{\mmx}{\textbf{MinMax} }
+\newcommand{\adv}{\textbf{Adv} }
+
+% ================================================================================
+% ALGORITHMES ET CODE
+% ================================================================================
+%\usepackage{algorithm}
+%\usepackage{algpseudocode}
+\usepackage{listings}
+\usepackage{minted}
+
+\usepackage[ruled, vlined, linesnumbered]{algorithm2e}
+\DontPrintSemicolon % Évite d'afficher des points-virgules à la fin des lignes
+\SetKwInput{Require}{Require} % Permet de garder tes mots-clés Require et Ensure
+\SetKwInput{Ensure}{Ensure}
+
+% --- Style Language Bash ---
+\lstdefinestyle{terminal}{
+	language=bash,
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue},
+	commentstyle=\color{green!50!black},
+	stringstyle=\color{orange},
+	showstringspaces=false,
+	columns=fullflexible,
+	keepspaces=true,
+	frame=tb,
+	rulecolor=\color{black},
+	framerule=0.5pt,
+	xleftmargin=0pt,
+	xrightmargin=0pt,
+	backgroundcolor=\color{white},
+	numbers=none,
+	aboveskip=1em
+}
+
+% --- Style Code Informatique (C++) ---
+\lstset{
+	language=C++,
+	backgroundcolor=\color{bgcode},
+	basicstyle=\ttfamily\footnotesize,
+	keywordstyle=\color{mainblue}\bfseries,
+	stringstyle=\color{darkgray},
+	commentstyle=\color{teal}\itshape,
+	numbers=left,
+	numberstyle=\tiny\color{gray},
+	stepnumber=1,
+	numbersep=8pt,
+	frame=l,
+	framesep=5pt,
+	rulecolor=\color{mainblue},
+	breaklines=true,
+	tabsize=4,
+	showstringspaces=false
+}
+
+% ================================================================================
+% HYPERREF
+% ================================================================================
+\usepackage{hyperref}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=mainblue,
+	citecolor=mainblue,
+	urlcolor=mainblue,
+	pdftitle={Amélioration de Méthodes de Benders pour un problème de Planification Robuste sous Incertitude},
+	pdfauthor={Mathis Francine-Habas}
+}
+
+% --- Paragraphes ---
+%\setlength{\parindent}{1.5em} % Tabulation pour les paragraphes suivants
+%\setlength{\parskip}{0.4em}   % Espace léger entre les paragraphes
+
+% ======================================== DÉBUT DU DOCUMENT ========================================
+\begin{document}
+	
+	\pagenumbering{roman}
+	
+	% ======================================== PAGE DE GARDE ========================================
+	\begin{titlepage}
+		\pagecolor{white}
+		
+		\noindent
+		\begin{minipage}[t]{0.48\textwidth}
+			\centering
+			\includegraphics[width=4cm, height=2cm, keepaspectratio]{images/inst5.png} \\
+			\vspace{0.2cm}
+			\textbf{\small École Nationale de l'Aviation Civile} \\
+			\textit{\footnotesize 7 Av. Édouard Belin \\ 31400 Toulouse Cedex 9}
+		\end{minipage}
+		\hfill
+		\begin{minipage}[t]{0.48\textwidth}
+			\centering
+			\includegraphics[width=4cm, height=2cm, keepaspectratio]{images/inst1_1.png} \\
+			\vspace{0.2cm}
+			\textbf{\small Institut de Recherche en Informatique de Toulouse} \\
+			\textit{\footnotesize Cr Rose Dieng-Kuntz \\ 31400 Toulouse}
+		\end{minipage}
+		
+		\vspace{1cm}
+		
+		\noindent
+		\begin{minipage}[t]{0.48\textwidth}
+			\centering
+			\includegraphics[width=4cm, height=2cm, keepaspectratio]{images/inst3.png} \\
+			\vspace{0.2cm}
+			\textbf{\small LAAS-CNRS} \\
+			\textit{\footnotesize 7 Avenue du Colonel Roche \\ 31400 Toulouse}
+		\end{minipage}
+		\hfill
+		\begin{minipage}[t]{0.48\textwidth}
+			\centering
+			\includegraphics[width=4cm, height=2cm, keepaspectratio]{images/inst4.png} \\
+			\vspace{0.2cm}
+			\textbf{\small Artificial and Natural Intelligence Toulouse Institute} \\
+			\textit{\footnotesize 3 Rue Tarfaya \\ 31400 Toulouse}
+		\end{minipage}
+		
+		\vspace{2.5cm}
+		
+		\begin{center}
+			{\color{mainblue}\rule{\textwidth}{2pt}} \\[0.6cm]
+			{\sffamily \Huge \bfseries Amélioration de Méthodes de Benders pour un Problème de Planification Robuste sous Incertitude} \\[0.4cm] 
+			%{\sffamily \Large Rapport de Stage -- Master 1 IMAI / ROO} \\[0.4cm]
+			{\color{mainblue}\rule{\textwidth}{2pt}}
+		\end{center}
+		
+		\vspace{1.5cm}
+		
+		\begin{center}
+			{\Large \textbf{Mathis FRANCINE-HABAS}} \\[1cm]
+			
+			\begin{tabular}{ll}
+				\textbf{Encadrants:} & Christian Artigues \hfill (Directeur de Recherche au LAAS-CNRS) \\
+				& Romain Guillaume \hfill (Enseignant-Chercheur à l'IRIT/ANITI) \\[0.3cm]
+				\textbf{Tuteur Universitaire:} & Mohammed Sbihi \hfill (Enseignant-Chercheur à l’ENAC)
+			\end{tabular}
+		\end{center}
+		
+		\vfill
+		
+		\begin{center}
+			{\large \textbf{Soutenu le :} 24 / 08 / 2026} \\
+			\vspace{0.2cm}
+			{\large 2025-2026}
+		\end{center}
+	\end{titlepage}
+	
+	% ======================================== REMERCIEMENTS ========================================
+	\clearpage
+	\newgeometry{top=4cm, bottom=4cm, left=3.5cm, right=3.5cm} 
+	\thispagestyle{empty}
+	
+	\vspace*{\fill}
+	
+	\begin{center}
+		{\sffamily \Huge \bfseries \textcolor{mainblue}{Remerciements}} \\[1.5cm]
+	\end{center}
+	
+	\begin{spacing}{2}
+		%Je tiens à remercier toutes les personnes qui ont contribué, de près ou de loin, à la réalisation de ce stage et à la rédaction de ce rapport.
+		
+		%Je remercie tout particulièrement Messieurs Christian Artigues et Romain Guillaume pour la confiance qu'ils m'ont accordée ainsi que pour leur aide tout au long de ce projet de recherche.
+		
+		%Je souhaite également remercier l'ensemble de mes professeurs pour la qualité de leur enseignement, qui m'ont permis d'acquérir les connaissances nécessaires à la réussite de ma formation et de ce stage.
+	\end{spacing}
+
+	\vspace*{\fill}
+	
+	\clearpage
+	\restoregeometry
+	
+	% ======================================== SOMMAIRES ========================================
+	\clearpage
+	\tableofcontents
+	\thispagestyle{empty}
+	
+	\clearpage
+	% \begin{figure}...\caption{}...\end{figure})
+	\listoffigures
+	
+	\clearpage
+	% \begin{table}...\caption{}...\end{table})
+	\listoftables
+
+    \clearpage
+    \newpage
+    \listofalgorithms
+	
+	% ======================================== CONTENU DU RAPPORT ========================================
+	\clearpage
+	\pagenumbering{arabic}
+	
+	
+	% ============================== INTRODUCTION ============================== 
+	\section{Introduction}
+	
+	Historiquement dérivée des stratégies militaires de la Seconde Guerre mondiale, la Recherche Opérationnelle (RO) s'est progressivement affirmée comme une discipline scientifique essentielle pour l'allocation optimale des ressources et l'amélioration des processus industriels. Son efficacité actuelle repose sur un triptyque fondamental. Le premier axe consiste à modéliser mathématiquement ces processus complexes afin de traduire fidèlement les contraintes et les objectifs . Le deuxième se concentre sur le développement de méthodes de résolution capables d'être appliquées à grande échelle. Enfin, le dernier levier de performance, devenu central aujourd'hui, est le traitement intégré et intelligent des données.
+
+    C'est précisément sur ce dernier point que la Recherche Opérationnelle converge vers l'Intelligence Artificielle. Cependant, l'exploitation de ces données provenant d'environnements réels confronte systématiquement les modèles à un défi majeur : l'omniprésence de l'incertitude. En effet, l'instabilité de la demande, des prix et du climat complique la planification au quotidien. La production, la logistique et les approvisionnements sont soumis à des risques accrus, amplifiés par l'interdépendance des chaînes mondiales. Les modèles classiques supposent souvent un monde \enquote{parfait}. Optimiser ce scénario crée une stratégie fragile qui ne tiendra pas face au premier aléa. L'enjeu n'est donc plus seulement d'optimiser un plan idéal, mais aussi d’anticiper les écarts malgré ces incertitudes : c'est la naissance de l'Optimisation Robuste (OR).
+
+    A. L. Soyster a formalisé ce nouveau concept en 1973 dans \cite{soyster1973convex}. Son innovation protège une solution contre le pire des cas. Elle suppose que chaque paramètre peut prendre simultanément sa valeur la plus défavorable. Cette nouvelle approche est le début de la prise de décision dans l'incertitude. Aujourd'hui, nous décrivons l'incertitude à l'aide de mesures et de scénarios critiques identifiés. Les applications de l'optimisation robuste englobent notamment la \textit{supply chain}, la maintenance et la production, où les aléas locaux peuvent provoquer des effets systématiques sur les performances globales. Pour résoudre ces problèmes liés à l'optimisation robuste, plusieurs approches existent. L'une d'elles, connue sous le nom de méthode de Benders Adverse (BA), a été introduite par \cite{Mutapcic01062009}. C'est cette approche que nous avons utilisée et que nous détaillerons par la suite.
+
+    Comment les méthodes des Benders peuvent-elles optimiser la planification robuste face à l'incertitude ? Nous commencerons par présenter le contexte de notre recherche, ferons un point sur les avancées scientifiques dans ce domaine avant d'exposer nos objectifs, nos solutions ainsi que les résultats obtenus. Les contributions techniques et professionnelles issues de cette expérience seront abordées dans une dernière partie.
+    
+	% ============================== CONTEXTE DE LA RECHERCHE ==============================
+	\clearpage
+	\section{Contexte de la recherche}
+	
+	Ce stage s'inscrit au cœur d'un écosystème scientifique toulousain riche, porté par une collaboration entre trois acteurs majeurs de la recherche en intelligence artificielle et en informatique : l'institut ANITI, l'IRIT-CNRS et le LAAS-CNRS.
+	
+	L'impulsion de cette dynamique est notamment portée par la chaire HEROIC\footnote{Hybridizing Learning, seaRch and combinatorial Optimization for Industrial deCision-making.} d' ANITI (Artificial and Natural Intelligence Toulouse Institute), un cluster labellisé par la Communauté d'universités et d'établissements de Toulouse. Son ambition est de concevoir des systèmes d'Intelligence Artificielle dont les prises de décision sont explicables, équitables, fiables et robustes, une condition indispensable pour permettre leur déploiement dans des secteurs critiques à haut risque.
+	
+	Cette volonté de développer des systèmes décisionnels de confiance s'appuie sur l'expertise de deux laboratoires. D'une part, l'Institut de Recherche en Informatique de Toulouse (IRIT), qui est un laboratoire de recherche publique rattaché au Centre National de la Recherche Scientifique (CNRS). D'autre part, le Laboratoire d'Analyse et d'Architecture des Systèmes (LAAS) est une unité propre du CNRS. Si le LAAS aborde des thématiques très variées, allant de la robotique aux micro-nano-bio-technologies, il se distingue particulièrement par sa recherche théorique et méthodologique sur la conception de lois mathématiques appliquées à la commande et à la décision.
+	
+	C'est à l'intersection de ces institutions, et plus spécifiquement au sein de l'équipe ROC (Recherche sur des problèmes d'Optimisation Combinatoire) du LAAS que s'est déroulé mon stage. Positionnée à la frontière entre la Recherche Opérationnelle et l'Intelligence Artificielle, cette équipe offre un cadre scientifique idéal pour aborder les problématiques d'optimisation robuste qui font l'objet de ce rapport.
+
+    Plus précisément, les travaux menés s'inscrivent dans la continuité directe de la thèse de Tom Portoleau (voir \cite{portoleauTHESIS}), soutenue au sein de cette même équipe. L'objectif est d'approfondir et de consolider la méthode de  Benders Adverse Étendue qu'il a introduite, en surmontant ses limites combinatoires actuelles. À terme, les modèles d'optimisation et les heuristiques développés ont pour ambition d'être transférés vers l'industrie aéronautique, en partenariat avec Airbus. L'exploitation de ces algorithmes sur des données réelles permettra de tester leur robustesse et leur passage à l'échelle face à des problématiques concrètes et critiques de planification.
+	
+	% ============================== LITTERATURE ==============================
+	\clearpage
+	\section{Littérature}
+	
+	L'optimisation robuste absolue (où approche \mmx) de problèmes de planification est complexe. Pour contourner cette difficulté, les auteurs de \cite{JFBENDERS} ont mis au point la méthode dite de Benders Adverse, qui s'appuie sur une décomposition itérative : elle isole un problème Maître, qui planifie la production, et un problème adverse, qui évalue la robustesse de cette planification en cherchant le pire scénario possible.
+	
+	Dans la littérature, \cite{PATZOLD202020} présente une variante de cette méthode où les pires scénarios\footnote{Dans la suite du rapport, les notions de \enquote{pire scénario}, \enquote{pire chemin}, \enquote{chemin critique optimal} et \enquote{scenario/chemin optimal} sont équivalentes.} sont calculés de manière approximative tout en garantissant la convergence de l'algorithme. Plus récemment, les travaux de \cite{portoleauROADEF}, sur lesquels s'appuie l'essentiel de notre étude, proposent la méthode de  Benders Adverse Étendue, que nous noterons $BAE$ ou $KC$ pour \textit{Knowledge Compilation}. Contrairement à l'approche classique, l'adversaire ne renvoie plus un unique pire cas, mais un ensemble de scénarios défavorables afin d'accélérer la convergence globale. 
+
+    Afin de justifier l'efficacité de cette approche étendue, il est nécessaire de s'appuyer sur le paradigme de la Compilation de Connaissances (KC). Initialement issue de l'intelligence artificielle et de l'informatique théorique \cite{Darwiche_2002}, la KC consiste à compiler une théorie propositionnelle complexe (ici, l'espace des scénarios incertains) dans un langage cible qui est structuré, typiquement un Graphe Orienté Acyclique (DAG). 
+    
+    Comme démontré par Darwiche et Marquis \cite{Darwiche_2002}, l'intérêt majeur des DAGs réside dans leur capacité à trouver un compromis idéal entre la précision et la tractabilité. En imposant des propriétés structurelles telles que la \textit{décomposabilité} (où les sous-problèmes traitent de variables disjointes), le DAG permet de factoriser les redondances présentes dans une formulation de type CNF (\textit{Conjunctive Normal Form}). Cette factorisation rend possible l'utilisation d'algorithmes permettant l'agrégation de scénarios en temps polynomial. %rajoter: par rapport à la taille du graphe, et non par rapport à l'exponentielle de l'espace de décision.
+    
+    Dans le domaine de l'Optimisation Combinatoire (OC), cette logique a été transposée aux Diagrammes de Décision (\textit{Decision Diagrams for Optimization}) \cite{bergman2016decision}. Dans la méthode classique de Benders, l'énumération itérative de scénarios discrets se traduit par l'ajout de contraintes linéaires indépendantes, potentiellement redondantes, qui saturent rapidement le problème Maître. À l'inverse, l'approche KC proposée par \cite{portoleauTHESIS} exploite la décomposabilité du DAG pour agréger ces scénarios défavorables. Au lieu de stocker chaque scénario individuellement, la méthode factorise leurs sous-chemins communs au sein d'une structure unique (que nous définirons par la suite comme le graphe partiel de budget\footnote{Voir Définition~\ref{def:graphe_budget}.}). Cette factorisation réduit le nombre de variables et de contraintes générées à chaque itération, permettant ainsi de limiter le phénomène d’explosion combinatoire tout en conservant l'information nécessaire et suffisante.
+    
+    Dans la continuité de cette recherche, nous présenterons cette méthode pour un problème de dimensionnement de lots avec des contraintes de capacité (\textit{Capacitated Lot-Sizing Problem - CLSP}), soumis à un budget d'incertitude portant sur la demande cumulée.
+
+    \subsection{Définition et modélisation du problème}
+	
+	Afin de modéliser ce problème, nous considérons un horizon de planification divisé en $T$ périodes. À chaque période $t\leq T$, la demande est notée $d_t$ et la quantité produite $x_t$. Un plan de production est constitué par l'ensemble de ces variables décisionnelles sur l'horizon. La production, à chaque pas de temps, est bornée par une capacité maximale $\mathbb{X}$, de sorte que $x_t\leq \mathbb{X}$. La gestion des flux de production génère différents coûts linéaires indépendants de la période. On a $c^P$ le coût unitaire de lancement de production, $c^I$ le coût unitaire de stockage appliqué au surplus de production (noté $I_t$), $c^B$ le coût unitaire de pénalité de retard appliqué à la demande insatisfaite (notée $B_t$), et enfin $b^P$ le prix de vente unitaire appliqué à la quantité de demande effectivement satisfaite (notée $s_t$). Contrairement aux approches classiques où l'incertitude porte sur la demande de chaque période de façon indépendante, notre modèle intègre une incertitude sur la demande cumulée. Soient $X_t = \sum_{i=1}^{t}x_i$ la production cumulée et $D_t = \sum_{i=1}^{t}d_i$ la demande cumulée à l'instant $t$. L'incertitude sur la demande cumulée est modélisée par un intervalle symétrique  $[\hat{\mathcal{D}}_t - \Delta_t, \hat{\mathcal{D}}_t + \Delta_t]$, où $\hat{\mathcal{D}}_t \geq \Delta_t \geq 0$ représente la valeur nominale et $\Delta_t$ la déviation maximale.
+	
+	Nous définissons un \textbf{scénario} comme une réalisation spécifique de ces incertitudes au sein d'un ensemble de scénarios possibles $\mathcal{U}$. En imposant une limite globale sur les déviations via un budget d'incertitude $\Gamma$, l'ensemble continu des scénarios admissibles se définit par :
+	
+	\begin{equation}
+		\mathcal{U} = \left\{ (D_t)_{t\leq T} \mid D_t \leq D_{t+1},\, D_t \in [\hat{\mathcal{D}}_t - \Delta_t, \hat{\mathcal{D}}_t + \Delta_t],\, \vert{}\vert{}\mathcal{D}-\hat{\mathcal{D}}\vert{}\vert{}_1 \leq \Gamma \right\}
+	\end{equation}
+	
+	Ce problème de \textit{Lot-Sizing} déterministe sous-jacent étant \textit{NP-Difficile} \cite{computational_complexity_gabriel}, sa résolution sous incertitude requiert une approche \mmx.
+	
+	\subsection{Méthode de Benders Adverse (BA)}
+	
+	Le principe fondamental de la méthode de Benders Adverse est de résoudre le problème \mmx itérativement. Plutôt que de confronter le modèle à l'infinité des scénarios de $\mathcal{U}$ simultanément, le problème Maître est initialement résolu face à un scénario unique, correspondant à la demande nominale notée $\hat{\mathcal{D}}$.
+	
+	Une fois le plan de production initial $S$ obtenu, une phase adverse (le sous-problème \adv) est exécutée. Son rôle est d'identifier, pour ce plan $S$ figé, le scénario $\mathcal{D}'$ maximisant les coûts. Ce pire scénario est alors ajouté à l'ensemble restreint des scénarios considérés, et le problème Maître est résolu à nouveau. Ce processus itératif, illustré par la Figure \ref{fig:sch_ba}, s'arrête si le critère d'arrêt est atteint, c'est-à-dire lorsque l'adversaire n'est plus en mesure de trouver un scénario dégradant la valeur objective du problème Maître. Le Maître et l'adversaire ont convergé vers la même solution robuste.
+	
+	\begin{figure}[H]
+		\centering \includegraphics[width=0.6\linewidth]{images/schema_ba.png} 
+		\caption{Schéma de la méthode de Benders Adverse. \cite{portoleauROADEF}}
+		\label{fig:sch_ba}
+	\end{figure}
+	
+	Pour appliquer cette méthode à notre problème, il faut donc être capable de résoudre le problème \mmx pour une liste de scénarios donnée et de résoudre le problème \adv pour une solution du problème donné.
+	
+	\subsubsection{Le problème \mmx}
+	
+	L'objectif du problème Maître est de trouver le plan de production minimisant les coûts face au pire des scénarios connus. Mathématiquement, il s'agit de résoudre \\ $\min_{X \in \mathcal{X}} \max_{u \in U} \text{Coût}(X, u)$, où $U \subseteq \mathcal{U}$ est la liste finie des scénarios générés par l'adversaire.
+	
+	Afin de le modéliser sous la forme d'un \textit{Programme Linéaire en Nombres Entiers Mixtes (MILP)}, une technique de reformulation en épigraphe est employée. On introduit une variable auxiliaire continue $z$ dont le rôle est de majorer le coût total pour l'ensemble des scénarios $\xi \in \mathcal{U}$. En minimisant ce majorant $z$, on minimise le coût du scénario le plus défavorable. Outre $z$, le modèle utilise une variable binaire $y_t\in \{0, 1\}$ indiquant si une production a lieu à la période $t$, et la constante $M$ du \textit{Big-M} pour lier les variables continues et binaires.
+
+    {\small
+    	\begin{align}
+    		\label{Lot-Sizing-prb}
+    		\min\quad & z \\
+    		\text{s.t.}\quad & \sum_{t=1}^{T}\left(c^I I_{t,\xi} + c^B B_{t,\xi} + c^P y_t - b^P s_{t,\xi}\right) \le z &&  \forall\xi\in\mathcal{U},\\
+    		& B_{t,\xi}-I_{t,\xi}=D_t^\xi-X_t && \forall t\in[T],\ \forall\xi\in\mathcal{U},\\
+    		& \sum_{i=1}^{t}s_{i,\xi}=D_t^\xi-B_{t,\xi} && \forall t\in[T],\ \forall\xi\in\mathcal{U},\\
+    		& X_t-X_{t-1}\le My_t && 2\le t\le T,\\
+    		& X_1\le My_1,\\
+    		& B_{t,\xi},\,I_{t,\xi},\,s_{t,\xi}\ge0 && \forall t\in[T],\ \forall\xi\in\mathcal{U},\\
+    		& y_t\in\{0,1\} && \forall t\in[T],\\
+    		& X\in\mathcal{X}\subseteq\mathbb{R}_+^T
+    	\end{align}
+	}
+    
+	\vspace{-0.5em}
+	{\centering
+		\small Lot-Sizing Problem. \cite{portoleauTHESIS}\par
+		\label{formulation_probleme_maitre}
+	}
+	
+	Dans notre formulation, la contrainte limitant $z$ garantit la robustesse du modèle. Les contraintes d'équilibre assurent la conservation des flux entre la production cumulée $X_t$ et la demande $D_t^l$, tandis que la somme des ventes $s_{i, l}$ modélise la quantité effectivement écoulée.
+	
+	\subsubsection{Le sous-problème \adv}
+	
+	Une fois le plan de production $X$ fixé, le sous-problème cherche à construire le pire scénario entier. Bien que ce problème de maximisation soit \textit{NP-Difficile} au sens faible, \cite{guillaume2020robustproductionplanningbudgeted} ont démontré qu'il pouvait être résolu en temps pseudo-polynomial. L'astuce, introduite par \cite{guillaume2020robustproductionplanningbudgeted} dans la Définition~\ref{def:graphe_budget} (située en Annexe \ref{section:annexe:def:graphe_budget}), consiste à modéliser l'espace des déviations de la demande sous la forme d'un graphe acyclique orienté, au sein duquel la recherche du pire scénario se réduit à celle du plus long chemin.
+	
+	De ce fait, évaluer un scénario revient à sommer les poids des arcs traversés, et identifier le pire scénario revient à extraire le chemin de poids maximal dans $\mathcal{G}$ (schématisé en Figure \ref{fig:sch_graphe_budget}). Pour la suite du rapport, le terme de \enquote{chemin} signifiera une suite d'arcs dans le graphe entre la source $v_0$ et le puits $v_{T+1}$.
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.5\linewidth]{images/graphe_budget.png} 
+		\caption{Schéma générique du graphe de budget. \cite{guillaume2020robustproductionplanningbudgeted}}
+		\label{fig:sch_graphe_budget}
+	\end{figure}
+	
+	\subsubsection{L'algorithme de Benders Adverse pour le Lot-Sizing sous incertitude}
+	
+	Voici l'algorithme implémenté par \cite{portoleauTHESIS} pour résoudre le problème de Benders Adverse présenté ci-dessus dans la Figure \ref{fig:sch_ba}. Tant que l'adversaire parvient à construire un graphe de budget dont le plus long chemin révèle un coût $v'$ strictement supérieur au coût $v$ anticipé par le Maître, ce nouveau scénario est ajouté à $\mathcal{U}$ et le processus se réitère.
+    
+    \begin{algorithm}[H]
+        \caption{Adversarial Benders Method}
+        \label{alg:benders_algo}
+        
+        $\mathcal{U} \gets \{\hat{\mathcal{D}}\}$\;
+        $(X,v) \gets \text{SolveMaster}(\mathcal{U})$\;
+        $(\mathcal{D},v') \gets \text{SolveAdversarial}(X)$\;
+        
+        \While{$v \neq v'$}{
+            $v \gets v'$\;
+            $\mathcal{U} \gets \mathcal{U} \cup \{\mathcal{D}\}$\;
+            $(X,v) \gets \text{SolveMaster}(\mathcal{U})$\;
+            $(\mathcal{D},v') \gets \text{SolveAdversarial}(X)$\;
+        }
+        
+        \Return $(X,v)$\;
+    \end{algorithm}
+	
+	\subsection{Méthode de  Benders Adverse Étendue (BAE)}
+	
+	Cette section détaille la méthode de  Benders Adverse Étendue (BAE), formellement introduite par \cite{portoleauTHESIS}. Cette approche constitue le fondement de mes recherches. Il s'agit d'une extension de la méthode classique de Benders Adverse présentée précédemment, conçue pour accélérer la convergence de l'algorithme. Plutôt que d'isoler l'unique pire scénario à chaque itération du sous-problème adverse, la BAE génère un ensemble de scénarios défavorables. L'enjeu de cette méthode réside dans la résolution du problème Maître : sa formulation initiale, basée sur une liste explicite de scénarios  $\mathcal{U}$, souffre d'une explosion combinatoire et passe très difficilement à l'échelle lorsque ce nombre augmente. Pour faire face à cette limite, le problème Maître est redéfini en s'appuyant sur une structure plus compacte : le graphe partiel de budget.
+	
+	\subsubsection{Le problème \mmx}
+	
+	Pour ce faire, les auteurs de \cite{portoleauTHESIS} ont précisément défini cette notion, voir Définition~\ref{def:graphe_partiel_budget} située en annexe \ref{section:annexe:def:graphe_partiel_budget}. Lorsque le problème Maître du Benders Adverse classique se basait sur l'approximation de l'ensemble des scénarios $\mathcal{U}$ par une liste de scénarios, cette fois-ci, il se fait par l'extraction d'un sous-graphe issu du graphe de budget global (voir Algorithme \ref{fig:sch_graphe_budget}).
+	
+	Grâce à cette structure, le problème Maître peut être reformulé comme un problème de calcul du plus long chemin dans le graphe partiel $\mathcal{G}'$. Cette formulation s'appuie sur des variables duales, notées $\pi_{t,i}$, qui représentent le coût du plus long chemin depuis le nœud source $v_0$ jusqu'au nœud $v_{t,i}$. Le programme linéaire en variables mixtes modélisant ce nouveau problème Maître s'écrit alors de la manière suivante :
+
+    {\small
+    	\begin{align}
+    		\min\quad & \pi_{T+1}\\
+    		\text{s.t.}\quad &\pi_{t_j}-\pi_{(t-1)_i} \geq c^I\left(X_t-(\hat{\mathcal{D}}_t-(j-i))\right)+c^P y_t, &&t\in[1,T-1],\ a_{t,i,j}\in A',\\
+    		&\pi_{t,j}-\pi_{(t-1)_i} \ge c^B\left(\hat{\mathcal{D}}_t+(j-i)-X_t\right)+c^P y_t, && t\in[1,T-1],\ a_{t,i,j}\in A',\\
+    		&\pi_{t,j}-\pi_{(t-1)_i} \ge c^I\left(X_t-(\hat{\mathcal{D}}_t-(j-i))\right) +c^P y_t -b^P(\hat{\mathcal{D}}_t-(j-i)), &&t=T,\ a_{t,i,j}\in A',\\
+    		&\pi_{t_j}-\pi_{(t-1)_i} \geq c^B(\hat{\mathcal{D}}_t + (j-i)-X_t)+c^Py_t-b^PX_t && t=T,\ a_{t,i,j}\in A',\\
+    		& \pi_{T+1}-\pi_{T, i}\geq 0 && 0\leq i\leq \Gamma,\\
+    		&\pi_0=0,\, \pi_v\in\mathbb{R} && v\in V,\\
+    		&X_t-X_{t-1}\leq My_t && 2\leq t \leq T,\\
+    		& X_1 \leq My_1\\
+    		& y_t \in \{0, 1\} && 1\leq t\leq T,\\
+    		& X\in\mathbb{X}
+    	\end{align}
+	}
+    
+	\vspace{-0.5em}
+	{   \centering
+		\small Reformulation du problème Maître. \cite{portoleauTHESIS}\par
+		\label{reformulation_pbr_maitre}
+	}
+	
+	\subsubsection{Le sous-problème \adv}
+	
+	Une fois le problème Maître résolu pour une itération donnée, il fournit un plan de production $X$. L'objectif du sous-problème adverse est alors d'évaluer la robustesse de cette solution en cherchant non pas un unique pire scénario, mais un ensemble de scénarios défavorables qui viendront accroître les connaissances du problème Maître à l'itération suivante. Cet ensemble prend la forme d'un nouveau graphe partiel de budget, noté $\mathcal{G}''$.
+
+	Pour construire ce graphe, la méthode s'appuie sur un algorithme de programmation dynamique (voir Algorithme \ref{alg:adv_subgraph}). Dans un premier temps, un calcul de plus long chemin est réalisé sur le graphe de budget complet $\mathcal{G}$, afin de déterminer le coût maximal pour atteindre chaque nœud depuis l'origine $v_0$. Cette étape s'effectue rapidement du fait que le graphe est orienté et sans cycle. Ensuite, une phase de remontée (\textit{backtracking}) est réalisée depuis le nœud final $v_{T+1}$. À chaque étape de cette remontée, au lieu de ne conserver que l'arc menant au pire chemin absolu, l'algorithme sélectionne un sous-ensemble d'arcs appartenant aux chemins critiques. C'est cette sélection d'arcs qui définit la structure et la taille du graphe partiel $\mathcal{G}''$. Pour être plus précis, une heuristique a été mise en place sur la définition des pires chemins. Lors de la première phase, le coût du plus long chemin, noté $C$ (ou $ub\_cost$ dans les algorithmes), va servir de référence pour définir la notion de chemin critique. Considérons $\tau\in[0, 1]$, un chemin critique sera donc un scénario dont la longueur est supérieure ou égale à $\tau C$ dans le graphe de budget. Si $\tau=1$ alors seuls les chemins ayant le même coût que celui du pire chemin sont considérés comme critiques et donc ajoutés au sous-graphe. À l'inverse, si $\tau=0$, tous les chemins sont considérés comme étant des chemins critiques. Nous nous attendons à ce que la diminution de $\tau$ entraîne une augmentation du temps de résolution, mais une potentielle baisse du nombre d'itérations.
+
+    \begin{algorithm}[H]
+        \caption{Adv\_subGraph}
+        \label{alg:adv_subgraph}
+        
+        \Require{$\mathcal{G}=(V, A) \text{ and } \tau\in[0, 1]$}
+        \Ensure{$\mathcal{G}'=(V, A'), \pi_{T+1}$}
+        
+        $\pi_0 \gets 0$\;
+        
+        \For{$t=1 \rightarrow T+1$}{
+            \For{$j=0 \rightarrow \Gamma+1$}{
+                $\pi_{t, j} \gets \max\{\pi_{t-1, i}+c_{t-1, i, t, j} \mid (v_{t-1, i}, v_{t, j}) \in A\}$\;
+            }
+        }
+        
+        $A' \gets \{\}$\;
+        
+        \For{$t=T \rightarrow 1$}{
+            \For{$j=0 \rightarrow \Gamma+1$}{
+                
+                \If{$\pi_{T, j} \geq \tau\pi_{T+1} \text{ and } t=T$}{
+                    $A' \gets A' \cup \{(v_{T, j}, v_{T+1})\}$\;
+                    $v_{T, j} \gets \text{marqued}$\;
+                }
+                
+                \If{$v_{t, j} \text{ marqued}$}{
+                    \For{$i=0 \rightarrow \Gamma+1$}{
+                        \If{$\pi_{t-1, i}+c_{t-1, i, t, j} = \pi_{t, j}$}{
+                            $A' \gets A' \cup \{(v_{t-1, i}, v_{t, j})\}$\;
+                            $v_{t-1, i} \gets \text{marqued}$\;
+                        }
+                    }
+                }            
+            }
+        }
+        
+        \Return $\mathcal{G}'=(V, A'), \pi_{T+1}$\;
+    \end{algorithm}
+
+	\subsubsection{L'opération de fusion}
+
+	Dans l'approche classique de Benders Adverse, l'ajout d'un nouveau scénario se traduit par une simple concaténation dans une liste. Dans le cadre de la BAE, il est nécessaire de combiner le graphe partiel de l'itération courante ($\mathcal{G}'$) avec celui généré par le sous-problème adverse ($\mathcal{G}''$). La nouvelle opération de fusion a été définie de la manière suivante : $\text{Merge}(\mathcal{G}', \mathcal{G}'')=(V, A'\cup A'')$.
+	
+	Toutefois, cette opération de fusion soulève une limite sur laquelle j'ai travaillé concernant l'aspect combinatoire de cette méthode \cite{portoleauTHESIS} : la fusion de deux graphes partiels peut générer de nouveaux chemins qui n'existaient dans aucun des deux graphes initiaux. Ainsi, l'ensemble des scénarios du graphe fusionné est potentiellement plus grand que la somme des scénarios des graphes de départ. Il devient donc nécessaire de travailler sur l'affinage des coupes combinatoires afin de ne pas perdre l'avantage lié à cette extension.
+	
+	\subsubsection{Stratégies de sélection des pires scénarios}
+	
+	Comme évoqué précédemment, la taille et la densité du graphe partiel de budget $\mathcal{G}''$ dépendent entièrement de la politique de sélection des arcs lors de la phase de backtracking. Dans la littérature, deux heuristiques principales ont été proposées pour effectuer ce tri parmi les chemins critiques :
+	
+	\begin{itemize}
+		\item $SelectAll$ : Cette approche exhaustive consiste à sélectionner tous les arcs entrants dont les nœuds d'origine appartiennent à l'un des plus longs chemins dans le graphe partiel. Autrement dit, le graphe généré contient l'intégralité des pires scénarios entiers pour la solution courante. Bien qu'elle fournisse une information très complète au problème Maître, cette méthode tend à faire exploser très rapidement le nombre d'arcs après quelques opérations de fusion. Le graphe partiel devient alors trop dense et difficile à exploiter.
+		\item $SelectFew$ : Pour faire face à ce problème, cette méthode propose de restreindre la sélection. Lors du parcours, un premier arc critique est systématiquement choisi, puis un autre arc critique potentiel n'est ajouté qu'avec une certaine probabilité, suivant une loi de Bernoulli de paramètre $p$ (les travaux de référence utilisent généralement $p=\frac{1}{T}$, où $T$ est le nombre de périodes dans l'horizon RAJOUTER SOURCE par sur de l'information). Cette restriction probabiliste permet de garder un graphe partiel de taille réduite, car il existe un grand nombre de pires scénarios équivalents.
+	\end{itemize}
+	
+	Ces deux méthodes illustrent le compromis soutenu par les auteurs de $BAE$. Il s'agit de fournir suffisamment de scénarios critiques au Maître pour le guider efficacement, tout en contrôlant la taille du graphe pour garantir des temps de résolution acceptables. Cette nécessité de filtrage met en évidence l'intérêt de développer des heuristiques de sélection plus structurelles. Au lieu de s'en remettre à une sélection probabiliste ou exhaustive, il devient pertinent de chercher à extraire des chemins non seulement critiques, mais aussi les plus diversifiés possibles, afin de maximiser la quantité d'information transmise tout en minimisant la redondance des scénarios. C'est ce point que nous aborderons dans la prochaine section. Dans la suite du rapport, $BAE$ signifiera l'approche  Benders Adverse Étendue avec l'heuristique $SelectAll$, et $BAE_{Few}$ permettra de spécifier l'utilisation de l'heuristique $SelectFew$.
+	
+	\subsubsection{L’algorithme de  Benders Adverse Étendue pour le Lot-Sizing sous incertitude }
+	
+	En combinant les éléments précédents, nous avons le schéma itératif de la méthode de  Benders Adverse Étendue. De la même manière que nous initialisons l'algorithme de Benders Adverse (voir Algorithme \ref{alg:benders_algo}) par le scénario nominal, ici, nous initialisons la méthode de  Benders Adverse Étendue par le graphe de budget $\hat{\mathcal{G}}$ ne contenant que le scénario nominal.
+
+    \begin{algorithm}[H]
+        \caption{Extended Adversarial Benders Method}
+        \label{alg:benders_algo_etendue}
+
+        $\mathcal{G}' \gets \hat{\mathcal{G}}$\;
+        $(X,v) \gets \text{SolveMaster}(\mathcal{U})$\;
+        $(\mathcal{G}'',v') \gets \text{SolveAdversarial}(X)$\;
+    
+        \While{$v \neq v'$}{
+            $v \gets v'$\;
+            $\mathcal{G}' \gets \text{Merge}(\mathcal{G}', \mathcal{G}'')$\;
+            $(X,v) \gets \text{SolveMaster}(\mathcal{U})$\;
+            $(\mathcal{G}'',v') \gets \text{SolveAdversarial}(X)$\;
+        }
+        
+        \Return $(X,v)$\;
+    \end{algorithm}
+
+	% ============================== TRAVAIL EFFECTUE ==============================
+	\clearpage
+	\section{Présentation du travail effectué}
+	
+	% ============================== OBJECTIFS ==============================
+	\subsection{Objectifs}
+	
+	Cette section détaille les objectifs scientifiques de cette recherche, les propositions algorithmiques formulées, ainsi que les résultats expérimentaux obtenus. La démarche globale s'est structurée en trois temps fondamentaux.
+	
+	\subsubsection{Manipulation théorique et restructuration du modèle informatique}
+	
+	La première phase du stage a été consacrée à l'assimilation des concepts d'optimisation robuste appliqués à la problématique du \textit{Lot-Sizing} sous incertitude. Afin de conceptualiser le fonctionnement de la méthode de Benders Adverse, l'algorithme a d'abord été déroulé et appliqué sur des instances de taille réduite (le détail de ces itérations est consultable en Annexe \ref{sec:annexe:hand_instance}).
+	
+	Au-delà de l'appropriation théorique, une partie de ce travail a reposé sur de l'implémentation logicielle. En effet, après avoir récupéré une version du code en \textit{C++} utilisé dans la thèse de \cite{portoleauTHESIS}, il a été nécessaire de le reconstruire de manière stable. Ce travail de refonte a exigé de modéliser et d'implémenter plusieurs contraintes mathématiques manquantes par rapport à la formulation du problème de \textit{Lot-Sizing} susmentionné (voir la modélisation du Problème \ref{Lot-Sizing-prb}), mais également de parfaire la liaison avec le solveur exact \textit{CPLEX} pour garantir la viabilité des expérimentations futures.
+
+    Un exemple que nous pouvons citer pour illustrer les problèmes de modélisation concerne l'initialisation du budget d'incertitude $\Gamma$. La logique de traitement est détaillée dans l'Algorithme \ref{alg:gamma_proportional}, situé en Annexe \ref{section:annexe:gamma_proportional}. Dans la formulation de notre problème adverse, il a été nécessaire de repenser la définition des bornes d'incertitude $\Delta_t$. En effet, une affectation aléatoire de ces bornes peut générer des instances irréelles (ex. allouer un budget d'incertitude élevé à une période de faible demande). Pour pallier ce problème, le budget d'incertitude global $\Gamma$ est maintenant modulé par une marge de manœuvre adverse et est distribué au prorata de la demande marginale de chaque période par rapport à la demande totale de l'horizon. La capacité de perturbation de l'adversaire est maintenant concentrée sur les périodes à forts enjeux (resp. à forte demande). L'incertitude locale ne peut pas dépasser la demande nominale de la période.
+	
+	\subsubsection{Analyse des performances de référence} REFAIRE TABLEAU
+	
+	Une fois l'environnement de développement opérationnel, l'objectif suivant a été de reproduire les expérimentations de référence pour évaluer le comportement des différentes approches existantes. L'idée défendue par la méthode $KC$ est que l'extraction d'un graphe de pires scénarios permet de réduire le nombre d'itérations afin de gagner en temps de calcul. Pour valider cette première hypothèse, nous avons mené une batterie de tests sur des instances générées aléatoirement via un script créé pour notre problème. Ces instances simulent une planification sur $52$ périodes (représentant une année de production), pour $20$ références de produits distincts. Une périodicité trimestrielle de $13$ semaines a été mise en place. La probabilité qu'une demande à un instant $t$, pour une référence donnée, suit une loi de Bernoulli de paramètre $p_{demand}=0.7$ lors des périodes denses, et de paramètre $(1-p_{demand})$ lors des périodes creuses. L'étude a été réalisée en faisant varier le budget d'incertitude $\Gamma$ dans son ensemble de définition $\mathcal{D}_{\Gamma}=\{1, 11, \cdots, 91, 101\}$, et $\tau=1$. En ce qui concerne l'heuristique de sélection partielle $BAE_{few}$, la décision de conserver un arc alternatif lors du \textit{backtracking} suit également une loi de Bernoulli de paramètre $p_{few}=0.35$ \footnote{Ce paramètre a été fixé empiriquement à 0.35 pour les besoins de cette comparaison.}. Le tableau \ref{tb:res_initiaux} synthétise ces résultats de référence, en mesurant le nombre moyen d'itérations et le temps de résolution en secondes pour les couples de la forme $(\Gamma_i, \{BA\})$ et $(\Gamma_i, \tau, \{BAE_{all}, BAE_{few}\}), \forall\, \Gamma_i\in\mathcal{D}_{\Gamma}$.
+	
+	\begin{table}[H]
+		\label{tb:res_initiaux}
+		\centering
+		\begin{tabular}{@{}|l|llllll@{}}
+			\toprule
+			\multirow{2}{*}{$\Gamma$ \textbackslash{} Méthode} & \multicolumn{2}{l|}{BA}                                & \multicolumn{2}{l|}{$BAE_{all}$}                              & \multicolumn{2}{l|}{$BAE_{few}$}                              \\ \cmidrule(l){2-7} 
+			& iter.                     & time                       & iter.                     & time                       & iter.                     & time                       \\ \midrule
+			1                                             & \multicolumn{1}{l|}{3.0} & \multicolumn{1}{l|}{0.224}  & \multicolumn{1}{l|}{\textbf{1.0}} & \multicolumn{1}{l|}{0.007}  & \multicolumn{1}{l|}{\textbf{1.0}} & \multicolumn{1}{l|}{\textbf{0.005}}  \\ \midrule
+			21                                            & \multicolumn{1}{l|}{10.0} & \multicolumn{1}{l|}{0.274} & \multicolumn{1}{l|}{\textbf{1.0}} & \multicolumn{1}{l|}{0.106}  & \multicolumn{1}{l|}{1.0} & \multicolumn{1}{l|}{\textbf{0.07}}  \\ \midrule
+			41                                            & \multicolumn{1}{l|}{8.0} & \multicolumn{1}{l|}{\textbf{0.282}} & \multicolumn{1}{l|}{\textbf{1.0}} & \multicolumn{1}{l|}{0.329} & \multicolumn{1}{l|}{1.0} & \multicolumn{1}{l|}{0.315}  \\ \midrule
+			61                                            & \multicolumn{1}{l|}{11.0} & \multicolumn{1}{l|}{0.627} & \multicolumn{1}{l|}{\textbf{1.0}} & \multicolumn{1}{l|}{\textbf{0.615}}  & \multicolumn{1}{l|}{1.0} & \multicolumn{1}{l|}{0.625} \\ \midrule
+			81                                            & \multicolumn{1}{l|}{8.0} & \multicolumn{1}{l|}{0.6045} & \multicolumn{1}{l|}{\textbf{1.0}} & \multicolumn{1}{l|}{1.244}  & \multicolumn{1}{l|}{1.0} & \multicolumn{1}{l|}{\textbf{1.497}} \\ \midrule
+			101                                           & \multicolumn{1}{l|}{10.0} & \multicolumn{1}{l|}{\textbf{1.20}} & \multicolumn{1}{l|}{\textbf{1.0}}  & \multicolumn{1}{l|}{2.160}   & \multicolumn{1}{l|}{1.0} & \multicolumn{1}{l|}{2.330}  \\ \bottomrule
+		\end{tabular}
+		\caption{Nombre d'itérations et temps d'exécution (en secondes) moyen pour chacune des trois méthodes. \cite{portoleauROADEF}}
+	\end{table}
+		
+	\subsubsection{Définition de l'objectif principal}
+	
+	L'analyse de ces résultats préliminaires met en évidence les limites des approches actuelles. Si la méthode exhaustive $BAE$ converge systématiquement en un nombre minimal d'itérations, elle souffre d'une explosion combinatoire. En effet, la densité du graphe partiel généré sature le problème Maître, entraînant des temps de résolution conséquents pour des budgets $\Gamma$ élevés. À l'inverse, l'approche probabiliste $BAE_{few}$ offre un meilleur compromis sur les instances intermédiaires, mais perd en efficacité sur les fortes incertitudes, à tel point que l'approche $BA$ offre un meilleur compromis pour $\Gamma=101$. Cette observation est le point de départ de nos travaux. Une sélection exhaustive ou aléatoire des scénarios n'est pas soutenable à grande échelle. L'objectif principal de ce stage est donc de concevoir de nouvelles heuristiques de sélection. Il s'agit d'extraire de façon intelligente un sous-ensemble restreint de pires scénarios qui soit suffisamment diversifié pour guider efficacement le problème Maître , tout en garantissant un graphe partiel de petite taille pour maîtriser les temps de résolution.
+	
+	% ============================== PROPOSITIONS ==============================
+	\subsection{Propositions}
+
+    Comme vu précédemment, l'heuristique par compilation de connaissances proposée dans l'état de l'art n'est pas efficace pour tous les couples de données. Il devient donc nécessaire de modéliser et d'implémenter de nouvelles heuristiques qui permettront de rendre cette approche plus performante pour un plus large spectre de paramètres. C'est cette mission qui m'a été donnée de réaliser.
+
+    %\input{STG_construction_heuristics/test}
+    
+    \subsubsection{L'heuristique KCU}
+
+
+
+    \subsubsection{L'heuristique KCUD}
+
+
+
+    \subsubsection{L'heuristique KCRDKL}
+    
+
+    
+	\subsubsection{L'heuristique KCHOGL}
+	
+	La première heuristique sur laquelle nous avons travaillé a été l'orthogonalité (nous noterons $HOG$ pour Heuristique d'OrthoGonalité).
+	L'idée sous-jacente est qu'en extrayant, parmi les chemins critiques, seulement ceux qui sont les plus éloignés, nous pourrons attaquer le Maître à des périodes complètement différentes et ainsi réduire le temps de calcul. Nous gardons en tête que cette méthode peut faire augmenter le nombre d'itérations. En effet, bien que l'approche de  Benders Adverse Étendue soit innovante, elle n'infère pas sur la diversité des scénarios remontés tant qu'ils sont supérieurs à $\tau C$.
+	HOG a été construite autour de trois éléments : une métrique de distance, une exploration gloutonne ainsi qu'une nouvelle approche \mmx. Plusieurs métriques de distance ont été considérées, comme la distance de Jaccard, définie comme le complémentaire de son indice de la façon suivante :
+	
+	\begin{equation}
+		D_J(A, B)
+		= 1 - J(A, B)
+		= \frac{|A \cup B| - |A \cap B|}{|A \cup B|}
+		= \frac{d_H(A, B)}{|A \cup B|}
+	\end{equation}
+	
+	\noindent où \(d_H\) est la distance de Hamming\footnote{La distance de Hamming est définie dans l'état de l'art (voir \cite{hamming_dist_scheduling_prbl}) comme une métrique de type \enquote{arc overlap}, c'est-à-dire que la distance est définie comme étant la différence d'arcs empruntés entre les deux chemins. Formellement, il s'agit d'une distance $L_1$ restreinte aux vecteurs binaires $x\in\{0, 1\}^{|E|}$ :
+		
+		\[
+		d_H(x_1,x_2)=|x_1\Delta x_2|=|x_1\cup x_2|-|x_1\cap x_2|.
+		\]
+	}.
+	
+	Cette notion de distance se base essentiellement sur la différence de chemin emprunté par les deux scénarios. La dimension d'incertitude n'étant pas prise en compte, nous avons opté pour une tout autre méthode, la distance de Manhattan associée à la norme $L_1$. Introduite par Hermann Minkowski SOURCE en DATE, elle s'est depuis imposée comme une distance utilisée naturellement dans plusieurs domaines, notamment en optimisation, dans des algorithmes comme Distrat ou A*, grâce à sa propriété d'inégalité triangulaire qui permet de réduire les espaces de recherche, ou en IA. En plus des propriétés habituelles de non-négativité, d’identité des indiscernables, de symétrie et d'inégalité triangulaire, nous rappelons certaines propriétés additionnelles de cette heuristique. Tout d'abord, il s'agit d'une distance admissible, car le coût entre deux points ne peut-être qu'inférieur au coût réel (SOURCE). De plus, elle est consistante. C'est-à-dire que la distance $L_1$ donne directement le coût minimal pour atteindre l'objectif (SOURCE). Elle est définie de la façon suivante $||\Vec{x}||=|x_1|+|x_2|+\cdots+|x_n|$ où $\Vec{x}$ est un vecteur $(x_1, x_2, \cdots, x_n)$ de $K^n$ (définir K). Dans notre cas de figure, l'idée est la suivante : nous ne regardons plus par où passe le chemin, mais plutôt l'intensité de l'attaque de l'adversaire à chaque instant. Soit deux chemins $x_1\, x_2$ de taille $T$, et $\delta^{x_1}=(\delta_{t=1}^{x_1}, \cdots, \delta_{t=T}^{x_1})$ et $\delta^{x_2}=(\delta_{t=1}^{x_2}, \cdots, \delta_{t=T}^{x_2})$ qui représentent respectivement l'énergie dépensée par $x_1$ (resp. $x_2$) à chaque instant $1\leq t\leq T$. Si $d(x_1, x_2)$ représente la distance de Manhattan entre $x_1$ et $x_2$. Nous avons donc implémenté l'Algorithme \ref{alg:bray_curtis}.
+	
+	\begin{algorithm}[H]
+		\caption{Calculation of the Manhattan distance}
+		\label{alg:bray_curtis}
+		\begin{algorithmic}[1]
+			\Require Path $A$, Path $B$
+			
+			\If{$|A| \neq |B|$} \Comment{Consistency check}
+			\State \Return $0$
+			\EndIf
+			
+			\State $sum\_diff \gets 0$
+			
+			\For{$k = 1$ \textbf{to} $|A|$}
+    			\State $\Delta_A \gets A[k].j - A[k].i$ \Comment{Budget consumed at time $k$ of path A}
+    			\State $\Delta_B \gets B[k].j - B[k].i$            
+    			\State $sum\_diff \gets sum\_diff + |\Delta_A - \Delta_B|$ \Comment{More the paths diverge, the more it increases}
+			\EndFor
+			
+			\State \Return $sum\_diff$
+		\end{algorithmic}
+	\end{algorithm}
+	
+	\newpage
+	sub\_OPT et point 2 à mettre
+	
+	% ============================== RESULTATS ==============================
+	\subsection{Résultats} A REFORMULER en prenant en compte doc psdc
+    
+	Les différents programmes linéaires ont été résolus avec \textit{CPLEX 22.1.0}, et tous les calculs ont été effectués avec un processeur XXXX sous Linux Ubuntu 24.04.4. Pour ces expérimentations, nous avons considéré deux paramètres. Tout d'abord, le budget d'incertitude $\Gamma$, qui prend ses valeurs dans l'ensemble $\{1, 21, 41, 61, 81,101\}$, ainsi que la méthode de sélection proposée par \cite{portoleauTHESIS}. Nous avons au total trois méthodes :
+	
+	\begin{itemize}
+		\item[] $BAE$ : la méthode de Benders adverse standard ;
+		\item[] $BAE_{all}$ : la méthode de  Benders Adverse Étendue, en utilisant la méthode de sélection $SelectAll$ ;
+		\item[] $BAE_{few}$ : la méthode de  Benders Adverse Étendue, en utilisant la méthode de sélection $SelectFew$.
+	\end{itemize}
+	
+	Les deux critères qui sont observés sont le nombre d'itérations de l'algorithme ainsi que le temps de calcul pour chacune des méthodes et chacun des $\Gamma$. Les résultats sont affichés dans la table XX avec, à gauche dans chaque cellule, le nombre moyen d'itérations et, à droite, le temps moyen de calcul de ces méthodes sur l'ensemble des instances. Pour chaque $\Gamma$, les valeurs des cellules avec le plus petit nombre moyen d'itérations ou le plus petit temps de calcul moyen ont été mises en gras.
+
+    \subsubsection{Conjectures}
+
+
+
+    \subsection{Expérimentation 1 : Apports de la factorisation de connaissances}
+
+
+
+    \subsection{Expérimentation 2 : arranger titre}
+
+
+
+    \subsection{Expérimentation 3 : arranger titre}
+
+
+
+    \subsection{Conclusion}
+
+
+    
+    \subsection{Piste d’améliorations}
+
+    modele apprentissage auto type GNN ?
+
+    varier N voir note 
+
+    prog MILP pour instances dures
+
+    pareto optimales
+
+    wassertsein
+
+    kullbak leibler
+
+    Se renseigner sur Méthodes de Magnanti Wong
+
+    approche Minmax possiblité de mémoïser si pas le temps de l'implémenter
+
+    
+	% ======================================== CONCLUSION ========================================
+	\clearpage
+	\section{Conclusion}
+	
+	
+	% ============================== SYNTHESE ==============================
+	\subsection{Synthèse sur le travail effectué}
+	
+	
+	% ============================== APPORTS PRO ==============================
+	\subsection{Apports professionnels}
+	competence de recherche
+    formalisme
+    envie d'en faire partie
+    
+	
+	% ============================== APPORTS HUM ==============================
+	\subsection{Apports techniques}
+	cpp evidemment
+    methode de benders
+    pro
+    competence en litterature
+    competence pour ecrire article
+    competence pour raisonner comme chercheur (tests etc)
+    
+	\subsection{Perspectives}
+
+    these*
+
+
+    important CORRGIER LES DEUX SOURCES THESE PORTOLEAU
+    
+    
+	\vfill{}
+	\paragraph{Utilisation de l'intelligence artificielle} Différents outils d'IA ont été utilisés durant ce stage à des fins d'aide à la compréhension de notions complexes et d'aide à la correction de code, mais n'ont pas été moteurs de la réflexion. 
+	
+	% ======================================== BIBLIOGRAPHIE ========================================
+	\printbibliography
+	
+	% ======================================== ANNEXES ========================================
+	\clearpage
+	\section*{Annexes}
+	\addcontentsline{toc}{part}{Annexes}
+
+    \pagenumbering{roman}
+    \appendix
+    
+    \begingroup
+        \etocsettocstyle{\subsection*{Sommaire des annexes}}{}
+        
+        \localtableofcontents
+    \endgroup
+
+% ======================================== ANNEXE ========================================
+
+    \clearpage
+    \section{Annexe 1 : définition d'un graphe de budget}
+    \label{section:annexe:def:graphe_budget}
+    
+    \begin{definition}{Graphe de budget}{graphe_budget}
+		On note ce graphe $\mathcal{G}=(V, A)$. L'ensemble des nœuds $V$ partitionné en $T+2$ niveaux et, mis à part le premier et le dernier niveau qui contiennent un unique nœud chacun, chaque niveau contient $\Gamma +1$ nœuds. On note respectivement $v_0$ et $v_{T+1}$ les nœuds du premier et du dernier niveau, et $v_{t, i}$ pour $1\leq t\leq T$ et $0\leq i \leq \Gamma$ tous les autres nœuds du graphe. L'ensemble des arcs $A$ est construit de sorte que l'arc de $v_{t-1, i}$ vers $v_{t, j}$ existe et si et seulement si $i\leq j$ et $j-i\leq\Delta_t$ pour chaque $t$ compris entre $1$ et $T$, et un arc de $v_0$ vers $v_{T+1}$ représente un scénario de $\mathcal{U}$, et que si un nœud $v_{t, i}$ est sur ce chemin, alors $i$ unités de budget ont été consommées entre la première période et la période $t$. Ensuite, on définit les coûts des arcs de sorte qu'ils représentent chacun la contribution à la fonction objective de la décision de faire varier la demande à une période donnée pour une solution $X$ donnée. Plus formellement, on définit les coûts des arcs par :
+
+   		\[
+    		c_{t-1, i, t, j}=\left\{
+    		\begin{array}{ll}
+    			\max\{c^I(X_t-(\hat{\mathcal{D}}_t-(j-i))),\\
+    			c^B(\hat{\mathcal{D}}_t+(j-i)-X_t)\} + c^Py_t & \text{si}\, 1\leq t\leq T-1,\\
+    			\max\{c^I(X_t-(\hat{\mathcal{D}}_t-(j-i))) - b^P(\hat{\mathcal{D}}_t - (j-i), \\
+    			c^B(\hat{\mathcal{D}}_t+(j-i)-X_t) - b^PX_t\} + c^Py_t & \text{si}\, t=T,\\
+    			0 & \text{si}\, t=T+1
+    		\end{array}
+    		\right.
+   		\]
+        
+		où $c_{t-1, i, t, j}$ est le coût de l'arc entre les nœuds $v_{t-1, i}$ et $v_{t, j}$ lorsque cet arc existe, et $y_t=0$ si $X_{t-1}=X_t$ et $1$ sinon.
+        
+        {\footnotesize
+            \hrulefill
+        
+            Source \cite{guillaume2020robustproductionplanningbudgeted}.
+        }
+	\end{definition}
+
+% ======================================== ANNEXE ========================================
+
+    \clearpage
+    \section{Annexe 2 : définition d'un graphe partiel de budget}
+    \label{section:annexe:def:graphe_partiel_budget}
+    
+    \begin{definition}{Graphe partiel de budget}{graphe_partiel_budget}
+		Soit $\mathcal{G}=(V, A)$ un graphe de budget défini suivant la Définition~\ref{def:graphe_budget}. On dit que $\mathcal{G}'=(V, A')$ est un graphe partiel de budget de $\mathcal{G}$ si $A'\subset A$ et, pour tout arc $a\in A'$, il existe un chemin de $v_0$ vers $v_{T+1}$ passant par l'arc $a$. Les poids des arcs de ce graphe sont calculés de la même manière que pour le graphe défini précédemment. On a alors :
+
+        \[
+            \mathcal{U}_{\mathcal{G}'}\subset \mathcal{U}_{\mathcal{G}}.
+        \]
+
+        {\footnotesize
+            \hrulefill
+        
+            Source \cite{portoleauTHESIS}.
+        }
+	\end{definition}
+
+% ======================================== ANNEXE ========================================
+
+    \clearpage
+    \section{Annexe 2 : algorithme d'initialisation du budget d'incertitude}
+    \label{section:annexe:gamma_proportional}
+    
+    \begin{algorithm}[H]
+        \caption{Proportional initialization of uncertainty bounds}
+        \label{alg:gamma_proportional}
+    
+        \Require{Total budget $\Gamma$, Adverse margin $\alpha$, Marginal requests $d$, Total demand $D_{total}$}
+        \Ensure{Proportional uncertainty bounds $\Delta$}
+            
+        \For{$t=1$ \textbf{to} $T$}{
+            
+            \eIf{$d_t == 0$}{
+                $\Delta_t \gets 0$\;
+            }{
+                $p_t \gets \frac{d_t}{D_{total}}$ \tcp*{Share of demand in period $t$ relative to total demand}
+                $\Delta_t \gets \left\lceil (\Gamma \times \alpha) \times p_t \right\rceil$ \tcp*{Proportional budget allocation}
+                
+                \If{$\Delta_t > d_t$}{
+                    $\Delta_t \gets d_t$\; \tcp*{We cannot cancel more requests than there are}
+                }
+            }
+        }
+        
+        \Return $\Delta$\;
+    \end{algorithm}
+
+% ======================================== ANNEXE ========================================
+
+    \clearpage
+    \section{Annexe 3 : déroulement de l'algorithme de Benders Adverse}
+    \label{sec:annexe:hand_instance}
+
+    \begingroup
+        \let\section\subsection
+        \let\subsection\subsubsection
+        \let\subsubsection\paragraph
+        \input{STG_running_benders_hand/STG_running_hand_instance_import_repport.tex}
+    \endgroup
+
+% ======================================== ANNEXE ========================================
+
+    \clearpage
+	\section{Annexe 4 : Reproducing Robust Instance Scheduling}
+	\label{section:annexe:notice}
+    
+	\subsection{Launch of the Experiment}
+
+    \noindent We provide in this appendix sufficient details to reproduce the scheduling experiments. The source code is available via github at \href{https://github.com/mathsfrcn/STG_1RO_LAASCNRS.git}{https://github.com/mathsfrcn/STG\_1RO\_LAASCNRS.git}. After cloning the repository\footnote{\href{http://help.github.com}{http://help.github.com}}, it will be necessary to configure the CPLEX path in the \textit{MakeFile}\footnote{If you have followed the installation by default, the path must look like : \textit{opt/ibm/ILOG/CPLEX\_Studio222}. You can install the latest version of CPLEX by following: \href{https://www.ibm.com/academic/}{https://www.ibm.com/academic/}. We advise you to download the previous version to achieve better performance.}. You can follow the instructions below:
+
+    \begin{lstlisting}[style=terminal]
+		# Makefile
+		CPLEX_DIR=/path/to/CPLEX
+	\end{lstlisting}
+
+    \noindent You should now be ready to run \textit{benders\_kc.cpp} by following this instruction:
+	
+	\begin{lstlisting}[style=terminal]
+		$ make benders_kc
+		$ ./benders_kc
+	\end{lstlisting}
+
+    \noindent You can also modify the set of parameters directly in the \textit{main} function. We have listed the directions for use in the table \ref{tb:an:parametres_cpp}.
+	
+	\begin{table}[H]
+	    \centering
+	    \begin{tabular}{l l}
+            \toprule
+            Parameters & Definition\\
+            \midrule
+            \textbf{Export} & \\
+            $bool: use\_graph\_export$ & Not usable for the time being\\
+            $bool: use\_results\_export$ & If you wish to export data\\
+            \textbf{Simulation parameters} & \\
+            $int: nb\_path\_to\_select$ & Max of paths to retrieve per iteration\\
+            $int: limit\_number\_path$ & DFS Exploration limit\\
+            $float: eps$ & Margin of error\\
+            $int: max\_iter$ & Maximum number of iterations for each pass\\
+            $int: max\_time\_s$ & Maximum time for each pass\\
+            $float: p\_few$ & Probability of the $SelectFew$ heuristic\\
+            \bottomrule
+	    \end{tabular}
+	    \caption{Simulation parameters settings.}
+	    \label{tb:an:parametres_cpp}
+	\end{table}
+	
+	\subsection{Test Different Heuristics}
+
+    \noindent You can already run numerous experiments, but if you wish to create additional tests, simply follow the instructions below. Listing \ref{lst:ajout_comparaison} illustrates the creation of a test comparing methods $A$ and $B$.
+    
+	\begin{lstlisting}[caption={Add a comparison between two methods.}, label={lst:ajout_comparaison}]
+		// Initialize the return variables
+		Benders_Result benders_sol_A_B;
+		float timeA, timeB;
+		float iterA, iterB;
+		
+		// Initialize the output file
+		ostringstream oss_A_B;
+		oss_A_B << folder_path << experience_name << "_A_B.csv";
+		ofstream output_A_B(oss_A_B.str());
+		// Add to the following variable
+		output_time_m_s << ".., time_master_A, time_subproblem_A, .." << endl;
+		
+		// Simulate the heuristic
+		A_benders_Main = heuristic();
+		B_benders_Main = heuristic();
+	
+		// Add the check to the existing condition
+		if(abs(benders_sol_ref.obj_value - benders_sol_A.obj_value) > eps){}
+		
+		// Create the analysis files
+		output_A_B	<< "A,"
+					<< Gamma << ","
+					<< tau << ","
+					<< nb_path_to_select << ","
+					<< limit_number_paths << ","
+					<< benders_sol_A.iter << ","
+					<< benders_sol_A.time << ","
+					<< benders_sol_A.time_master << ","
+					<< benders_sol_A.time_subproblem << endl;
+		output_A_B	<< "B,"..
+	
+		// Add to the existing output
+		output_time_m_s	<< Gamma << ","
+						<< ..
+						<< benders_sol_A.time_master << ","
+						<< benders_sol_A.time_subproblem << ","
+						<< ..
+		
+		// Add to the existing output
+		output_stats 	<< "A,"
+						<< Gamma << ","
+						<< tau << ","
+						<< nb_path_to_select << ","
+						<< limit_number_paths << ","
+						<< benders_sol_A.time << ","
+						<< benders_sol_A.iter << ","
+						<< ..
+		
+		// Close the document in its current state.
+		output_A_B.close();
+	\end{lstlisting}
+
+	\noindent There are two main functions for testing all the heuristics. \textit{BA\_benders\_Main} simulates the Benders Adverse method, while \textit{KC\_benders\_Main} simulates the KC heuristics. To select the desired KC heuristic, you must adjust the function call using one of the following parameters: $KC\_Method::\{KC, RDK, RDKL, Unique, UniqueDual, HOG, HOGL\}$.
+	
+	\subsection{Instance Generation}
+	
+	\noindent Instances are generated using the following command. Once generated, the instances are placed directly into the \textit{toy\_instances} folder\footnote{You can change the folder name, but you will then need to modify the path used to read the instances in \textit{benders\_kc.cpp}.}. It contains various parameters listed in the Table \ref{tb:an:parametres_ginstance}.
+	
+    \begin{table}[H]
+        \centering
+        \begin{tabular}{l l}
+            \toprule
+            Parameters & Definitions\\
+            \midrule
+            $str: outdir$ & Discharge package\\
+            $int: nb\_instances$ & Number of instances\\
+            $int: nb\_periods$ & Number of periods\\
+            $int: nb\_items$ & Number of elements for each period\\
+            $bool: use\_periodicity$ & Use of periodicity\\
+            $bool: start\_in\_period$ & Start during peak/off-peak periods\\
+            $int: timespan\_period$ & Duration of the period\\
+            $int: demand\_prob$ & Probability of an item being scheduled\\
+            $int: read\_instance\_rd\_lb$ & JSP\\
+            $int: read\_instance\_rd\_ub$ & JSP\\
+            $int: margin\_settings$ & Order of magnitude of costs &  & \\
+            \bottomrule
+        \end{tabular}
+        \caption{Instance generation settings.}
+        \label{tb:an:parametres_ginstance}
+    \end{table}
+    
+	\begin{lstlisting}[style=terminal]
+		$ python3 generate_random_instance.py
+	\end{lstlisting}
+
+	\subsection{Statistical Analysis of the Results}
+	
+	\noindent The results are located in the \textit{results} folder. Each experiment has its own timestamped folder containing the simulation's main parameters. For example, we have: \textit{result\_2026-07-30\_1701\_n=0\_l=0\_pfew=0.35\_advmargin=2\_BA\_KC.csv}, where $n$ represents the number of paths to backtrack, $l$ is the DFS exploration limit, $p\_few$ is the probability of selecting an arc using the \textit{SelectFew} heuristic, and $adv\_margin$ corresponds to the margin allocated to the subproblem when using the uncertainty budget $\Gamma$; the higher this variable, the more difficult the resolution becomes. $adv\_margin=1$ means the adversary can use only $1\times\Gamma$, making the problem easier to solve. The last two elements correspond to the heuristics tested in this CSV file.
+
+	\noindent You have various Python or R scripts available to perform different analyses. The script \textit{analyse\_benders\_stats.py} provides a clear overview of the average computation time and average number of iterations for each simulated method. \textit{analyse\_benders\_resultsv3.py} generates several graphs offering a more detailed visualization based on various metrics. Finally, \textit{analyse\_time\_results.R} allows you to visualize, among other things, the time spent in the master problem and the subproblem. All these scripts can be run using the following commands:
+	
+	\begin{lstlisting}[style=terminal]
+		$ cd results
+		$ python3 analyse_benders_stats.py "folder/file.csv"
+		$ python3 analyse_benders_resultsv3.py "folder/file.csv"
+		# For the R script, you would need to import the CSV.
+		$ r analyse_time_results.R
+	\end{lstlisting}
+
+% ======================================== ANNEXE ========================================
+
+
+
+    
+	%\clearpage
+	%\thispagestyle{empty}
+	%\null
+	%\addtocounter{page}{-1}
+	
+	
+\end{document}

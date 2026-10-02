@@ -1,0 +1,244 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\geometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+\usepackage{amsmath,amssymb,amsfonts,mathtools}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{titlesec}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{MnSymbol}
+\usepackage{eurosym}
+\usepackage{float}
+\usepackage{csquotes}
+
+% --- Palette de Couleurs Académique ---
+\definecolor{mainblue}{RGB}{26, 54, 93}
+\definecolor{slate}{RGB}{74, 85, 104}
+\definecolor{lightbg}{RGB}{247, 250, 252}
+\definecolor{bordergrey}{RGB}{226, 232, 240}
+
+% --- Configuration des Titres ---
+\titleformat{\section}{\color{mainblue}\large\bfseries}{\thesection.}{0.5em}{}[{\titlerule[0.5pt]}]
+\titleformat{\subsection}{\color{slate}\normalsize\bfseries}{\thesubsection.}{0.5em}{}
+\titleformat{\subsubsection}{\color{slate}\normalsize\bfseries}{\thesubsubsection.}{0.5em}{}
+
+% --- Configuration des En-têtes et Pieds de page ---
+\pagestyle{fancy}
+\fancyhf{}
+\pagestyle{plain}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\fancyhead[L]{\footnotesize\color{slate}\textbf{Note Technique} | LAAS-CNRS}
+\fancyhead[R]{\footnotesize\color{slate}Décomposition de Benders robuste}
+\fancyfoot[C]{\footnotesize\color{slate}Page \thepage}
+
+% --- Configuration de Hyperref ---
+\hypersetup{
+    colorlinks=true,
+    linkcolor=mainblue,
+    urlcolor=mainblue,
+    pdftitle={bendersAlgorithmExecution},
+    pdfauthor={Mathis Francine-Habas}
+}
+
+\begin{document}
+    \begin{center}
+        {\color{mainblue}\LARGE\bfseries Déroulement manuel de l'algorithme de\\ Benders Adverse}\\[0.3cm]
+        {\color{slate}\large Planification robuste sous incertitude}\\[0.5cm]
+        \noindent\makebox[\linewidth]{\color{bordergrey}\rule{\linewidth}{1pt}}\\[0.2cm]
+        \begin{minipage}{0.48\textwidth}
+            \begin{flushleft} \small
+                \textbf{Auteur :} Mathis Francine-Habas \\
+                \textbf{Structure :} LAAS-CNRS
+            \end{flushleft}
+        \end{minipage}
+        \hfill
+        \begin{minipage}{0.48\textwidth}
+            \begin{flushright} \small
+                \textbf{Date :} \today \\
+                \textbf{Version :} 3.0
+            \end{flushright}
+        \end{minipage}\\[0.1cm]
+        \noindent\makebox[\linewidth]{\color{bordergrey}\rule{\linewidth}{1pt}}
+    \end{center}
+    
+    \section{Première configuration}
+    \label{sec:formulation1}
+    
+    \textit{Pour cette expérience, nous prendrons $\Delta_i$ inconstant $\forall i\in[\![1, T]\!]$. Cependant, nous suggérerons que les coûts de lancement $c^P$ sont nuls et que le bénéfice par objet vendu est strictement positif. $\widehat{D}_{nominal}$ est la demande nominale cumulée. Le problème est formulé comme une minimisation des coûts, ce qui explique que les revenus soient des coûts négatifs.}
+    
+    \subsection{Formulation du problème}
+    
+    Soit le jeu de données suivant :
+    
+    \begin{alignat}{5}
+        &T&&=3\\
+        &\Gamma&&=2\\
+        &\Delta_1&&=1\\
+        &\Delta_i&&=2, \forall i\in[\![2, T]\!]\\
+        &c^I&&=1\text{\euro}\\
+        &c^B&&=2\text{\euro}\\
+        &c^P&&=0\text{\euro}\\
+        &b^P&&=10\text{\euro}\\
+        &\widehat{D}_{nominal}&&=[10, 20, 30]
+    \end{alignat}
+    
+    On obtient le graphe ci-dessous :
+    
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{STG_running_benders_hand/images/deroulement_algo_methode_2.png}
+        \caption{Graphe de budget}
+        \label{fig:graph_congif_2}
+    \end{figure}
+    
+    \subsection{Itérations}
+    
+    Soit $U$ l'ensemble contenant le scénario nominal et $U'$ l'ensemble agrégé de $U$ par les nouveaux scénarios remontés par le sous-problème.
+    
+    \subsubsection{Step 1 :}
+    
+    \paragraph{Lower Bound} Lors de la première étape, le problème Maître n'a aucune idée de l'incertitude ; il ne connaît que le scénario nominal. Il va donc chercher à la satisfaire.
+    
+    \begin{itemize}
+        \item Plan de production cumulé : $X^{(1)}=[10, 20, 30]$ ;
+        \item Pénalités $=0$\euro\, (car ni stock ni rupture) ;
+        \item Ventes $=\sum (max\{0, 0\}) - b^Pmin\{30, 30\}=- 10\times \min(30, 30)=-300$\euro ;
+        \item $LowerBound=$\textcolor{green}{$-300$}\euro.
+    \end{itemize}
+    
+    \paragraph{Upper Bound} L'adversaire observe le plan $X^{(1)}$ et cherche à maximiser la fonction de coût tout en dépensant le maximum de budget possible. Nous devons calculer le coût maximum des deux scénarios (rupture/ surstock) :
+    
+    \begin{itemize}
+    Scénario 1 : Attaque $D_{up}$ (rupture)
+        \item $D_{up}=[11, 22, 30]$ ;
+        \item Pénalités $=2\cdot(1+2)=6$\euro ;
+        \item Ventes $=b^Pmin\{30, 32\}=300$\euro ;
+        \item $UpperBound=6-300=-294$\euro.
+    \end{itemize}
+    
+    \begin{itemize}
+    Scénario 2 : Attaque $D_{down}$ (surstock)
+        \item $D_{down}=[10, 20, 28]$ ;
+        \item Pénalités : Le Maître a produit $30$. surstock de $2$ objets $\times 1$\euro$=2$\euro ;
+        \item Ventes $=b^Pmin\{30, 28\}=280$\euro ;
+        \item $UpperBound=2-280=$\textcolor{green}{$-278$}\euro.
+    \end{itemize}
+    
+    \underline{Bilan itération 1 :}
+    
+    \[
+        \textcolor{red}{UB(-278) > LB(-300)}
+    \]
+    
+    Nous ne sommes pas à l'équilibre. Le scénario $D_{down}$ est remonté au Maître.
+    
+    \subsubsection{Step 2 :}
+    
+    On a donc $U=\{[10, 20, 30], [10, 20, 28]\}$.
+    
+    \textit{Avec $b^P=0$,  les trois périodes n'ont plus la même importance. Les revenus étant comptabilisés après le dernier temps $T$, cette dernière période dicte la stratégie. L'adversaire va chercher à réduire sa demande pour priver le Maître de ses ventes.}
+    
+    \paragraph{Lower Bound}
+    
+    Si $a, b, c$ représentent la quantité de \enquote{sous-production}, nous pouvons poser le plan du Maître :
+    
+    \begin{align}
+        &X_1=10-a\\
+        &X_2=20-b\\
+        &X_3=30-c
+    \end{align}
+    
+    Face au scénario $D_{nom}=[10, 20, 30]$, le Maître est en rupture globale :
+    
+    \begin{itemize}
+        \item Pénalités $=2\cdot(a+b+c)$ ;
+        \item Ventes $=10\cdot(30-c)=300-10c$ ;
+        \item $LowerBound_{nom}=(2a+2b+2c)-(300-10c)=2a+2b+12c-300$.
+    \end{itemize}
+    
+    Comparons maintenant ce plan à la demande $D_{down}=[10, 20, 28]$ :
+    
+    \begin{itemize}
+        \item Pénalités : Rupture aux temps $1$ et $2$ $(a+b)$, mais surstock au temps $3$ ($(30-c)-28=2-c$). Total $=2a+2b+(2-c)$ ;
+        \item Ventes $=10\times\min(30-c, 28)=280$ (en supposant $c\leq2$) ;
+        \item $LowerBound_{down}=(2a+2b+2-c)-280=2a+2b-c-278$.
+    \end{itemize}
+    
+    Le Maître cherche l'équilibre en ces deux pires cas :
+    
+    \[
+        2a+2b+12c-300=2a+2b-c-278 \Longrightarrow c \approx 1.692
+    \]
+    
+    Les variables $a$ et $b$ s'annulent de chaque côté de l'équation. Le Maître n'a aucun intérêt à prendre des risques de rupture en début d'horizon, il fixe donc $a=0$ et $b=0$. Le nouveau plan est $X^{(2)}=[10, 20, 28.307]$. $LowerBound=$\textcolor{green}{$-279.692$}\euro.
+    
+    \paragraph{Upper Bound} Le Maître ayant réduit sa production finale pour éviter le surstock, l'adversaire attaque dans la direction opposée (à la hausse) au temps $3 : \delta_3=+2$.
+    
+    \begin{itemize}
+        \item $D_{up}=[10, 20, 32]$ ;
+        \item Pénalités : Rupture au temps $3$ de $32-28.307=7.384$\euro ;
+        \item Ventes $=10\times28.307=283.07$\euro ;
+        \item $UpperBound=7.384-283.07=-275.686$\euro.
+    \end{itemize}
+    
+    \underline{Bilan itération 2 :}
+    
+    \[
+        \textcolor{red}{UB(-275.686) > LB(-279.692)}
+    \]
+    
+    Nous ne sommes pas à l'équilibre. Le scénario $D_{up}$ est remonté au Maître.
+    
+    \subsubsection{Step 3 : Trouver l'équilibre final}
+    
+    On a donc $U=\{[10, 20, 30], [10, 20, 28], [10, 20, 32]\}$.
+    
+    \paragraph{Lower Bound} Le Maître connait les deux extrêmes de l'adversaire. En gardant le formalisme $X^{(3)}=[10-a, 20-b, 30-c]$, confrontons ce plan à la nouvelle attaque $D_{up}$ :
+    
+    \begin{itemize}
+        \item Pénalités : Rupture globale. $2a+2b+2(32-(30-c))=2a+2b+4+2c$ ;
+        \item Ventes $=10(30-c)$ ;
+        \item $LowerBound_{up}=(2a+2b+4+2c)-(300-10c)=2a+2b+12c-296$ ;
+    \end{itemize}
+    
+    Le Maître équilibre le risque entre l'attaque $D_{down}$ et $D_{up}$ :
+    
+    \[
+        13c = 18 \implies c = \frac{18}{13} \approx 1.385
+    \]
+    
+    De nouveau, $a=0$ et $b=0$. Le plan final robuste est $X^{(3)}=[10, 20, 28.615]$. $LowerBound = -1.385-278=$\textcolor{green}{$-279.385$}\euro.
+    
+    \paragraph{Upper Bound} Face à ce plan centré de $28.615$ au temps $3$, l'adversaire est bloqué :
+    
+    \begin{itemize}
+        \item S'il attaque $DOWN$ ($D_{down}=[10, 20, 28]$) : $UpperBound = -279.385$\euro ;
+        \item S'il attaque $UP$ ($D_{up}=[10, 20, 32]$) : $UpperBound = -279.385$\euro.
+        Toute autre combinaison d'attaque (par exemple, répartir le budget sur $t=1$ et $t=3$) s'avère moins efficace et laisse au Maître un profit supérieur.
+    \end{itemize}
+    
+    \underline{Bilan itération 3 :}
+    
+    \[
+        \textcolor{green}{UB(-279.385) \le LB(-279.385) + \epsilon}
+    \]
+    
+    Nous sommes à l'équilibre. L'algorithme a convergé vers la solution optimale, prouvant que le Maître garantit un bénéfice minimal de $279.385$\euro\ dans le pire des cas.
+    
+    \section{Résultats de l'expérimentation par CPLEX}
+    
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.75\linewidth]{STG_running_benders_hand/images/results_config_3.png}
+        \caption{Résolution de l'instance par CPLEX via la méthode de Benders Adverse.}
+        \label{fig:results_config_3}
+    \end{figure}
+    
+\end{document}
